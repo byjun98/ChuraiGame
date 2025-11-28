@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 프로필 - GameMatch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: #F2F4F6; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 py-10 w-full">
+        <!-- 뒤로가기 -->
+        <a href="{% url 'home' %}" class="mb-6 flex items-center text-gray-500 hover:text-gray-900 inline-block">
+            <i class="ph-bold ph-arrow-left mr-2"></i> 메인으로
+        </a>
+
+        <!-- 프로필 카드 -->
+        <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div class="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-50">
+                <!-- 아바타 -->
+                <div class="w-24 h-24 rounded-full bg-gray-100 relative overflow-hidden flex items-center justify-center border border-gray-200">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <i class="ph-fill ph-user text-4xl text-gray-300"></i>
+                    {% endif %}
+                </div>
+                
+                <!-- 정보 -->
+                <div class="text-center sm:text-left flex-1">
+                    <h2 class="text-2xl font-bold text-gray-900">{{ user.nickname }}</h2>
+                    <p class="text-gray-500">{{ user.email }}</p>
+                    <div class="flex gap-2 mt-3 justify-center sm:justify-start">
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">LV. 1</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full">가입일: {{ user.date_joined|date:"Y.m.d" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 통계 (예시) -->
+            <div class="grid grid-cols-2 divide-x divide-gray-50">
+                <div class="p-6 text-center hover:bg-gray-50 transition-colors">
+                    <p class="text-2xl font-bold text-gray-900">0</p>
+                    <p class="text-xs text-gray-500 font-medium mt-1">찜한 게임</p>
+                </div>
+                <div class="p-6 text-center hover:bg-gray-50 transition-colors">
+                    <p class="text-2xl font-bold text-gray-900">0</p>
+                    <p class="text-xs text-gray-500 font-medium mt-1">평가한 게임</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 계정 관리 버튼들 -->
+        <div class="space-y-3">
+            <a href="{% url 'users:logout' %}" class="block w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors text-center">
+                로그아웃
+            </a>
+            
+            <form action="{% url 'users:delete' %}" method="POST" onsubmit="return confirm('정말로 탈퇴하시겠습니까?');">
+                {% csrf_token %}
+                <button type="submit" class="w-full py-4 text-gray-400 text-sm underline decoration-gray-300 hover:text-red-500">
+                    회원 탈퇴
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

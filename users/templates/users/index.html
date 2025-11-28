@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameMatch - 게이머를 위한 취향 저격 & 세일 정보</title>
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #F2F4F6;
+            color: #191F28;
+        }
+
+        /* Custom Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animations */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        .slide-up-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide-up-enter-from { opacity: 0; transform: translateY(20px); }
+
+        /* Input Focus Styles */
+        .input-group:focus-within label { color: #3182F6; }
+        .input-group:focus-within input { border-color: #3182F6; }
+    </style>
+</head>
+<body class="antialiased overflow-y-scroll">
+
+    <div id="app" class="min-h-screen flex flex-col relative">
+        
+        {% verbatim %}
+        <!-- Header (Global) -->
+        <header v-if="currentStep !== 'auth'" class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+            <div class="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
+                <div class="flex items-center gap-8">
+                    <h1 class="text-2xl font-bold text-blue-600 tracking-tight cursor-pointer select-none" @click="goToHome">GameMatch</h1>
+                    
+                    <!-- Desktop Nav -->
+                    <nav class="hidden md:flex gap-6">
+                        <button @click="currentTab = 'home'" :class="currentTab === 'home' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">홈</button>
+                        <button @click="currentTab = 'sale'" :class="currentTab === 'sale' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">세일</button>
+                    </nav>
+                </div>
+
+                <!-- User Profile Widget -->
+                <div v-if="user" @click="currentStep = 'profile'" class="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity">
+                    <div class="text-right hidden sm:block leading-tight">
+                        <p class="text-sm font-semibold">{{ user.nickname }}</p>
+                        <p class="text-[11px] text-gray-400">{{ user.email }}</p>
+                    </div>
+                    <div class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                        <img v-if="user.avatar" :src="user.avatar" class="w-full h-full object-cover">
+                        <i v-else class="ph-fill ph-user text-gray-400"></i>
+                    </div>
+                </div>
+                <div v-else>
+                     <button @click="currentStep = 'auth'" class="text-sm font-medium text-blue-600">로그인</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col">
+            
+            <!-- PAGE 1: Authentication (Login & Signup) -->
+            <transition name="fade" mode="out-in">
+                <div v-if="currentStep === 'auth'" key="auth" class="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
+                    <div class="w-full max-w-md space-y-8">
+                        
+                        <!-- Logo Area -->
+                        <div class="text-center space-y-2">
+                            <div class="inline-flex p-4 bg-blue-50 rounded-3xl mb-4">
+                                <i class="ph-fill ph-game-controller text-4xl text-blue-600"></i>
+                            </div>
+                            <h2 class="text-3xl font-bold text-[#191F28]">
+                                {{ isLoginMode ? '다시 만나서 반가워요' : '게이머를 위한 첫 걸음' }}
+                            </h2>
+                            <p class="text-[#8B95A1]">
+                                {{ isLoginMode ? '나만의 게임 취향을 찾아보세요.' : '3초만에 가입하고 추천을 받아보세요.' }}
+                            </p>
+                        </div>
+
+                        <!-- Form Area -->
+                        <div class="space-y-4">
+                            <!-- Name Input (Signup Only) -->
+                            <div v-if="!isLoginMode" class="input-group">
+                                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">닉네임</label>
+                                <input type="text" v-model="authForm.nickname" placeholder="게임매니아" 
+                                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
+                            </div>
+
+                            <!-- Email Input -->
+                            <div class="input-group">
+                                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">이메일</label>
+                                <input type="email" v-model="authForm.email" placeholder="example@email.com" 
+                                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
+                            </div>
+
+                            <!-- Password Input -->
+                            <div class="input-group">
+                                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">비밀번호</label>
+                                <input type="password" v-model="authForm.password" placeholder="비밀번호 입력" 
+                                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
+                            </div>
+
+                            <!-- Action Button -->
+                            <button @click="handleAuthAction" 
+                                    class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-[0.98] transition-all">
+                                {{ isLoginMode ? '로그인' : '동의하고 회원가입' }}
+                            </button>
+                        </div>
+
+                        <!-- Social Login -->
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4 py-2">
+                                <div class="h-px bg-gray-200 flex-1"></div>
+                                <span class="text-xs text-gray-400 font-medium">또는 소셜 계정으로 시작</span>
+                                <div class="h-px bg-gray-200 flex-1"></div>
+                            </div>
+                            <div class="flex justify-center gap-4">
+                                <!-- Naver -->
+                                <button @click="socialLogin('Naver')" class="w-12 h-12 rounded-full bg-[#03C75A] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm" title="네이버 로그인">
+                                    <span class="font-black text-xs">N</span>
+                                </button>
+                                <!-- Google -->
+                                <button @click="socialLogin('Google')" class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm" title="구글 로그인">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
+                                </button>
+                                <!-- Steam -->
+                                <button @click="socialLogin('Steam')" class="w-12 h-12 rounded-full bg-[#171A21] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm" title="스팀 로그인">
+                                    <i class="ph-fill ph-steam-logo text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Mode -->
+                        <div class="text-center">
+                            <button @click="toggleAuthMode" class="text-sm text-gray-500 underline decoration-gray-300 hover:text-gray-800">
+                                {{ isLoginMode ? '아직 계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 2: Main Dashboard -->
+                <div v-else-if="currentStep === 'main'" key="main" class="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full">
+                    
+                    <!-- Home Tab -->
+                    <div v-if="currentTab === 'home'" class="space-y-12">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden border border-gray-100">
+                            <div class="relative z-10">
+                                <h2 class="text-3xl font-bold leading-tight mb-2">
+                                    <span class="text-blue-600">{{ user?.nickname || '게이머' }}</span>님의<br>
+                                    취향을 분석했어요
+                                </h2>
+                                <p class="text-gray-500 mb-8">최근 플레이한 게임을 바탕으로 추천해드려요.</p>
+                                <button @click="currentTab = 'sale'" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                                    추천 리스트 보기
+                                </button>
+                            </div>
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-16 -mt-16"></div>
+                        </div>
+
+                         <!-- Popular Section -->
+                        <div>
+                            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                                <i class="ph-fill ph-fire text-red-500"></i> 요즘 뜨는 게임
+                            </h3>
+                            <div class="flex overflow-x-auto gap-5 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+                                <div v-for="game in popularGames" :key="game.game_id" class="shrink-0 w-64 group cursor-pointer">
+                                    <div class="relative rounded-2xl overflow-hidden shadow-md aspect-[16/9] mb-3">
+                                        <img :src="game.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    </div>
+                                    <h4 class="font-bold text-gray-800 truncate">{{ game.title }}</h4>
+                                    <p class="text-sm text-gray-500">{{ game.genre || '액션' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sale Tab -->
+                    <div v-else-if="currentTab === 'sale'" class="animate-fade-in">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold">오늘의 특가</h2>
+                            <!-- Sort Dropdown -->
+                            <select v-model="sortBy" class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+                                <option value="interest">추천순 (관심도)</option>
+                                <option value="discount">높은 할인율순</option>
+                                <option value="price_asc">낮은 가격순</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div v-for="game in sortedSaleGames" :key="game.game_id" class="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group relative">
+                                <!-- Wishlist Button -->
+                                <button @click.stop="toggleWishlist(game)" class="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur flex items-center justify-center transition-colors hover:bg-black/50">
+                                    <i class="ph-fill ph-heart text-lg transition-transform active:scale-75" :class="isWishlisted(game.game_id) ? 'text-red-500' : 'text-white/70'"></i>
+                                </button>
+
+                                <div class="relative aspect-[16/9] bg-gray-200">
+                                    <img :src="game.thumbnail" @error="handleImageError" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
+                                        -{{ Math.round(game.discount_rate * 100) }}%
+                                    </div>
+                                </div>
+                                <div class="p-4 flex flex-col flex-1">
+                                    <h3 class="font-bold text-gray-800 mb-1 line-clamp-1" :title="game.title">{{ game.title }}</h3>
+                                    <div class="mt-auto pt-3 flex items-end justify-between">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs text-gray-400 line-through">₩{{ formatPrice(game.original_price) }}</span>
+                                            <span class="text-lg font-bold text-blue-600">₩{{ formatPrice(game.current_price) }}</span>
+                                        </div>
+                                        <a :href="game.store_link" target="_blank" class="w-8 h-8 rounded-full bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 flex items-center justify-center transition-colors">
+                                            <i class="ph-bold ph-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE 3: Profile (My Page) -->
+                <div v-else-if="currentStep === 'profile'" key="profile" class="max-w-2xl mx-auto px-4 sm:px-6 py-10 w-full">
+                    <button @click="currentStep = 'main'" class="mb-6 flex items-center text-gray-500 hover:text-gray-900">
+                        <i class="ph-bold ph-arrow-left mr-2"></i> 뒤로가기
+                    </button>
+
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
+                        <div class="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-50">
+                            <div class="w-24 h-24 rounded-full bg-gray-100 relative overflow-hidden group cursor-pointer">
+                                <img v-if="user.avatar" :src="user.avatar" class="w-full h-full object-cover">
+                                <i v-else class="ph-fill ph-user text-4xl text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                                <div class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white text-xs">수정</div>
+                            </div>
+                            <div class="text-center sm:text-left flex-1">
+                                <h2 class="text-2xl font-bold text-gray-900">{{ user.nickname }}</h2>
+                                <p class="text-gray-500">{{ user.email }}</p>
+                                <div class="flex gap-2 mt-3 justify-center sm:justify-start">
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">LV. {{ Math.floor(wishlist.length * 1.5) + 1 }}</span>
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full">가입일: 2023.10.24</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 divide-x divide-gray-50">
+                            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" @click="currentTab = 'wishlist'; currentStep = 'main'">
+                                <p class="text-2xl font-bold text-gray-900">{{ wishlist.length }}</p>
+                                <p class="text-xs text-gray-500 font-medium mt-1">찜한 게임</p>
+                            </div>
+                            <div class="p-6 text-center hover:bg-gray-50 transition-colors">
+                                <p class="text-2xl font-bold text-gray-900">0</p>
+                                <p class="text-xs text-gray-500 font-medium mt-1">작성 리뷰</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Linked Accounts -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+                        <h3 class="font-bold text-lg mb-4">계정 연동</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-[#171A21] text-white flex items-center justify-center">
+                                        <i class="ph-fill ph-steam-logo text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold">Steam</p>
+                                        <p class="text-xs text-gray-500">{{ user.linked_steam ? '연동됨' : '미연동' }}</p>
+                                    </div>
+                                </div>
+                                <button @click="toggleLink('steam')" 
+                                    :class="user.linked_steam ? 'text-red-500 bg-red-50' : 'text-blue-600 bg-blue-50'"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                                    {{ user.linked_steam ? '해제' : '연동' }}
+                                </button>
+                            </div>
+                             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-[#03C75A] text-white flex items-center justify-center">
+                                        <span class="font-black text-xs">N</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold">Naver</p>
+                                        <p class="text-xs text-gray-500">미연동</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100">연동</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Actions -->
+                    <div class="space-y-3">
+                        <button @click="handleLogout" class="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                            로그아웃
+                        </button>
+                        <button @click="deleteAccount" class="w-full py-4 text-gray-400 text-sm underline decoration-gray-300 hover:text-red-500">
+                            회원 탈퇴
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </main>
+        {% endverbatim %}
+
+        <!-- Mobile Bottom Nav -->
+        <nav v-if="currentStep === 'main'" class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50 safe-area-pb">
+            <button @click="currentTab = 'home'" class="flex flex-col items-center gap-1 w-1/3" :class="currentTab === 'home' ? 'text-blue-600' : 'text-gray-400'">
+                <i :class="currentTab === 'home' ? 'ph-fill ph-house' : 'ph-bold ph-house'" class="text-2xl"></i>
+                <span class="text-[10px] font-medium">홈</span>
+            </button>
+            <button @click="currentTab = 'sale'" class="flex flex-col items-center gap-1 w-1/3" :class="currentTab === 'sale' ? 'text-blue-600' : 'text-gray-400'">
+                <i :class="currentTab === 'sale' ? 'ph-fill ph-tag' : 'ph-bold ph-tag'" class="text-2xl"></i>
+                <span class="text-[10px] font-medium">세일</span>
+            </button>
+            <button @click="currentStep = 'profile'" class="flex flex-col items-center gap-1 w-1/3 text-gray-400">
+                <i class="ph-bold ph-user text-2xl"></i>
+                <span class="text-[10px] font-medium">마이</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, reactive } = Vue;
+
+        // --- MOCK DATA (Normally from DB) ---
+        const rawSaleData = [
+            { "game_id": "app1086940", "title": "Baldur's Gate 3", "current_price": 49500, "original_price": 66000, "discount_rate": 0.25, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/3dd81008e9c385caf68152450c22353f6a8abec9/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1086940/Baldurs_Gate_3/" },
+            { "game_id": "app1245620", "title": "Elden Ring", "current_price": 44800, "original_price": 64800, "discount_rate": 0.3, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1245620/Elden_Ring/" },
+            { "game_id": "app2679460", "title": "Metaphor: ReFantazio", "current_price": 39900, "original_price": 79800, "discount_rate": 0.5, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2679460/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/2679460/Metaphor_ReFantazio/" },
+            { "game_id": "app1904540", "title": "Football Manager 2023", "current_price": 23600, "original_price": 59000, "discount_rate": 0.6, "thumbnail": "https://cdn.cloudflare.steamstatic.com/steam/apps/1904540/capsule_sm_120.jpg", "store_link": "https://store.steampowered.com/app/1904540/Football_Manager_2023/" },
+            { "game_id": "app524220", "title": "NieR:Automata™", "current_price": 15680, "original_price": 44800, "discount_rate": 0.65, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/524220/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/524220/NieRAutomata/" },
+            { "game_id": "app1332010", "title": "Stray", "current_price": 21000, "original_price": 35000, "discount_rate": 0.4, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1332010/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1332010/Stray/" },
+            { "game_id": "app2369390", "title": "Far Cry® 6", "current_price": 13000, "original_price": 65000, "discount_rate": 0.8, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2369390/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/2369390/Far_Cry_6/" },
+            { "game_id": "app2561580", "title": "Horizon Zero Dawn™ Remastered", "current_price": 35280, "original_price": 58800, "discount_rate": 0.4, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2561580/507f27b6be81658f406a42e269a2e4b065941ade/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/2561580/Horizon_Zero_Dawn_Remastered/" },
+            { "game_id": "app1222730", "title": "STAR WARS™: Squadrons", "current_price": 2200, "original_price": 44000, "discount_rate": 0.95, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222730/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1222730/STAR_WARS_Squadrons/" },
+            { "game_id": "app1605220", "title": "Dune: Spice Wars", "current_price": 15120, "original_price": 30500, "discount_rate": 0.6, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1605220/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1605220/Dune_Spice_Wars/" },
+            { "game_id": "app383870", "title": "Firewatch", "current_price": 2150, "original_price": 21000, "discount_rate": 0.9, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/383870/4bede1250e3ec63295fa3f019311d4a30a1a4bce/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/383870/Firewatch/" },
+            { "game_id": "app1196090", "title": "Scars Above", "current_price": 3040, "original_price": 30400, "discount_rate": 0.9, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1196090/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/1196090/Scars_Above/" },
+            { "game_id": "app2058180", "title": "Judgment", "current_price": 10440, "original_price": 34800, "discount_rate": 0.7, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2058180/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/2058180/Judgment/" },
+            { "game_id": "app863550", "title": "HITMAN™ 2", "current_price": 24800, "original_price": 62000, "discount_rate": 0.6, "thumbnail": "https://cdn.cloudflare.steamstatic.com/steam/apps/863550/capsule_sm_120.jpg", "store_link": "https://store.steampowered.com/app/863550/HITMAN_2/" },
+            { "game_id": "app448510", "title": "Overcooked", "current_price": 3600, "original_price": 18000, "discount_rate": 0.8, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/448510/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/448510/Overcooked/" },
+            { "game_id": "app924150", "title": "Farm Together", "current_price": 4400, "original_price": 11000, "discount_rate": 0.6, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/924150/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/924150/" },
+             { "game_id": "app304390", "title": "FOR HONOR™", "current_price": 4950, "original_price": 16500, "discount_rate": 0.7, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304390/5b4909717c94e99511e459aad48cd2202e191046/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/304390/FOR_HONOR/" },
+             { "game_id": "app2815270", "title": "The Sims™ 4 Lovestruck", "current_price": 22000, "original_price": 44000, "discount_rate": 0.5, "thumbnail": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2815270/capsule_231x87.jpg", "store_link": "https://store.steampowered.com/app/2815270/" }
+        ];
+
+        createApp({
+            setup() {
+                // State
+                const currentStep = ref('main'); // Forced main view for logged-in users
+                const currentTab = ref('home'); // 'home', 'sale'
+                const isLoginMode = ref(true); // Toggle between Login and Signup
+                const user = ref({ nickname: '{{ user.nickname }}', email: '{{ user.email }}' }); // Inject Django user data
+                const games = ref([]);
+                const wishlist = ref([]);
+                
+                // Auth Form State
+                const authForm = reactive({
+                    email: '',
+                    password: '',
+                    nickname: ''
+                });
+
+                // Sorting State
+                const sortBy = ref('interest');
+
+                onMounted(() => {
+                    // Initialize Game Data from Django
+                    // Use verbatim block or different delimiters if mixing Vue and Django extensively
+                    // Here we initialize from rawSaleData for demo purposes, but ideally this comes from views.py context
+                    
+                    const serverData = JSON.parse('{{ games_json|escapejs }}');
+                    if (serverData.length > 0) {
+                         games.value = serverData.map(game => ({
+                            ...game,
+                            matchScore: Math.floor(Math.random() * (99 - 70) + 70),
+                        }));
+                    } else {
+                        // Fallback to mock data if server data is empty
+                        games.value = rawSaleData.map(game => ({
+                            ...game,
+                            matchScore: Math.floor(Math.random() * (99 - 70) + 70),
+                            genre: "액션/RPG"
+                        }));
+                    }
+                });
+
+                // --- Computed ---
+                const popularGames = computed(() => games.value.slice(0, 5));
+
+                const sortedSaleGames = computed(() => {
+                    let sorted = [...games.value];
+                    if (sortBy.value === 'interest') sorted.sort((a, b) => b.matchScore - a.matchScore);
+                    else if (sortBy.value === 'discount') sorted.sort((a, b) => b.discount_rate - a.discount_rate);
+                    else if (sortBy.value === 'price_asc') sorted.sort((a, b) => a.current_price - b.current_price);
+                    return sorted;
+                });
+
+                // --- Methods for CRUD & Auth ---
+
+                const toggleAuthMode = () => {
+                    isLoginMode.value = !isLoginMode.value;
+                    authForm.email = '';
+                    authForm.password = '';
+                    authForm.nickname = '';
+                };
+
+                const handleAuthAction = () => {
+                    // Backend Integration Note: 
+                    // Replace this with axios.post('/api/login/' or '/api/register/', authForm)
+
+                    if (!authForm.email || !authForm.password) {
+                        alert('이메일과 비밀번호를 입력해주세요.');
+                        return;
+                    }
+                    // ... implementation details ...
+                };
+
+                const handleLogout = () => {
+                    // Redirect to Django logout URL
+                    window.location.href = "{% url 'users:logout' %}";
+                };
+
+                const deleteAccount = () => {
+                    // Redirect/Form submit to Django delete URL
+                     if(confirm("정말로 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.")) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = "{% url 'users:delete' %}";
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = 'csrfmiddlewaretoken';
+                        csrf.value = '{{ csrf_token }}';
+                        form.appendChild(csrf);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                };
+
+                const socialLogin = (provider) => {
+                    alert(`${provider} 로그인 연동 기능은 준비 중입니다.`);
+                };
+
+                const toggleLink = (provider) => {
+                    // Toggle Linked Account Status (Update)
+                    if (provider === 'steam') {
+                        user.value.linked_steam = !user.value.linked_steam;
+                    }
+                };
+
+                // --- Feature Methods ---
+
+                const toggleWishlist = (game) => {
+                    const index = wishlist.value.findIndex(id => id === game.game_id);
+                    if (index === -1) {
+                        wishlist.value.push(game.game_id);
+                    } else {
+                        wishlist.value.splice(index, 1);
+                    }
+                };
+
+                const isWishlisted = (gameId) => {
+                    return wishlist.value.includes(gameId);
+                };
+
+                const formatPrice = (price) => price ? price.toLocaleString() : '무료';
+                const handleImageError = (e) => { e.target.src = "https://via.placeholder.com/460x215?text=No+Image"; };
+                const goToHome = () => { 
+                    currentStep.value = 'main'; 
+                    currentTab.value = 'home';
+                };
+
+                return {
+                    // State
+                    currentStep,
+                    currentTab,
+                    user,
+                    authForm,
+                    isLoginMode,
+                    popularGames,
+                    sortedSaleGames,
+                    sortBy,
+                    wishlist,
+
+                    // Methods
+                    toggleAuthMode,
+                    handleAuthAction,
+                    handleLogout,
+                    deleteAccount,
+                    socialLogin,
+                    toggleLink,
+                    toggleWishlist,
+                    isWishlisted,
+                    formatPrice,
+                    handleImageError,
+                    goToHome
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
