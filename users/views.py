@@ -98,7 +98,12 @@ def main_view(request):
         print(f"게임 데이터를 불러오는 중 오류 발생: {e}")
         games_json = "[]" # 에러 발생 시 빈 배열 전달
 
+    # Wishlist IDs
+    wishlist_ids = list(request.user.wishlist.values_list('steam_appid', flat=True))
+    wishlist_json = json.dumps(wishlist_ids, cls=DjangoJSONEncoder)
+
     return render(request, 'users/index.html', {
         'user': request.user,
-        'games_json': games_json, 
+        'games_json': games_json,
+        'wishlist_json': wishlist_json,
     })

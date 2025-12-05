@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GameMatch - 게이머를 위한 취향 저격 & 세일 정보{% endblock %}</title>
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #F2F4F6;
+            color: #191F28;
+        }
+
+        /* Custom Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animations */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        .slide-up-enter-active {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-up-enter-from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* Input Focus Styles */
+        .input-group:focus-within label {
+            color: #3182F6;
+        }
+
+        .input-group:focus-within input {
+            border-color: #3182F6;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="antialiased overflow-y-scroll">
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

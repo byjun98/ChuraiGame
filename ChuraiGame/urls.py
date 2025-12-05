@@ -16,4 +16,6 @@ urlpatterns = [
     
     # 3. 루트 URL('')로 접속 시 users 앱의 main_view로 연결합니다.
     path('', user_views.main_view, name='home'),
+
+    path('community/', include('community.urls')),
 ]

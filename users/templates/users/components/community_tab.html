@@ -1,0 +1,139 @@
+<!-- Community Tab -->
+<div v-else-if="currentTab === 'community'" class="animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">유저 커뮤니티</h2>
+        <button @click="isWritingPost = true"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors">
+            <i class="ph-bold ph-pencil-simple mr-1"></i> 글쓰기
+        </button>
+    </div>
+
+    <!-- Write Post Modal/Form -->
+    <div v-if="isWritingPost" class="mb-8 bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
+        <h3 class="font-bold mb-4">새 게시글 작성</h3>
+        <div class="space-y-4">
+            <input v-model="newPost.title" type="text" placeholder="제목을 입력하세요"
+                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+            <select v-model="newPost.category"
+                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+                <option value="free">자유</option>
+                <option value="review">리뷰</option>
+                <option value="guide">공략</option>
+            </select>
+            <textarea v-model="newPost.content" rows="5" placeholder="내용을 입력하세요"
+                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+
+            <!-- File Upload -->
+            <div class="flex items-center gap-2">
+                <label
+                    class="cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-600 transition-colors">
+                    <i class="ph-bold ph-image mr-1"></i> 사진/동영상 추가
+                    <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden"
+                        accept="image/*,video/*">
+                </label>
+                <span v-if="newPost.file" class="text-xs text-blue-600 truncate max-w-[200px]">{% verbatim %}{{
+                    newPost.file.name }}{% endverbatim %}</span>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button @click="isWritingPost = false"
+                    class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">취소</button>
+                <button @click="submitPost"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">등록</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+        <button v-for="cat in ['all', 'free', 'review', 'guide']" @click="communityCategory = cat"
+            :class="communityCategory === cat ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 border border-gray-200'"
+            class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors">
+            {% verbatim %}{{ {'all': '전체', 'free': '자유', 'review': '리뷰', 'guide': '공략'}[cat] }}{% endverbatim %}
+        </button>
+    </div>
+
+    <!-- Post List -->
+    <div class="space-y-4">
+        <div v-for="post in communityPosts" :key="post.id" @click="openPostDetail(post)"
+            class="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded">{% verbatim %}{{
+                    {'free': '자유', 'review': '리뷰', 'guide': '공략'}[post.category] }}{% endverbatim %}</span>
+                <span class="text-xs text-gray-400">{% verbatim %}{{ post.created_at }}{% endverbatim %}</span>
+            </div>
+            <h3 class="font-bold text-lg mb-2">{% verbatim %}{{ post.title }}{% endverbatim %}</h3>
+            <div class="flex items-center justify-between text-sm text-gray-500">
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1"><i class="ph-fill ph-user"></i> {% verbatim %}{{ post.author
+                        }}{% endverbatim %}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1"><i class="ph-fill ph-heart text-red-400"></i> {% verbatim %}{{
+                        post.likes }}{% endverbatim %}</span>
+                    <span class="flex items-center gap-1"><i class="ph-fill ph-chat-circle text-blue-400"></i> {% verbatim %}{{ post.comments }}{% endverbatim %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Post Detail Modal -->
+<div v-if="selectedPost" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closePostDetail"></div>
+    <div
+        class="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl z-10 overflow-hidden flex flex-col animate-fade-in">
+        <!-- Header -->
+        <div class="p-6 border-b border-gray-100 flex justify-between items-start bg-white sticky top-0 z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">{% verbatim %}{{
+                        {'free': '자유', 'review': '리뷰', 'guide': '공략'}[selectedPost.category] }}{% endverbatim %}</span>
+                    <span class="text-xs text-gray-400">{% verbatim %}{{ selectedPost.created_at }}{% endverbatim %}</span>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">{% verbatim %}{{ selectedPost.title }}{% endverbatim %}</h3>
+                <div class="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                    <i class="ph-fill ph-user"></i> {% verbatim %}{{ selectedPost.author }}{% endverbatim %}
+                </div>
+            </div>
+            <button @click="closePostDetail" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <i class="ph-bold ph-x text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto custom-scrollbar">
+            <p class="text-gray-800 whitespace-pre-wrap leading-relaxed mb-6">{% verbatim %}{{ selectedPost.content }}{% endverbatim %}</p>
+
+            <!-- Media -->
+            <div v-if="selectedPost.image" class="mb-6 rounded-xl overflow-hidden border border-gray-100">
+                <img :src="selectedPost.image" class="w-full h-auto">
+            </div>
+            <div v-if="selectedPost.video" class="mb-6 rounded-xl overflow-hidden border border-gray-100">
+                <video :src="selectedPost.video" controls class="w-full h-auto"></video>
+            </div>
+
+            <!-- Comments Section (Placeholder for now) -->
+            <div class="border-t border-gray-100 pt-6">
+                <h4 class="font-bold mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-chat-circle text-blue-600"></i> 댓글
+                </h4>
+                <div class="bg-gray-50 rounded-xl p-8 text-center text-gray-500 text-sm">
+                    댓글 기능 준비 중입니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+            <button
+                class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-600">
+                <i class="ph-bold ph-heart text-red-500"></i> 좋아요 {% verbatim %}{{ selectedPost.likes }}{% endverbatim %}
+            </button>
+            <button
+                class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-600">
+                <i class="ph-bold ph-share-network"></i> 공유하기
+            </button>
+        </div>
+    </div>
+</div>

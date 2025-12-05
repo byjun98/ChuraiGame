@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Back Button -->
+    <a href="/" class="inline-flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+        <i class="ph-bold ph-arrow-left mr-2"></i> 메인으로 돌아가기
+    </a>
+
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Game Header -->
+        <div class="relative h-80 bg-gray-900">
+            <img src="{{ game.image_url }}" class="w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            <div class="absolute bottom-0 left-0 w-full p-8 sm:p-12">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                    <div>
+                        <span class="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full mb-3 shadow-lg shadow-blue-900/50">
+                            {{ game.genre }}
+                        </span>
+                        <h1 class="text-4xl sm:text-5xl font-black text-white mb-2 tracking-tight drop-shadow-lg">{{ game.title }}</h1>
+                        <div class="flex items-center gap-4 text-gray-300 text-sm font-medium">
+                            <span class="flex items-center gap-1"><i class="ph-fill ph-star text-yellow-400"></i> {{ game.rating_set.count }}개의 평가</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="https://store.steampowered.com/app/{{ game.steam_appid }}" target="_blank" 
+                           class="px-6 py-3 bg-[#171A21] hover:bg-[#2a2d33] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-fill ph-steam-logo text-xl"></i>
+                            Steam에서 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <!-- Left: Reviews -->
+            <div class="lg:col-span-2 space-y-10">
+                
+                <!-- My Review Form -->
+                <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="ph-fill ph-pencil-simple text-blue-600"></i>
+                        {{ my_review|yesno:"리뷰 수정하기,리뷰 작성하기" }}
+                    </h3>
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-2">별점</label>
+                            <div class="flex gap-2">
+                                {% for i in "12345" %}
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="score" value="{{ forloop.counter }}" class="hidden peer" {% if my_review.score == forloop.counter %}checked{% endif %} required>
+                                    <i class="ph-fill ph-star text-3xl text-gray-300 peer-checked:text-yellow-400 group-hover:text-yellow-300 transition-colors"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-2">코멘트</label>
+                            <textarea name="content" rows="3" placeholder="이 게임에 대한 솔직한 평가를 남겨주세요."
+                                class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none text-sm"
+                                >{{ my_review.content|default:'' }}</textarea>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition-all active:scale-95">
+                                등록하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Review List -->
+                <div>
+                    <h3 class="text-xl font-bold mb-6">유저 리뷰 <span class="text-blue-600">{{ reviews.count }}</span></h3>
+                    <div class="space-y-6">
+                        {% for review in reviews %}
+                        <div class="flex gap-4 pb-6 border-b border-gray-100 last:border-0">
+                            <div class="shrink-0">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                    <i class="ph-fill ph-user text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-gray-900">{{ review.user.nickname }}</span>
+                                    <span class="text-xs text-gray-400">{{ review.updated_at|date:"Y.m.d" }}</span>
+                                </div>
+                                <div class="flex items-center gap-1 mb-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.score %}
+                                        <i class="ph-fill ph-star text-yellow-400 text-sm"></i>
+                                        {% else %}
+                                        <i class="ph-fill ph-star text-gray-200 text-sm"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="text-gray-600 text-sm leading-relaxed">{{ review.content }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="ph-duotone ph-chat-teardrop-text text-4xl mb-3"></i>
+                            <p>아직 작성된 리뷰가 없습니다.<br>첫 번째 리뷰어가 되어보세요!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Info -->
+            <div class="space-y-6">
+                <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                    <h3 class="font-bold text-gray-900 mb-4">게임 정보</h3>
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500">장르</dt>
+                            <dd class="font-medium text-gray-900">{{ game.genre }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500">출시일</dt>
+                            <dd class="font-medium text-gray-900">-</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500">개발사</dt>
+                            <dd class="font-medium text-gray-900">-</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

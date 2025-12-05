@@ -13,7 +13,10 @@ class Rating(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     score = models.FloatField() # 1.0 ~ 5.0
+    content = models.TextField(blank=True) # 리뷰 내용
     playtime_forever = models.IntegerField(default=0) # 스팀에서 가져온 플레이 타임 (분)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'game') # 한 유저는 한 게임에 하나의 평가만

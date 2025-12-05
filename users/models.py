@@ -19,6 +19,9 @@ class User(AbstractUser):
     # 추천 시스템을 위한 유사 유저 목록 (Many-to-Many)
     similar_users = models.ManyToManyField('self', blank=True)
 
+    # 찜한 게임 목록
+    wishlist = models.ManyToManyField('games.Game', related_name='wishlisted_by', blank=True)
+
     # --- [충돌 해결을 위한 추가 코드] ---
     # related_name을 설정하여 기본 auth.User 모델과의 충돌을 방지합니다.
     groups = models.ManyToManyField(

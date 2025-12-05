@@ -1,0 +1,49 @@
+<!-- Sale Tab -->
+<div v-else-if="currentTab === 'sale'" class="animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">오늘의 특가</h2>
+        <!-- Sort Dropdown -->
+        <select v-model="sortBy"
+            class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+            <option value="interest">추천순 (관심도)</option>
+            <option value="discount">높은 할인율순</option>
+            <option value="price_asc">낮은 가격순</option>
+        </select>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-for="game in sortedSaleGames" :key="game.game_id"
+            class="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group relative">
+            <!-- Wishlist Button -->
+            <button @click.stop="toggleWishlist(game)"
+                class="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur flex items-center justify-center transition-colors hover:bg-black/50">
+                <i class="ph-fill ph-heart text-lg transition-transform active:scale-75"
+                    :class="isWishlisted(game.game_id) ? 'text-red-500' : 'text-white/70'"></i>
+            </button>
+
+            <div class="relative aspect-[16/9] bg-gray-200">
+                <img :src="game.thumbnail" @error="handleImageError" class="w-full h-full object-cover">
+                <div
+                    class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
+                    -{% verbatim %}{{ Math.round(game.discount_rate * 100) }}{% endverbatim %}%
+                </div>
+            </div>
+            <div class="p-4 flex flex-col flex-1">
+                <h3 class="font-bold text-gray-800 mb-1 line-clamp-1" :title="game.title">{% verbatim %}{{
+                    game.title }}{% endverbatim %}</h3>
+                <div class="mt-auto pt-3 flex items-end justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 line-through">₩{% verbatim %}{{
+                            formatPrice(game.original_price) }}{% endverbatim %}</span>
+                        <span class="text-lg font-bold text-blue-600">₩{% verbatim %}{{
+                            formatPrice(game.current_price) }}{% endverbatim %}</span>
+                    </div>
+                    <a :href="game.store_link" target="_blank"
+                        class="w-8 h-8 rounded-full bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 flex items-center justify-center transition-colors">
+                        <i class="ph-bold ph-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
