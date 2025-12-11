@@ -96,7 +96,8 @@ def main_view(request):
             with open(new_json_path, 'r', encoding='utf-8') as f:
                 sale_data = json.load(f)
                 games_data = sale_data.get('current_sales', [])
-                best_prices = sale_data.get('best_prices', [])[:30]  # Top 30 best prices
+                # Try historical_lows first, fall back to best_prices
+                best_prices = sale_data.get('historical_lows', sale_data.get('best_prices', []))[:30]  # Top 30 best prices
         elif os.path.exists(legacy_json_path):
             with open(legacy_json_path, 'r', encoding='utf-8') as f:
                 games_data = json.load(f)

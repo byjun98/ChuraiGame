@@ -70,8 +70,9 @@
             const sortBy = ref('interest');
 
             // Infinite Scroll State for Sale Tab
-            const saleItemsPerPage = ref(10);
-            const currentSaleCount = ref(10);
+            const saleItemsPerPage = ref(12);
+            const currentSaleCount = ref(12);
+            const saleSearchQuery = ref('');  // Search query for sale games
             const showScrollTopBtn = ref(false);
             const isLoadingMoreSales = ref(false);
             const infiniteScrollTrigger = ref(null);
@@ -79,6 +80,7 @@
             const isLoadingPopularGames = ref(false);
             const bestPrices = ref([]);  // Best historical prices
             const bestPricesContainer = ref(null);  // Ref for best prices scroll container
+            const popularGamesContainer = ref(null);  // Ref for popular games scroll container
 
             // Steam Library State
             const steamLibrary = ref([]);
@@ -319,11 +321,70 @@
             // --- Computed ---
             const popularGames = computed(() => games.value.slice(0, 5));
 
+            // Calculate recommendation score for sale games (similar to recommendation.py)
+            const calculateSaleScore = (game) => {
+                let score = 0;
+
+                // 1. Steam Rating (40 points max)
+                const steamRating = game.steam_rating || 0;
+                if (steamRating > 0) {
+                    // Scale: 70-100% rating → 0-40 points
+                    score += Math.min(40, Math.max(0, (steamRating - 70) / 30 * 40));
+                }
+
+                // 2. Review count popularity (25 points max)
+                const reviewCount = game.review_count || 0;
+                if (reviewCount > 0) {
+                    // Log scale for review count (more reviews = more trusted)
+                    const logReviews = Math.log10(reviewCount + 1);
+                    score += Math.min(25, logReviews * 5);
+                }
+
+                // 3. Discount rate (20 points max)
+                const discountRate = game.discount_rate || 0;
+                score += Math.min(20, discountRate * 100 * 0.2);
+
+                // 4. Historical low bonus (15 points)
+                if (game.is_historical_low) {
+                    score += 15;
+                }
+
+                return Math.round(score * 10) / 10;
+            };
+
+            // Filter by search query first, then sort
+            const filteredSaleGames = computed(() => {
+                let filtered = [...games.value];
+
+                // Apply search filter
+                if (saleSearchQuery.value.trim()) {
+                    const query = saleSearchQuery.value.toLowerCase().trim();
+                    filtered = filtered.filter(game =>
+                        game.title && game.title.toLowerCase().includes(query)
+                    );
+                }
+
+                return filtered;
+            });
+
             const sortedSaleGames = computed(() => {
-                let sorted = [...games.value];
-                if (sortBy.value === 'interest') sorted.sort((a, b) => b.matchScore - a.matchScore);
-                else if (sortBy.value === 'discount') sorted.sort((a, b) => b.discount_rate - a.discount_rate);
-                else if (sortBy.value === 'price_asc') sorted.sort((a, b) => a.current_price - b.current_price);
+                let sorted = [...filteredSaleGames.value];
+
+                if (sortBy.value === 'interest') {
+                    // Apply recommendation algorithm
+                    sorted = sorted.map(game => ({
+                        ...game,
+                        saleScore: calculateSaleScore(game)
+                    }));
+                    sorted.sort((a, b) => b.saleScore - a.saleScore);
+                } else if (sortBy.value === 'rating') {
+                    sorted.sort((a, b) => (b.steam_rating || 0) - (a.steam_rating || 0));
+                } else if (sortBy.value === 'discount') {
+                    sorted.sort((a, b) => (b.discount_rate || 0) - (a.discount_rate || 0));
+                } else if (sortBy.value === 'price_asc') {
+                    sorted.sort((a, b) => (a.current_price || 0) - (b.current_price || 0));
+                }
+
                 return sorted;
             });
 
@@ -423,11 +484,43 @@
                 return [...bestPrices.value, ...bestPrices.value, ...bestPrices.value];
             });
 
+            // Infinite scroll for popular games on sale (repeat items for infinite effect)
+            const infinitePopularGames = computed(() => {
+                if (!popularGamesOnSale.value || popularGamesOnSale.value.length === 0) return [];
+                // Repeat the list to create infinite scroll effect
+                return [...popularGamesOnSale.value, ...popularGamesOnSale.value, ...popularGamesOnSale.value];
+            });
+
             // Scroll best prices list left or right
             const scrollBestPrices = (direction) => {
                 if (!bestPricesContainer.value) return;
                 const container = bestPricesContainer.value;
                 const cardWidth = 256 + 16; // w-64 (256px) + gap-4 (16px)
+                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+                const maxScroll = container.scrollWidth - container.clientWidth;
+
+                if (direction === 'left') {
+                    if (container.scrollLeft <= 0) {
+                        // At the beginning, jump to end
+                        container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
+                    } else {
+                        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                    }
+                } else {
+                    if (container.scrollLeft >= maxScroll - 10) {
+                        // At the end, jump to beginning
+                        container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
+                    } else {
+                        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    }
+                }
+            };
+
+            // Scroll popular games list left or right
+            const scrollPopularGames = (direction) => {
+                if (!popularGamesContainer.value) return;
+                const container = popularGamesContainer.value;
+                const cardWidth = 288 + 16; // w-72 (288px) + gap-4 (16px)
                 const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
                 const maxScroll = container.scrollWidth - container.clientWidth;
 
@@ -807,6 +900,11 @@
                 currentSaleCount.value = saleItemsPerPage.value;
             });
 
+            // Reset count when search query changes
+            Vue.watch(saleSearchQuery, () => {
+                currentSaleCount.value = saleItemsPerPage.value;
+            });
+
             // --- Steam Library Methods ---
             const fetchSteamLibrary = async () => {
                 if (isLoadingSteamLibrary.value) return;
@@ -953,6 +1051,7 @@
                 hasMoreSaleGames,
                 saleItemsPerPage,
                 currentSaleCount,
+                saleSearchQuery,
                 showScrollTopBtn,
                 isLoadingMoreSales,
                 infiniteScrollTrigger,
@@ -1030,6 +1129,9 @@
                 bestPricesContainer,
                 infiniteBestPrices,
                 scrollBestPrices,
+                popularGamesContainer,
+                infinitePopularGames,
+                scrollPopularGames,
                 fetchSteamLibrary,
                 fetchRecommendations,
                 loadMoreRecommendations,

@@ -21,9 +21,9 @@ from datetime import datetime
 # ==========================================
 # 설정
 # ==========================================
-TARGET_COUNT = 500          # 목표 수집 개수
+TARGET_COUNT = 2000          # 목표 수집 개수
 PAGE_SIZE = 60              # 한 번에 가져올 개수 (CheapShark 최대 60)
-MIN_STEAM_RATING = 75       # 최소 스팀 평가 점수 (%)
+MIN_STEAM_RATING = 40       # 최소 스팀 평가 점수 (%)
 MIN_REVIEW_COUNT = 500      # 최소 리뷰 개수 (스캠 필터링 핵심!)
 FETCH_HISTORICAL_LOW = True # 역대 최저가 정보 조회 여부
 

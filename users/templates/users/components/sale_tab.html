@@ -27,11 +27,26 @@
             <p>현재 세일 중인 인기 게임이 없습니다</p>
         </div>
 
-        <!-- Horizontal Scroll Popular Games ON SALE -->
-        <div v-else class="relative">
-            <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory custom-scrollbar">
-                <a v-for="game in popularGamesOnSale" :key="'pop-' + game.rawg_id" :href="`/games/${game.rawg_id}/`"
-                    class="flex-shrink-0 w-72 snap-start bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
+        <!-- Horizontal Scroll with Arrow Buttons -->
+        <div v-else class="relative min-h-[200px]">
+            <!-- Left Arrow Button -->
+            <button @click="scrollPopularGames('left')" v-show="popularGamesOnSale.length > 3"
+                class="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 hover:bg-white shadow-lg rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 -ml-2 sm:-ml-4 border border-gray-200">
+                <i class="ph-bold ph-caret-left text-xl text-gray-700"></i>
+            </button>
+
+            <!-- Right Arrow Button -->
+            <button @click="scrollPopularGames('right')" v-show="popularGamesOnSale.length > 3"
+                class="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 hover:bg-white shadow-lg rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 -mr-2 sm:-mr-4 border border-gray-200">
+                <i class="ph-bold ph-caret-right text-xl text-gray-700"></i>
+            </button>
+
+            <!-- Popular Games List -->
+            <div ref="popularGamesContainer"
+                class="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+                <a v-for="(game, index) in infinitePopularGames" :key="'pop-' + game.rawg_id + '-' + index"
+                    :href="`/games/${game.rawg_id}/`"
+                    class="flex-shrink-0 w-72 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
                     <!-- Discount Badge -->
                     <div
                         class="absolute top-3 left-3 z-10 px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-lg flex items-center gap-1 shadow-lg">
@@ -151,24 +166,36 @@
             </div>
 
             <!-- Controls Container -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- Search Box -->
+                <div class="relative">
+                    <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input v-model="saleSearchQuery" type="text" placeholder="게임 검색..."
+                        class="bg-white border border-gray-200 text-sm rounded-lg pl-9 pr-3 py-2 w-40 sm:w-56 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <button v-if="saleSearchQuery" @click="saleSearchQuery = ''"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        <i class="ph-bold ph-x text-sm"></i>
+                    </button>
+                </div>
+
                 <!-- Items Per Page Dropdown -->
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-gray-500">표시:</span>
                     <select v-model="saleItemsPerPage"
                         class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-                        <option :value="5">5개</option>
-                        <option :value="10">10개</option>
-                        <option :value="20">20개</option>
-                        <option :value="30">30개</option>
+                        <option :value="12">12개</option>
+                        <option :value="24">24개</option>
+                        <option :value="36">36개</option>
+                        <option :value="48">48개</option>
                     </select>
                 </div>
 
                 <!-- Sort Dropdown -->
                 <select v-model="sortBy"
                     class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-                    <option value="interest">추천순 (관심도)</option>
-                    <option value="discount">높은 할인율순</option>
+                    <option value="interest">추천순</option>
+                    <option value="rating">평점순</option>
+                    <option value="discount">할인율순</option>
                     <option value="price_asc">낮은 가격순</option>
                 </select>
             </div>
@@ -176,7 +203,26 @@
 
         <!-- Games Count Info -->
         <div v-if="displayedSaleGames && sortedSaleGames" class="mb-4 text-sm text-gray-500">
-            {{ displayedSaleGames.length }}개 표시 중 (전체 {{ sortedSaleGames.length }}개)
+            <span v-if="saleSearchQuery">
+                "{{ saleSearchQuery }}" 검색 결과: {{ sortedSaleGames.length }}개
+                <span v-if="displayedSaleGames.length < sortedSaleGames.length">
+                    ({{ displayedSaleGames.length }}개 표시 중)
+                </span>
+            </span>
+            <span v-else>
+                {{ displayedSaleGames.length }}개 표시 중 (전체 {{ sortedSaleGames.length }}개)
+            </span>
+        </div>
+
+        <!-- No Search Results -->
+        <div v-if="saleSearchQuery && sortedSaleGames && sortedSaleGames.length === 0" class="text-center py-12">
+            <i class="ph-bold ph-magnifying-glass text-5xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 text-lg mb-2">"{{ saleSearchQuery }}"에 대한 검색 결과가 없습니다</p>
+            <p class="text-gray-400 text-sm">다른 검색어로 시도해보세요</p>
+            <button @click="saleSearchQuery = ''"
+                class="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:underline">
+                검색 초기화
+            </button>
         </div>
 
         <div v-if="displayedSaleGames && displayedSaleGames.length > 0"
