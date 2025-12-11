@@ -1,18 +1,40 @@
 <!-- Sale Tab -->
 <div v-else-if="currentTab === 'sale'" class="animate-fade-in">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 class="text-2xl font-bold">오늘의 특가</h2>
-        <!-- Sort Dropdown -->
-        <select v-model="sortBy"
-            class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-            <option value="interest">추천순 (관심도)</option>
-            <option value="discount">높은 할인율순</option>
-            <option value="price_asc">낮은 가격순</option>
-        </select>
+
+        <!-- Controls Container -->
+        <div class="flex items-center gap-3">
+            <!-- Items Per Page Dropdown -->
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500">표시:</span>
+                <select v-model="saleItemsPerPage"
+                    class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+                    <option :value="5">5개</option>
+                    <option :value="10">10개</option>
+                    <option :value="20">20개</option>
+                    <option :value="30">30개</option>
+                </select>
+            </div>
+
+            <!-- Sort Dropdown -->
+            <select v-model="sortBy"
+                class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+                <option value="interest">추천순 (관심도)</option>
+                <option value="discount">높은 할인율순</option>
+                <option value="price_asc">낮은 가격순</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Games Count Info -->
+    <div class="mb-4 text-sm text-gray-500">
+        {% verbatim %}{{ displayedSaleGames.length }}{% endverbatim %}개 표시 중 (전체 {% verbatim %}{{ sortedSaleGames.length
+        }}{% endverbatim %}개)
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div v-for="game in sortedSaleGames" :key="game.game_id"
+        <div v-for="game in displayedSaleGames" :key="game.game_id"
             class="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group relative">
             <!-- Wishlist Button -->
             <button @click.stop="toggleWishlist(game)"
@@ -46,4 +68,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Infinite Scroll Trigger -->
+    <div ref="infiniteScrollTrigger" class="h-10 flex items-center justify-center mt-6">
+        <div v-if="isLoadingMoreSales" class="flex items-center gap-2 text-gray-500">
+            <i class="ph-bold ph-spinner animate-spin"></i>
+            <span>불러오는 중...</span>
+        </div>
+        <div v-else-if="hasMoreSaleGames" class="text-gray-400 text-sm">
+            스크롤하여 더 보기
+        </div>
+        <div v-else class="text-gray-400 text-sm">
+            모든 게임을 불러왔습니다
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button v-show="showScrollTopBtn" @click="scrollToTop"
+        class="fixed bottom-24 right-6 z-50 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110 active:scale-95"
+        style="animation: fadeInUp 0.3s ease-out;">
+        <i class="ph-bold ph-arrow-up text-xl"></i>
+    </button>
 </div>

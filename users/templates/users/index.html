@@ -14,6 +14,7 @@
         <div v-else-if="currentStep === 'main'" key="main" class="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full">
 
             {% include 'users/components/home_tab.html' %}
+            {% include 'users/components/recommend_tab.html' %}
             {% include 'users/components/sale_tab.html' %}
             {% include 'users/components/community_tab.html' %}
 
@@ -54,6 +55,9 @@
             const fileInput = ref(null);
             const newPost = reactive({ title: '', content: '', category: 'free', file: null });
 
+            // Game List Container ref for scrolling
+            const gameListContainer = ref(null);
+
             // Auth Form State
             const authForm = reactive({
                 email: '',
@@ -63,6 +67,30 @@
 
             // Sorting State
             const sortBy = ref('interest');
+
+            // Infinite Scroll State for Sale Tab
+            const saleItemsPerPage = ref(10);
+            const currentSaleCount = ref(10);
+            const showScrollTopBtn = ref(false);
+            const isLoadingMoreSales = ref(false);
+            const infiniteScrollTrigger = ref(null);
+
+            // Steam Library State
+            const steamLibrary = ref([]);
+            const steamTotalGames = ref(0);
+            const steamTotalHours = ref(0);
+            const isLoadingSteamLibrary = ref(false);
+
+            // Recommendation State
+            const recommendations = ref([]);
+            const recommendSortBy = ref('score');
+            const genreAnalysis = ref(null);
+            const recommendationMessage = ref('');
+            const isLoadingRecommendations = ref(false);
+            const currentRecommendCount = ref(12);
+            const recommendItemsPerPage = ref(12);
+            const isLoadingMoreRecommendations = ref(false);
+            const infiniteScrollTriggerRecommend = ref(null);
 
             onMounted(async () => {
                 // Initialize Game Data from Django
@@ -91,6 +119,12 @@
 
                 // Fetch Community Posts
                 await fetchPosts();
+
+                // Setup scroll listener for scroll-to-top button
+                window.addEventListener('scroll', handleScroll);
+
+                // Setup infinite scroll
+                setupInfiniteScroll();
             });
 
             const loadGameTab = async (tabName) => {
@@ -99,13 +133,13 @@
                 rawgGames.value = [];
 
                 try {
-                    let url = '/games/api/popular/?limit=20';
+                    let url = '/games/api/popular/?limit=50';
                     if (tabName === 'top-rated') {
-                        url = '/games/api/top-rated/?limit=20';
+                        url = '/games/api/top-rated/?limit=50';
                     } else if (tabName === 'new-releases') {
-                        url = '/games/api/new-releases/?limit=20';
+                        url = '/games/api/new-releases/?limit=50';
                     } else if (tabName === 'trending') {
-                        url = '/games/api/trending/?limit=20';
+                        url = '/games/api/trending/?limit=50';
                     }
 
                     const response = await fetch(url);
@@ -117,6 +151,24 @@
                     console.error("Failed to fetch games for tab " + tabName, e);
                 } finally {
                     isLoadingGames.value = false;
+                    // Reset scroll position when tab changes
+                    if (gameListContainer.value) {
+                        gameListContainer.value.scrollLeft = 0;
+                    }
+                }
+            };
+
+            // Scroll game list left or right
+            const scrollGameList = (direction) => {
+                if (!gameListContainer.value) return;
+                const container = gameListContainer.value;
+                const cardWidth = 256 + 20; // w-64 (256px) + gap-5 (20px)
+                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+
+                if (direction === 'left') {
+                    container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                } else {
+                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
                 }
             };
 
@@ -129,6 +181,41 @@
                 else if (sortBy.value === 'discount') sorted.sort((a, b) => b.discount_rate - a.discount_rate);
                 else if (sortBy.value === 'price_asc') sorted.sort((a, b) => a.current_price - b.current_price);
                 return sorted;
+            });
+
+            // Displayed games with infinite scroll
+            const displayedSaleGames = computed(() => {
+                return sortedSaleGames.value.slice(0, currentSaleCount.value);
+            });
+
+            const hasMoreSaleGames = computed(() => {
+                return currentSaleCount.value < sortedSaleGames.value.length;
+            });
+
+            // Recommendation computed properties
+            const sortedRecommendations = computed(() => {
+                let sorted = [...recommendations.value];
+                if (recommendSortBy.value === 'score') {
+                    sorted.sort((a, b) => (b.recommendation_score || 0) - (a.recommendation_score || 0));
+                } else if (recommendSortBy.value === 'rating') {
+                    sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                } else if (recommendSortBy.value === 'sale') {
+                    // Show on-sale games first, then by discount
+                    sorted.sort((a, b) => {
+                        if (a.is_on_sale && !b.is_on_sale) return -1;
+                        if (!a.is_on_sale && b.is_on_sale) return 1;
+                        return (b.discount_rate || 0) - (a.discount_rate || 0);
+                    });
+                }
+                return sorted;
+            });
+
+            const displayedRecommendations = computed(() => {
+                return sortedRecommendations.value.slice(0, currentRecommendCount.value);
+            });
+
+            const hasMoreRecommendations = computed(() => {
+                return currentRecommendCount.value < sortedRecommendations.value.length;
             });
 
             // --- Methods for CRUD & Auth ---
@@ -291,6 +378,132 @@
                 currentTab.value = 'home';
             };
 
+            const openRawgGame = (game) => {
+                if (game && game.rawg_id) {
+                    window.location.href = `/games/${game.rawg_id}/`;
+                }
+            };
+
+            // --- Infinite Scroll Methods ---
+            const scrollToTop = () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const loadMoreSaleGames = () => {
+                if (isLoadingMoreSales.value || !hasMoreSaleGames.value) return;
+
+                isLoadingMoreSales.value = true;
+                setTimeout(() => {
+                    currentSaleCount.value += saleItemsPerPage.value;
+                    isLoadingMoreSales.value = false;
+                }, 300); // Small delay for smooth UX
+            };
+
+            const setupInfiniteScroll = () => {
+                // Observer for Sale tab
+                const saleObserver = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && currentTab.value === 'sale') {
+                        loadMoreSaleGames();
+                    }
+                }, { threshold: 0.1 });
+
+                // Observer for Recommend tab
+                const recommendObserver = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && currentTab.value === 'recommend') {
+                        loadMoreRecommendations();
+                    }
+                }, { threshold: 0.1 });
+
+                // Watch for the sale trigger element
+                Vue.watch(infiniteScrollTrigger, (el) => {
+                    if (el) saleObserver.observe(el);
+                });
+
+                // Watch for the recommend trigger element
+                Vue.watch(infiniteScrollTriggerRecommend, (el) => {
+                    if (el) recommendObserver.observe(el);
+                });
+            };
+
+            // Scroll position watcher
+            const handleScroll = () => {
+                showScrollTopBtn.value = window.scrollY > 300;
+            };
+
+            // Reset count when items per page changes
+            Vue.watch(saleItemsPerPage, (newVal) => {
+                currentSaleCount.value = newVal;
+            });
+
+            // Reset count when sort changes
+            Vue.watch(sortBy, () => {
+                currentSaleCount.value = saleItemsPerPage.value;
+            });
+
+            // --- Steam Library Methods ---
+            const fetchSteamLibrary = async () => {
+                if (isLoadingSteamLibrary.value) return;
+
+                isLoadingSteamLibrary.value = true;
+                try {
+                    const response = await fetch('/users/api/steam/library/');
+                    if (response.ok) {
+                        const data = await response.json();
+                        steamLibrary.value = data.library || [];
+                        steamTotalGames.value = data.total_games || 0;
+                        steamTotalHours.value = data.total_playtime_hours || 0;
+                    } else {
+                        console.error('Failed to fetch Steam library');
+                    }
+                } catch (e) {
+                    console.error('Error fetching Steam library:', e);
+                } finally {
+                    isLoadingSteamLibrary.value = false;
+                }
+            };
+
+            // --- Recommendation Methods ---
+            const fetchRecommendations = async () => {
+                if (isLoadingRecommendations.value) return;
+
+                isLoadingRecommendations.value = true;
+                recommendations.value = [];
+
+                try {
+                    const response = await fetch('/users/api/recommendations/');
+                    if (response.ok) {
+                        const data = await response.json();
+                        recommendations.value = data.recommendations || [];
+                        genreAnalysis.value = data.genres_analysis || null;
+                        recommendationMessage.value = data.message || '';
+                        currentRecommendCount.value = recommendItemsPerPage.value;
+                    } else {
+                        console.error('Failed to fetch recommendations');
+                    }
+                } catch (e) {
+                    console.error('Error fetching recommendations:', e);
+                } finally {
+                    isLoadingRecommendations.value = false;
+                }
+            };
+
+            const loadMoreRecommendations = () => {
+                if (isLoadingMoreRecommendations.value || !hasMoreRecommendations.value) return;
+
+                isLoadingMoreRecommendations.value = true;
+                setTimeout(() => {
+                    currentRecommendCount.value += recommendItemsPerPage.value;
+                    isLoadingMoreRecommendations.value = false;
+                }, 300);
+            };
+
+            // Watch for tab change to load recommendations
+            Vue.watch(currentTab, (newTab) => {
+                if (newTab === 'recommend' && recommendations.value.length === 0) {
+                    fetchRecommendations();
+                }
+            });
+
             return {
                 // State
                 currentStep,
@@ -300,6 +513,13 @@
                 isLoginMode,
                 popularGames,
                 sortedSaleGames,
+                displayedSaleGames,
+                hasMoreSaleGames,
+                saleItemsPerPage,
+                currentSaleCount,
+                showScrollTopBtn,
+                isLoadingMoreSales,
+                infiniteScrollTrigger,
                 sortBy,
                 wishlist,
                 gameTab,
@@ -312,6 +532,25 @@
                 newPost,
                 selectedPost,
                 fileInput,
+
+                // Steam Library State
+                steamLibrary,
+                steamTotalGames,
+                steamTotalHours,
+                isLoadingSteamLibrary,
+
+                // Recommendation State
+                recommendations,
+                recommendSortBy,
+                genreAnalysis,
+                recommendationMessage,
+                isLoadingRecommendations,
+                sortedRecommendations,
+                displayedRecommendations,
+                hasMoreRecommendations,
+                currentRecommendCount,
+                isLoadingMoreRecommendations,
+                infiniteScrollTriggerRecommend,
 
                 // Methods
                 fetchPosts,
@@ -331,7 +570,15 @@
                 isWishlisted,
                 formatPrice,
                 handleImageError,
-                goToHome
+                goToHome,
+                openRawgGame,
+                scrollToTop,
+                loadMoreSaleGames,
+                gameListContainer,
+                scrollGameList,
+                fetchSteamLibrary,
+                fetchRecommendations,
+                loadMoreRecommendations
             };
         }
     }).mount('#app');

@@ -84,6 +84,11 @@
                         </div>
                     </div>
                     <div class="flex gap-3 flex-wrap">
+                        <a v-if="steamStoreUrl" :href="steamStoreUrl" target="_blank"
+                            class="px-6 py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6a8c] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-fill ph-steam-logo text-xl"></i>
+                            Steam 상점
+                        </a>
                         <a v-if="game.slug" :href="`https://rawg.io/games/${game.slug}`" target="_blank"
                             class="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
                             <i class="ph-fill ph-globe text-xl"></i>
@@ -270,6 +275,7 @@
         setup() {
             const game = ref(null);
             const screenshots = ref([]);
+            const steamStoreUrl = ref(null);
             const isLoading = ref(true);
             const isLoadingDetails = ref(false);
             const isRawgOnly = ref(true);
@@ -329,13 +335,31 @@
                     game.value = data;
                     isLoading.value = false;
 
-                    // Fetch screenshots in background (lazy loading)
+                    // Fetch screenshots and stores in background (lazy loading)
                     isLoadingDetails.value = true;
+
+                    // Fetch screenshots
                     const screenshotsResponse = await fetch(`https://api.rawg.io/api/games/${numericId}/screenshots?key={{ rawg_api_key }}&page_size=8`);
                     if (screenshotsResponse.ok) {
                         const ssData = await screenshotsResponse.json();
                         screenshots.value = ssData.results || [];
                     }
+
+                    // Fetch stores to get Steam link
+                    try {
+                        const storesResponse = await fetch(`https://api.rawg.io/api/games/${numericId}/stores?key={{ rawg_api_key }}`);
+                        if (storesResponse.ok) {
+                            const storesData = await storesResponse.json();
+                            // Find Steam store (store_id 1 = Steam)
+                            const steamStore = storesData.results?.find(s => s.store_id === 1);
+                            if (steamStore && steamStore.url) {
+                                steamStoreUrl.value = steamStore.url;
+                            }
+                        }
+                    } catch (storeError) {
+                        console.log('Could not fetch store info:', storeError);
+                    }
+
                     isLoadingDetails.value = false;
 
                 } catch (e) {
@@ -352,6 +376,7 @@
             return {
                 game,
                 screenshots,
+                steamStoreUrl,
                 isLoading,
                 isLoadingDetails,
                 isRawgOnly,

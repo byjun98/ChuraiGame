@@ -17,17 +17,21 @@
             <div class="text-center sm:text-left flex-1">
                 <h2 class="text-2xl font-bold text-gray-900">{% verbatim %}{{ user.nickname }}{% endverbatim %}</h2>
                 <p class="text-gray-500">{% verbatim %}{{ user.email }}{% endverbatim %}</p>
-                <div class="flex gap-2 mt-3 justify-center sm:justify-start">
+                <div class="flex gap-2 mt-3 justify-center sm:justify-start flex-wrap">
                     <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">LV.
                         {% verbatim %}{{ Math.floor(wishlist.length * 1.5) + 1 }}{% endverbatim %}</span>
-                    <span class="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full">가입일:
-                        2023.10.24</span>
+                    {% if user.is_steam_linked %}
+                    <span
+                        class="px-3 py-1 bg-[#171A21] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <i class="ph-fill ph-steam-logo"></i> Steam 연동
+                    </span>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-2 divide-x divide-gray-50">
+        <div class="grid grid-cols-{% if user.is_steam_linked %}3{% else %}2{% endif %} divide-x divide-gray-50">
             <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
                 @click="currentTab = 'wishlist'; currentStep = 'main'">
                 <p class="text-2xl font-bold text-gray-900">{% verbatim %}{{ wishlist.length }}{% endverbatim %}</p>
@@ -37,8 +41,74 @@
                 <p class="text-2xl font-bold text-gray-900">0</p>
                 <p class="text-xs text-gray-500 font-medium mt-1">작성 리뷰</p>
             </div>
+            {% if user.is_steam_linked %}
+            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" @click="fetchSteamLibrary">
+                <p class="text-2xl font-bold text-gray-900">{% verbatim %}{{ steamTotalGames }}{% endverbatim %}</p>
+                <p class="text-xs text-gray-500 font-medium mt-1">Steam 보유</p>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    {% if user.is_steam_linked %}
+    <!-- Steam Library Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <i class="ph-fill ph-steam-logo text-[#171A21]"></i>
+                Steam 라이브러리
+            </h3>
+            <button @click="fetchSteamLibrary" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                :disabled="isLoadingSteamLibrary">
+                <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin': isLoadingSteamLibrary}"></i>
+                새로고침
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoadingSteamLibrary" class="flex items-center justify-center py-8">
+            <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <!-- Steam Stats -->
+        {% verbatim %}
+        <div v-else-if="steamLibrary.length > 0" class="space-y-4">
+            <div class="flex items-center gap-4 p-4 bg-gradient-to-r from-[#171A21] to-[#2a3f5f] rounded-xl text-white">
+                <div class="text-center flex-1">
+                    <p class="text-2xl font-bold">{{ steamTotalGames }}</p>
+                    <p class="text-xs opacity-70">보유 게임</p>
+                </div>
+                <div class="w-px h-10 bg-white/20"></div>
+                <div class="text-center flex-1">
+                    <p class="text-2xl font-bold">{{ steamTotalHours }}h</p>
+                    <p class="text-xs opacity-70">총 플레이</p>
+                </div>
+            </div>
+
+            <!-- Most Played Games -->
+            <div>
+                <p class="text-sm font-bold text-gray-700 mb-3">가장 많이 플레이한 게임</p>
+                <div class="space-y-2">
+                    <div v-for="game in steamLibrary.slice(0, 5)" :key="game.appid"
+                        class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        <img :src="game.img_logo_url" class="w-16 h-8 object-cover rounded" @error="handleImageError">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">{{ game.name }}</p>
+                            <p class="text-xs text-gray-500">{{ Math.round(game.playtime_forever / 60) }}시간 플레이</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endverbatim %}
+
+        <!-- Empty State -->
+        <div v-else class="text-center py-8 text-gray-400">
+            <i class="ph ph-game-controller text-4xl mb-2"></i>
+            <p>Steam 라이브러리를 가져오려면 새로고침을 클릭하세요</p>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Linked Accounts -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -51,14 +121,27 @@
                     </div>
                     <div>
                         <p class="text-sm font-bold">Steam</p>
-                        <p class="text-xs text-gray-500">{% verbatim %}{{ user.linked_steam ? '연동됨' : '미연동' }}{% endverbatim %}</p>
+                        {% if user.is_steam_linked %}
+                        <p class="text-xs text-gray-500">연동됨 ({{ user.steam_id }})</p>
+                        {% else %}
+                        <p class="text-xs text-gray-500">미연동</p>
+                        {% endif %}
                     </div>
                 </div>
-                <button @click="toggleLink('steam')"
-                    :class="user.linked_steam ? 'text-red-500 bg-red-50' : 'text-blue-600 bg-blue-50'"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                    {% verbatim %}{{ user.linked_steam ? '해제' : '연동' }}{% endverbatim %}
-                </button>
+                {% if user.is_steam_linked %}
+                <form action="{% url 'users:steam_unlink' %}" method="POST" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
+                        해제
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'users:steam_login' %}?next=/"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                    연동
+                </a>
+                {% endif %}
             </div>
             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
                 <div class="flex items-center gap-3">

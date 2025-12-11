@@ -69,11 +69,11 @@
                             class="w-5 h-5">
                     </button>
                     <!-- Steam -->
-                    <button @click="socialLogin('Steam')"
+                    <a href="{% url 'users:steam_login' %}"
                         class="w-12 h-12 rounded-full bg-[#171A21] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
                         title="스팀 로그인">
                         <i class="ph-fill ph-steam-logo text-xl"></i>
-                    </button>
+                    </a>
                 </div>
             </div>
 

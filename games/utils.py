@@ -418,9 +418,11 @@ def get_games_by_genre(genre_slug, page_size=20):
 # D. 인기순/정렬 기능 ('요즘 뜨는 게임' 섹션용)
 # ============================================================================
 
-def get_games_by_ordering(ordering='-added', page_size=20, platforms='4'):
+def get_games_by_ordering(ordering='-added', page_size=20, platforms='4', 
+                           ratings_count_min=None, added_min=None, 
+                           metacritic_min=None, exclude_additions=True):
     """
-    Get games sorted by various criteria.
+    Get games sorted by various criteria with quality filters.
     
     Args:
         ordering: Sorting option (default: '-added' for most popular)
@@ -434,6 +436,10 @@ def get_games_by_ordering(ordering='-added', page_size=20, platforms='4'):
             - '-updated': Recently updated (최근 업데이트순)
         page_size: Number of results to return
         platforms: Platform ID (4 = PC, default)
+        ratings_count_min: Minimum number of ratings (filters low-sample games)
+        added_min: Minimum number of users who added (filters obscure games)
+        metacritic_min: Minimum metacritic score
+        exclude_additions: Exclude DLCs and additions (default: True)
     
     Returns:
         list: List of games sorted by the specified criteria
@@ -449,25 +455,61 @@ def get_games_by_ordering(ordering='-added', page_size=20, platforms='4'):
             'page_size': page_size,
             'platforms': platforms
         }
+        
+        # Quality filters
+        if ratings_count_min:
+            # Request more games to filter client-side, as RAWG doesn't support
+            # direct ratings_count filtering, we'll filter after receiving
+            params['page_size'] = page_size * 3  # Get more to filter
+        
+        if added_min:
+            # Added count filter (number of users who added game to library)
+            # RAWG doesn't support this directly, so we filter after
+            params['page_size'] = max(params['page_size'], page_size * 3)
+        
+        if metacritic_min:
+            # Metacritic filter - RAWG supports this!
+            params['metacritic'] = f"{metacritic_min},100"
+        
+        if exclude_additions:
+            params['exclude_additions'] = 'true'
+        
         response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         
         results = []
         for game in data.get('results', []):
+            # Apply client-side filters
+            ratings_count = game.get('ratings_count', 0)
+            added_count = game.get('added', 0)
+            
+            # Filter by ratings_count (minimum reviews)
+            if ratings_count_min and ratings_count < ratings_count_min:
+                continue
+            
+            # Filter by added count (minimum library additions)
+            if added_min and added_count < added_min:
+                continue
+            
             results.append({
                 'rawg_id': game['id'],
                 'slug': game.get('slug', ''),
                 'title': game['name'],
                 'image_url': game.get('background_image', ''),
                 'rating': game.get('rating'),
+                'ratings_count': ratings_count,
                 'released': game.get('released'),
                 'genres': [g['name'] for g in game.get('genres', [])],
                 'metacritic': game.get('metacritic'),
-                'added': game.get('added', 0)  # Number of users who added this
+                'added': added_count
             })
+            
+            # Stop when we have enough results
+            if len(results) >= page_size:
+                break
         
-        logger.info(f"Fetched {len(results)} games with ordering '{ordering}'")
+        logger.info(f"Fetched {len(results)} games with ordering '{ordering}' (filtered)")
         return results
     
     except requests.RequestException as e:
@@ -484,48 +526,106 @@ def get_popular_games(page_size=20):
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Most popular games
+        list: Most popular games (with at least 1000 users added)
     """
-    return get_games_by_ordering(ordering='-added', page_size=page_size)
+    return get_games_by_ordering(
+        ordering='-added', 
+        page_size=page_size,
+        added_min=1000  # At least 1000 users added
+    )
 
 
 def get_top_rated_games(page_size=20):
     """
-    Get highest rated games.
+    Get highest rated games with quality filtering.
+    Only includes games with significant number of ratings to avoid
+    obscure games with few but high ratings.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Top rated games
+        list: Top rated games (with at least 50 ratings)
     """
-    return get_games_by_ordering(ordering='-rating', page_size=page_size)
+    return get_games_by_ordering(
+        ordering='-rating', 
+        page_size=page_size,
+        ratings_count_min=50,   # At least 50 ratings (lowered)
+        added_min=500           # At least 500 users added (lowered)
+    )
 
 
 def get_trending_games(page_size=20):
     """
     Get games with highest metacritic scores.
+    Only includes games with metacritic score of 70+.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Games sorted by metacritic score
+        list: Games sorted by metacritic score (70+)
     """
-    return get_games_by_ordering(ordering='-metacritic', page_size=page_size)
+    return get_games_by_ordering(
+        ordering='-metacritic', 
+        page_size=page_size,
+        metacritic_min=70  # Only games with 70+ metacritic
+    )
 
 
 def get_new_releases(page_size=20):
     """
-    Get recently released games.
+    Get recently released games (already released, not upcoming).
+    Only shows games that have been released up to today.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Recently released games
+        list: Recently released games (past 1 year, already released)
     """
-    return get_games_by_ordering(ordering='-released', page_size=page_size)
+    if not RAWG_API_KEY:
+        logger.warning("RAWG_API_KEY not configured")
+        return []
+    
+    try:
+        from datetime import datetime, timedelta
+        today = datetime.now().strftime('%Y-%m-%d')
+        one_year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        
+        params = {
+            'key': RAWG_API_KEY,
+            'dates': f'{one_year_ago},{today}',  # From 1 year ago to today (already released only)
+            'ordering': '-released',  # Most recent first
+            'page_size': page_size,
+            'platforms': '4',  # PC only
+            'exclude_additions': 'true'  # Exclude DLCs
+        }
+        response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        for game in data.get('results', []):
+            results.append({
+                'rawg_id': game['id'],
+                'slug': game.get('slug', ''),
+                'title': game['name'],
+                'image_url': game.get('background_image', ''),
+                'rating': game.get('rating'),
+                'ratings_count': game.get('ratings_count', 0),
+                'released': game.get('released'),
+                'genres': [g['name'] for g in game.get('genres', [])],
+                'metacritic': game.get('metacritic'),
+                'added': game.get('added', 0)
+            })
+        
+        logger.info(f"Fetched {len(results)} new releases (released between {one_year_ago} and {today})")
+        return results
+    
+    except requests.RequestException as e:
+        logger.error(f"Error fetching new releases: {e}")
+        return []
 
 
 def get_upcoming_games(page_size=20):

@@ -1,0 +1,183 @@
+<!-- Recommend Tab (Personalized Recommendations) -->
+<div v-if="currentTab === 'recommend'" class="space-y-8">
+
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-pink-600 p-8 rounded-[2.5rem] shadow-lg relative overflow-hidden">
+        <div class="relative z-10">
+            <h2 class="text-3xl font-bold text-white leading-tight mb-2">
+                🎯 맞춤 추천
+            </h2>
+            <p class="text-white/90 mb-4">Steam 라이브러리를 분석하여 취향에 맞는 게임을 추천해드려요</p>
+            {% if not user.is_steam_linked %}
+            <a href="{% url 'users:steam_login' %}?next=/"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-colors backdrop-blur-sm">
+                <i class="ph-fill ph-steam-logo text-xl"></i>
+                Steam 연동하고 추천받기
+            </a>
+            {% endif %}
+        </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+    </div>
+
+    {% if user.is_steam_linked %}
+    <!-- Genre Analysis Section -->
+    {% verbatim %}
+    <div v-if="genreAnalysis && genreAnalysis.top_genres"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+            <i class="ph-fill ph-chart-pie text-purple-500"></i>
+            내 취향 분석
+        </h3>
+        <p class="text-gray-600 mb-4">{{ recommendationMessage }}</p>
+        <div class="flex flex-wrap gap-2">
+            <span v-for="genre in genreAnalysis.top_genres" :key="genre.name"
+                class="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-sm font-medium">
+                {{ genre.name }} ({{ genre.count }})
+            </span>
+        </div>
+    </div>
+    {% endverbatim %}
+    {% endif %}
+
+    <!-- Sorting and Filter Bar -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="text-gray-500 text-sm">정렬:</span>
+            <div class="flex bg-gray-100 p-1 rounded-xl">
+                <button @click="recommendSortBy = 'score'"
+                    :class="{'bg-white shadow-sm text-purple-600': recommendSortBy === 'score', 'text-gray-500 hover:text-gray-700': recommendSortBy !== 'score'}"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                    추천도
+                </button>
+                <button @click="recommendSortBy = 'rating'"
+                    :class="{'bg-white shadow-sm text-purple-600': recommendSortBy === 'rating', 'text-gray-500 hover:text-gray-700': recommendSortBy !== 'rating'}"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                    평점순
+                </button>
+                <button @click="recommendSortBy = 'sale'"
+                    :class="{'bg-white shadow-sm text-purple-600': recommendSortBy === 'sale', 'text-gray-500 hover:text-gray-700': recommendSortBy !== 'sale'}"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                    세일중
+                </button>
+            </div>
+        </div>
+
+        <div class="text-sm text-gray-500">
+            {% verbatim %}
+            총 {{ sortedRecommendations.length }}개 추천 게임
+            {% endverbatim %}
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoadingRecommendations" class="flex flex-col items-center justify-center py-20">
+        <div class="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-gray-500 text-lg">Steam 라이브러리를 분석하고 있습니다...</p>
+        <p class="text-gray-400 text-sm">잠시만 기다려주세요</p>
+    </div>
+
+    <!-- No Steam Linked State -->
+    {% if not user.is_steam_linked %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="ph-fill ph-steam-logo text-4xl text-gray-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Steam 연동이 필요해요</h3>
+        <p class="text-gray-500 mb-6">Steam을 연동하면 플레이 기록을 분석하여<br>취향에 맞는 게임을 추천해드려요</p>
+        <a href="{% url 'users:steam_login' %}?next=/"
+            class="inline-flex items-center gap-2 px-8 py-4 bg-[#171A21] hover:bg-[#2a3f5f] text-white rounded-xl font-bold transition-colors">
+            <i class="ph-fill ph-steam-logo text-xl"></i>
+            Steam 연동하기
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Recommendations Grid -->
+    {% verbatim %}
+    <div v-if="!isLoadingRecommendations && sortedRecommendations.length > 0" class="space-y-6">
+        <!-- Display count info -->
+        <div class="text-sm text-gray-400">
+            {{ displayedRecommendations.length }}개 표시 중 (전체 {{ sortedRecommendations.length }}개)
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div v-for="game in displayedRecommendations" :key="game.rawg_id"
+                class="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                @click="openRawgGame(game)">
+
+                <!-- Game Image -->
+                <div class="relative aspect-[16/10] overflow-hidden">
+                    <img :src="game.image_url || 'https://via.placeholder.com/460x215?text=No+Image'"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        @error="handleImageError">
+
+                    <!-- Overlay on hover -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    </div>
+
+                    <!-- Recommendation Score Badge -->
+                    <div
+                        class="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
+                        🎯 {{ game.recommendation_score }}점
+                    </div>
+
+                    <!-- Sale Badge -->
+                    <div v-if="game.is_on_sale"
+                        class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold animate-pulse">
+                        -{{ Math.round(game.discount_rate) }}%
+                    </div>
+
+                    <!-- Rating Badge -->
+                    <div
+                        class="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
+                        <i class="ph-fill ph-star text-yellow-400"></i>
+                        {{ game.rating }}
+                    </div>
+                </div>
+
+                <!-- Game Info -->
+                <div class="p-4">
+                    <h4 class="font-bold text-gray-800 truncate mb-1">{{ game.title }}</h4>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">{{ game.genres ? game.genres.slice(0, 2).join(', ') : '' }}</span>
+                        <span v-if="game.metacritic" class="text-green-600 font-bold">🏆 {{ game.metacritic }}</span>
+                    </div>
+
+                    <!-- Price Info if on sale -->
+                    <div v-if="game.is_on_sale" class="mt-3 flex items-center gap-2">
+                        <span class="text-gray-400 line-through text-sm">₩{{ formatPrice(game.original_price) }}</span>
+                        <span class="text-red-600 font-bold">₩{{ formatPrice(game.current_price) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infinite Scroll Trigger -->
+        <div ref="infiniteScrollTriggerRecommend" class="py-4 flex justify-center">
+            <div v-if="isLoadingMoreRecommendations" class="flex items-center gap-2 text-gray-500">
+                <div class="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-sm">불러오는 중...</span>
+            </div>
+            <div v-else-if="!hasMoreRecommendations" class="text-gray-400 text-sm">
+                모든 추천 게임을 불러왔습니다
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="!isLoadingRecommendations"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="ph ph-magnifying-glass text-4xl text-gray-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">추천 게임을 찾고 있어요</h3>
+        <p class="text-gray-500 mb-6">Steam 라이브러리를 분석 중입니다.<br>잠시 후 다시 시도해주세요.</p>
+        <button @click="fetchRecommendations"
+            class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors">
+            다시 시도
+        </button>
+    </div>
+    {% endverbatim %}
+    {% endif %}
+</div>
