@@ -149,15 +149,18 @@ def analyze_library_genres_fast(steam_library, limit=5):
     return genre_counter
 
 
-def get_recommendations_by_genres(genres, limit=250, max_pages=7):
+def get_recommendations_by_genres(genres, limit=250, max_pages=1):
     """
-    Get game recommendations based on genre list
-    Fetches multiple pages for more recommendations!
+    Get game recommendations based on genre list - ULTRA FAST VERSION
+    
+    Optimized: Only 3 API calls total (down from 112!)
+    - 1 call per ordering type: -rating, -added, -metacritic
+    - Each returns 40 games = 120 unique games max
     
     Args:
         genres: List of genre slugs
         limit: Maximum number of results (default 250)
-        max_pages: Maximum number of API pages to fetch
+        max_pages: Pages per ordering (default 1 for speed)
     
     Returns:
         list: Recommended games
@@ -166,7 +169,7 @@ def get_recommendations_by_genres(genres, limit=250, max_pages=7):
     api_key = get_rawg_api_key()
     
     print(f"[DEBUG] get_recommendations_by_genres called with genres: {genres}, limit: {limit}")
-    print(f"[DEBUG] RAWG_API_KEY exists: {bool(api_key)}, length: {len(api_key) if api_key else 0}")
+    print(f"[DEBUG] RAWG_API_KEY exists: {bool(api_key)}")
     
     if not api_key or not genres:
         print(f"[DEBUG] Early return - API key or genres missing")
@@ -175,80 +178,57 @@ def get_recommendations_by_genres(genres, limit=250, max_pages=7):
     all_results = []
     seen_ids = set()  # Avoid duplicates
     
-    # Try multiple genre combinations for variety
-    genre_combos = []
-    if len(genres) >= 2:
-        genre_combos.append(','.join(genres[:2]))  # Top 2 genres
-    if len(genres) >= 1:
-        genre_combos.append(genres[0])  # Primary genre only
-    if len(genres) >= 3:
-        genre_combos.append(','.join(genres[1:3]))  # Secondary genres
+    # Use top 2 genres for best match
+    genre_string = ','.join(genres[:2]) if len(genres) >= 2 else genres[0]
     
-    # Different orderings for variety
-    orderings = ['-rating', '-added', '-metacritic', '-released']
+    # Only 3 orderings for speed (metacritic first for quality!)
+    orderings = ['-metacritic', '-rating', '-added']
     
     try:
-        for genre_string in genre_combos:
-            for ordering in orderings:
-                if len(all_results) >= limit:
-                    break
-                    
-                # Calculate how many more we need
-                remaining = limit - len(all_results)
-                pages_to_fetch = min(max_pages, (remaining // 40) + 1)
+        for ordering in orderings:
+            if len(all_results) >= limit:
+                break
+            
+            params = {
+                'key': api_key,
+                'genres': genre_string,
+                'ordering': ordering,
+                'page_size': 40,  # Max allowed by RAWG
+                'page': 1,
+                'platforms': '4',  # PC
+                'metacritic': '60,100',  # Only quality games
+            }
+            
+            print(f"[DEBUG] Fetching: genres={genre_string}, ordering={ordering}")
+            response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
                 
-                for page in range(1, pages_to_fetch + 1):
+                for game in data.get('results', []):
+                    # Skip duplicates
+                    if game['id'] in seen_ids:
+                        continue
+                    seen_ids.add(game['id'])
+                    
+                    all_results.append({
+                        'rawg_id': game['id'],
+                        'title': game['name'],
+                        'image_url': game.get('background_image', ''),
+                        'rating': game.get('rating', 0),
+                        'ratings_count': game.get('ratings_count', 0),
+                        'metacritic': game.get('metacritic'),
+                        'released': game.get('released'),
+                        'genres': [g['name'] for g in game.get('genres', [])],
+                        'added': game.get('added', 0),
+                    })
+                    
                     if len(all_results) >= limit:
                         break
+            else:
+                print(f"[DEBUG] RAWG API error: {response.status_code}")
                         
-                    params = {
-                        'key': api_key,
-                        'genres': genre_string,
-                        'ordering': ordering,
-                        'page_size': 40,  # Max allowed by RAWG
-                        'page': page,
-                        'platforms': '4',  # PC
-                    }
-                    
-                    # Only add metacritic filter for top-rated ordering
-                    if ordering == '-rating' or ordering == '-metacritic':
-                        params['metacritic'] = '60,100'
-                    
-                    print(f"[DEBUG] Fetching page {page} for genres: {genre_string}, ordering: {ordering}")
-                    response = requests.get(f"{BASE_URL}/games", params=params, timeout=15)
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        
-                        for game in data.get('results', []):
-                            # Skip duplicates
-                            if game['id'] in seen_ids:
-                                continue
-                            seen_ids.add(game['id'])
-                            
-                            all_results.append({
-                                'rawg_id': game['id'],
-                                'title': game['name'],
-                                'image_url': game.get('background_image', ''),
-                                'rating': game.get('rating', 0),
-                                'ratings_count': game.get('ratings_count', 0),
-                                'metacritic': game.get('metacritic'),
-                                'released': game.get('released'),
-                                'genres': [g['name'] for g in game.get('genres', [])],
-                                'added': game.get('added', 0),
-                            })
-                            
-                            if len(all_results) >= limit:
-                                break
-                        
-                        # If no more results, break
-                        if not data.get('next'):
-                            break
-                    else:
-                        print(f"[DEBUG] RAWG API error: {response.status_code}")
-                        break
-                        
-        print(f"[DEBUG] Total fetched: {len(all_results)} recommendations")
+        print(f"[DEBUG] Total fetched: {len(all_results)} recommendations (FAST mode)")
         logger.info(f"Fetched {len(all_results)} recommendations for genres: {genres}")
         return all_results
             
@@ -263,29 +243,37 @@ def calculate_recommendation_score(game, user_genres, is_on_sale=False, sale_dis
     """
     Calculate recommendation score (0-100)
     
-    Priority:
-    1. Genre match: 50 points max
-    2. Rating: 30 points max
-    3. Sale bonus: 20 points max
+    Priority (updated):
+    1. Genre match: 40 points max
+    2. Metacritic score: 25 points max (NEW - higher than sale!)
+    3. Rating: 20 points max
+    4. Sale bonus: 15 points max
     """
     score = 0
     
-    # 1. Genre match (50 points max)
+    # 1. Genre match (40 points max)
     game_genres = [g.lower().replace(' ', '-') for g in game.get('genres', [])]
     if user_genres:
         genre_matches = sum(user_genres.get(g, 0) for g in game_genres)
         max_genre_score = max(user_genres.values()) if user_genres else 1
-        genre_score = min(50, (genre_matches / max(max_genre_score, 1)) * 50)
+        genre_score = min(40, (genre_matches / max(max_genre_score, 1)) * 40)
         score += genre_score
     
-    # 2. Rating (30 points max)
+    # 2. Metacritic score (25 points max) - HIGHER PRIORITY THAN SALE
+    metacritic = game.get('metacritic') or 0
+    if metacritic > 0:
+        # Scale: 60-100 metacritic → 0-25 points
+        metacritic_score = min(25, max(0, (metacritic - 60) / 40 * 25))
+        score += metacritic_score
+    
+    # 3. Rating (20 points max)
     rating = game.get('rating', 0) or 0
-    rating_score = (rating / 5) * 30
+    rating_score = (rating / 5) * 20
     score += rating_score
     
-    # 3. Sale bonus (20 points max)
+    # 4. Sale bonus (15 points max) - Lower priority than metacritic
     if is_on_sale:
-        sale_score = min(20, (sale_discount / 100) * 20)
+        sale_score = min(15, (sale_discount / 100) * 15)
         score += sale_score
     
     return round(score, 1)
@@ -299,9 +287,10 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
     1. Analyze top 5 games by playtime (instant - no API)
     2. Extract genres from game names (instant - no API)
     3. Single RAWG API call for recommendations
-    4. Calculate scores and sort
+    4. Filter out already owned games
+    5. Calculate scores and sort
     
-    Total: 1 API call only!
+    Total: 3 API calls only!
     """
     if not steam_library:
         return {
@@ -312,6 +301,24 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
         }
     
     sale_games = sale_games or []
+    
+    # Step 0: Build owned games set for exclusion (normalize titles)
+    owned_games = set()
+    for game in steam_library:
+        name = game.get('name', '').lower()
+        # Normalize: remove special chars, editions, etc.
+        normalized = name.replace(':', '').replace('-', ' ').replace('®', '').replace('™', '')
+        normalized = ' '.join(normalized.split())  # Collapse whitespace
+        owned_games.add(normalized)
+        
+        # Also add short version (first significant words)
+        words = normalized.split()
+        if len(words) >= 2:
+            owned_games.add(' '.join(words[:2]))  # First 2 words
+        if len(words) >= 3:
+            owned_games.add(' '.join(words[:3]))  # First 3 words
+    
+    print(f"[DEBUG] Owned games count: {len(owned_games)}, sample: {list(owned_games)[:5]}")
     
     # Step 1: Fast genre analysis (NO API CALLS)
     user_genres = analyze_library_genres_fast(steam_library, limit=5)
@@ -327,8 +334,9 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
     # Get top genres
     top_genres = [g for g, _ in user_genres.most_common(3)]
     
-    # Step 2: Get recommendations (SINGLE API CALL)
-    recommended_games = get_recommendations_by_genres(top_genres, limit=limit)
+    # Step 2: Get recommendations (3 API CALLS - fetch more to filter)
+    # Request 3x limit to have enough after filtering owned games
+    recommended_games = get_recommendations_by_genres(top_genres, limit=limit * 3)
     
     if not recommended_games:
         return {
@@ -340,7 +348,43 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
             'message': f"'{top_genres[0]}' 장르를 좋아하시네요! 하지만 추천 게임을 가져오지 못했습니다."
         }
     
-    # Step 3: Create sale lookup
+    # Step 3: Filter out already owned games
+    def is_owned(game_title):
+        title_lower = game_title.lower()
+        normalized = title_lower.replace(':', '').replace('-', ' ').replace('®', '').replace('™', '')
+        normalized = ' '.join(normalized.split())
+        
+        # Check exact match
+        if normalized in owned_games:
+            return True
+        
+        # Check short version match
+        words = normalized.split()
+        if len(words) >= 2 and ' '.join(words[:2]) in owned_games:
+            return True
+        if len(words) >= 3 and ' '.join(words[:3]) in owned_games:
+            return True
+        
+        # Check if any owned game name is contained in this title or vice versa
+        for owned in owned_games:
+            if len(owned) > 5:  # Only check meaningful names
+                if owned in normalized or normalized in owned:
+                    return True
+        
+        return False
+    
+    filtered_games = []
+    excluded_count = 0
+    for game in recommended_games:
+        if is_owned(game['title']):
+            excluded_count += 1
+            print(f"[DEBUG] Excluding owned game: {game['title']}")
+        else:
+            filtered_games.append(game)
+    
+    print(f"[DEBUG] Filtered {excluded_count} owned games, {len(filtered_games)} remaining")
+    
+    # Step 4: Create sale lookup
     sale_lookup = {}
     for sale_game in sale_games:
         title_lower = sale_game.get('title', '').lower()
@@ -355,8 +399,8 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
             'original_price': original_price,
         }
     
-    # Step 4: Calculate scores
-    for game in recommended_games:
+    # Step 5: Calculate scores for filtered games (not owned)
+    for game in filtered_games:
         title_lower = game['title'].lower()
         sale_info = sale_lookup.get(title_lower, {})
         is_on_sale = bool(sale_info)
@@ -372,13 +416,13 @@ def get_personalized_recommendations(steam_library, sale_games=None, limit=50):
             game['original_price'] = sale_info.get('original_price')
     
     # Sort by score
-    recommended_games.sort(key=lambda x: x.get('recommendation_score', 0), reverse=True)
+    filtered_games.sort(key=lambda x: x.get('recommendation_score', 0), reverse=True)
     
     # Get genre for display
     top_genre_display = top_genres[0].replace('-', ' ').title()
     
     return {
-        'recommendations': recommended_games[:limit],
+        'recommendations': filtered_games[:limit],
         'genres_analysis': {
             'top_genres': [{'name': g.replace('-', ' ').title(), 'count': c} for g, c in user_genres.most_common(5)],
             'total_genres': len(user_genres),

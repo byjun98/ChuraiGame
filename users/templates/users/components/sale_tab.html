@@ -1,9 +1,9 @@
 {% verbatim %}
 <!-- Sale Tab -->
-<div v-else-if="currentTab === 'sale'" class="animate-fade-in space-y-8">
+<div v-if="currentTab === 'sale'" class="animate-fade-in space-y-8">
 
     <!-- Popular Games ON SALE Section -->
-    <section v-if="popularGamesOnSale.length > 0 || isLoadingPopularGames">
+    <section v-if="(popularGamesOnSale && popularGamesOnSale.length > 0) || isLoadingPopularGames">
         <div class="flex items-center gap-3 mb-4">
             <div
                 class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-red-500 rounded-xl flex items-center justify-center">
@@ -22,7 +22,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="popularGamesOnSale.length === 0" class="text-center py-8 text-gray-500">
+        <div v-else-if="!popularGamesOnSale || popularGamesOnSale.length === 0" class="text-center py-8 text-gray-500">
             <i class="ph-bold ph-magnifying-glass text-4xl mb-2"></i>
             <p>현재 세일 중인 인기 게임이 없습니다</p>
         </div>
@@ -78,7 +78,7 @@
     </section>
 
     <!-- Best Historical Prices Section -->
-    <section v-if="bestPrices.length > 0">
+    <section v-if="bestPrices && bestPrices.length > 0">
         <div class="flex items-center gap-3 mb-4">
             <div
                 class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
@@ -90,12 +90,26 @@
             </div>
         </div>
 
-        <!-- Horizontal Scroll Best Prices -->
-        <div class="relative">
-            <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory custom-scrollbar">
-                <a v-for="game in bestPrices.slice(0, 15)" :key="'best-' + game.game_id"
-                    :href="`/games/${game.game_id}/`"
-                    class="flex-shrink-0 w-64 snap-start bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
+        <!-- Horizontal Scroll with Arrow Buttons -->
+        <div class="relative min-h-[200px]">
+            <!-- Left Arrow Button -->
+            <button @click="scrollBestPrices('left')" v-show="bestPrices.length > 4"
+                class="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 hover:bg-white shadow-lg rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 -ml-2 sm:-ml-4 border border-gray-200">
+                <i class="ph-bold ph-caret-left text-xl text-gray-700"></i>
+            </button>
+
+            <!-- Right Arrow Button -->
+            <button @click="scrollBestPrices('right')" v-show="bestPrices.length > 4"
+                class="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 hover:bg-white shadow-lg rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 -mr-2 sm:-mr-4 border border-gray-200">
+                <i class="ph-bold ph-caret-right text-xl text-gray-700"></i>
+            </button>
+
+            <!-- Best Prices List -->
+            <div ref="bestPricesContainer"
+                class="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div v-for="(game, index) in infiniteBestPrices" :key="'best-' + game.game_id + '-' + index"
+                    @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url)"
+                    class="flex-shrink-0 w-64 bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
                     <!-- Best Price Badge -->
                     <div
                         class="absolute top-3 left-3 z-10 px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-lg flex items-center gap-1">
@@ -120,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                </a>
+                </div>
             </div>
         </div>
     </section>
@@ -161,12 +175,14 @@
         </div>
 
         <!-- Games Count Info -->
-        <div class="mb-4 text-sm text-gray-500">
+        <div v-if="displayedSaleGames && sortedSaleGames" class="mb-4 text-sm text-gray-500">
             {{ displayedSaleGames.length }}개 표시 중 (전체 {{ sortedSaleGames.length }}개)
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <a v-for="game in displayedSaleGames" :key="game.game_id" :href="`/games/${game.game_id}/`"
+        <div v-if="displayedSaleGames && displayedSaleGames.length > 0"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div v-for="game in displayedSaleGames" :key="game.game_id"
+                @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url)"
                 class="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group relative cursor-pointer">
                 <!-- Wishlist Button -->
                 <button @click.stop.prevent="toggleWishlist(game)"
@@ -184,24 +200,57 @@
                 </div>
                 <div class="p-4 flex flex-col flex-1">
                     <h3 class="font-bold text-gray-800 mb-1 line-clamp-1" :title="game.title">{{ game.title }}</h3>
+                    <!-- Steam Rating Badge -->
+                    <div class="flex items-center gap-2 mb-2">
+                        <span v-if="game.steam_rating"
+                            class="px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1"
+                            :class="game.steam_rating >= 85 ? 'bg-green-100 text-green-700' : game.steam_rating >= 70 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
+                            <i class="ph-fill ph-thumbs-up"></i>
+                            {{ game.steam_rating }}%
+                        </span>
+                        <span v-if="game.review_count" class="text-xs text-gray-400">
+                            ({{ formatReviewCount(game.review_count) }}개 리뷰)
+                        </span>
+                        <span v-if="game.is_historical_low"
+                            class="px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white animate-pulse">
+                            🔥 역대 최저가!
+                        </span>
+                    </div>
                     <div class="mt-auto pt-3 flex items-end justify-between">
                         <div class="flex flex-col">
                             <span class="text-xs text-gray-400 line-through">₩{{ formatPrice(game.original_price)
                                 }}</span>
                             <span class="text-lg font-bold text-blue-600">₩{{ formatPrice(game.current_price) }}</span>
                         </div>
-                        <div
-                            class="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600 flex items-center justify-center transition-colors">
-                            <i class="ph-bold ph-arrow-right"></i>
+                        <!-- Buttons -->
+                        <div class="flex items-center gap-1">
+                            <!-- Compare Prices Button (CheapShark) -->
+                            <a v-if="game.cheapshark_url" :href="game.cheapshark_url" target="_blank" @click.stop
+                                class="w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center transition-colors"
+                                title="가격 비교 / 다른 스토어에서 보기">
+                                <i class="ph-bold ph-storefront"></i>
+                            </a>
+                            <!-- Steam Button -->
+                            <a :href="game.store_link" target="_blank" @click.stop
+                                class="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
+                                title="Steam에서 보기">
+                                <i class="ph-bold ph-steam-logo"></i>
+                            </a>
+                            <!-- Detail Arrow -->
+                            <div
+                                class="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600 flex items-center justify-center transition-colors">
+                                <i class="ph-bold ph-arrow-right"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
 
         <!-- Load More Button (Alternative to Infinite Scroll) -->
         <div class="flex justify-center mt-8">
-            <button v-if="hasMoreSaleGames && !isLoadingMoreSales" @click="currentSaleCount += saleItemsPerPage"
+            <button v-if="sortedSaleGames && hasMoreSaleGames && !isLoadingMoreSales"
+                @click="currentSaleCount += saleItemsPerPage"
                 class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-2">
                 <i class="ph-bold ph-plus"></i>
                 더 보기 ({{ Math.min(saleItemsPerPage, sortedSaleGames.length - displayedSaleGames.length) }}개)

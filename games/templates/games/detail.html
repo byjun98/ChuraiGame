@@ -94,6 +94,32 @@
                             <i class="ph-fill ph-globe text-xl"></i>
                             RAWG에서 보기
                         </a>
+                        <!-- Steam Store Direct Link (fallback if steamStoreUrl not available) -->
+                        <a v-if="!steamStoreUrl && steamAppId"
+                            :href="`https://store.steampowered.com/app/${steamAppId}/`" target="_blank"
+                            class="px-6 py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6a8c] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-fill ph-steam-logo text-xl"></i>
+                            Steam 상점
+                        </a>
+                        <!-- CheapShark Direct Deal Button (if redirect URL is available - goes directly to cheapest store) -->
+                        <a v-if="cheapsharkRedirectUrl" :href="cheapsharkRedirectUrl" target="_blank"
+                            class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-bold ph-lightning text-xl"></i>
+                            <span class="flex flex-col items-start leading-tight">
+                                <span class="text-xs opacity-80">최저가</span>
+                                <span>바로 구매</span>
+                            </span>
+                        </a>
+                        <!-- CheapShark Price Comparison (fallback - shows all store prices) -->
+                        <a v-else-if="steamAppId"
+                            :href="`https://www.cheapshark.com/browse/games?steamAppID=${steamAppId}`" target="_blank"
+                            class="px-6 py-3 bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-700 hover:to-orange-600 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-bold ph-storefront text-xl"></i>
+                            <span class="flex flex-col items-start leading-tight">
+                                <span class="text-xs opacity-80">CheapShark</span>
+                                <span>최저가 비교</span>
+                            </span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -143,8 +169,43 @@
                             <i class="ph-fill ph-book-open text-blue-600"></i>
                             게임 소개
                         </h3>
-                        <div class="prose prose-sm max-w-none text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-6 border border-gray-100"
-                            v-html="formatDescription(game.description_raw || game.description)">
+                        <div
+                            class="prose prose-sm max-w-none text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-6 border border-gray-100">
+                            <div v-html="formatDescription(game.description_raw || game.description)"></div>
+
+                            <!-- Translation Toggle Button -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <button @click="toggleTranslation" :disabled="isTranslating"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                                    :class="showTranslation 
+                                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                        : 'bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-gray-200'">
+                                    <i v-if="isTranslating" class="ph-bold ph-spinner animate-spin"></i>
+                                    <i v-else-if="showTranslation" class="ph-fill ph-globe"></i>
+                                    <i v-else class="ph-bold ph-translate"></i>
+                                    <span v-if="isTranslating">번역 중...</span>
+                                    <span v-else-if="showTranslation">원문 보기</span>
+                                    <span v-else>한국어로 번역</span>
+                                </button>
+                            </div>
+
+                            <!-- Translated Content -->
+                            <div v-if="showTranslation && translatedDescription"
+                                class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                <div class="flex items-center gap-2 mb-3 text-blue-600 text-sm font-medium">
+                                    <i class="ph-fill ph-globe"></i>
+                                    <span>AI 한국어 번역</span>
+                                </div>
+                                <div class="text-gray-700 leading-relaxed"
+                                    v-html="formatDescription(translatedDescription)"></div>
+                            </div>
+
+                            <!-- Translation Error -->
+                            <div v-if="translationError"
+                                class="mt-4 p-3 bg-red-50 rounded-lg border border-red-100 text-red-600 text-sm">
+                                <i class="ph-bold ph-warning mr-2"></i>
+                                {{ translationError }}
+                            </div>
                         </div>
                     </div>
                     <div v-else-if="isLoadingDetails">
@@ -288,6 +349,20 @@
             // Extract numeric ID
             const numericId = gameId.replace(/\D/g, '');
 
+            // Check if this is a Steam game (app123 format) or get from query params
+            const urlParams = new URLSearchParams(window.location.search);
+            const steamAppIdFromUrl = urlParams.get('steam_appid');
+            const steamAppId = ref(steamAppIdFromUrl || (gameId.startsWith('app') ? numericId : null));
+
+            // CheapShark redirect URL (directly goes to the cheapest store)
+            const cheapsharkRedirectUrl = ref(urlParams.get('cheapshark_url') || null);
+
+            // Translation state
+            const showTranslation = ref(false);
+            const translatedDescription = ref('');
+            const isTranslating = ref(false);
+            const translationError = ref('');
+
             // Computed properties for genres
             const primaryGenre = computed(() => {
                 if (game.value && game.value.genres && game.value.genres.length > 0) {
@@ -323,12 +398,84 @@
                 modal.classList.add('flex');
             };
 
+            const toggleTranslation = async () => {
+                // If already have translation, just toggle visibility
+                if (translatedDescription.value) {
+                    showTranslation.value = !showTranslation.value;
+                    return;
+                }
+
+                // Need to fetch translation
+                if (!game.value || (!game.value.description_raw && !game.value.description)) {
+                    return;
+                }
+
+                isTranslating.value = true;
+                translationError.value = '';
+
+                try {
+                    const textToTranslate = game.value.description_raw || game.value.description;
+
+                    const response = await fetch('/users/api/translate/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ text: textToTranslate })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.translated) {
+                        translatedDescription.value = data.translated;
+                        showTranslation.value = true;
+                    } else {
+                        translationError.value = data.error || '번역에 실패했습니다.';
+                    }
+                } catch (e) {
+                    console.error('Translation error:', e);
+                    translationError.value = '번역 요청 중 오류가 발생했습니다.';
+                } finally {
+                    isTranslating.value = false;
+                }
+            };
+
             const fetchGameData = async () => {
                 try {
                     isLoading.value = true;
 
-                    // Fetch basic game info
-                    const response = await fetch(`https://api.rawg.io/api/games/${numericId}?key={{ rawg_api_key }}`);
+                    // Check if we're searching by title (from sale tab)
+                    const searchTitle = urlParams.get('title');
+                    let rawgId = numericId;
+
+                    if (searchTitle) {
+                        // Search RAWG by game title with exact match
+                        const searchUrl = `https://api.rawg.io/api/games?key={{ rawg_api_key }}&search=${encodeURIComponent(searchTitle)}&search_exact=true&page_size=1`;
+                        const searchResponse = await fetch(searchUrl);
+
+                        if (searchResponse.ok) {
+                            const searchData = await searchResponse.json();
+                            if (searchData.results && searchData.results.length > 0) {
+                                rawgId = searchData.results[0].id;
+                            } else {
+                                // Fallback: try without exact match
+                                const fuzzyUrl = `https://api.rawg.io/api/games?key={{ rawg_api_key }}&search=${encodeURIComponent(searchTitle)}&page_size=1`;
+                                const fuzzyResponse = await fetch(fuzzyUrl);
+                                if (fuzzyResponse.ok) {
+                                    const fuzzyData = await fuzzyResponse.json();
+                                    if (fuzzyData.results && fuzzyData.results.length > 0) {
+                                        rawgId = fuzzyData.results[0].id;
+                                    } else {
+                                        throw new Error(`'${searchTitle}' 게임을 찾을 수 없습니다.`);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Fetch basic game info using RAWG ID
+                    const response = await fetch(`https://api.rawg.io/api/games/${rawgId}?key={{ rawg_api_key }}`);
                     if (!response.ok) throw new Error('게임을 찾을 수 없습니다.');
 
                     const data = await response.json();
@@ -339,7 +486,7 @@
                     isLoadingDetails.value = true;
 
                     // Fetch screenshots
-                    const screenshotsResponse = await fetch(`https://api.rawg.io/api/games/${numericId}/screenshots?key={{ rawg_api_key }}&page_size=8`);
+                    const screenshotsResponse = await fetch(`https://api.rawg.io/api/games/${rawgId}/screenshots?key={{ rawg_api_key }}&page_size=8`);
                     if (screenshotsResponse.ok) {
                         const ssData = await screenshotsResponse.json();
                         screenshots.value = ssData.results || [];
@@ -347,13 +494,20 @@
 
                     // Fetch stores to get Steam link
                     try {
-                        const storesResponse = await fetch(`https://api.rawg.io/api/games/${numericId}/stores?key={{ rawg_api_key }}`);
+                        const storesResponse = await fetch(`https://api.rawg.io/api/games/${rawgId}/stores?key={{ rawg_api_key }}`);
                         if (storesResponse.ok) {
                             const storesData = await storesResponse.json();
                             // Find Steam store (store_id 1 = Steam)
                             const steamStore = storesData.results?.find(s => s.store_id === 1);
                             if (steamStore && steamStore.url) {
                                 steamStoreUrl.value = steamStore.url;
+                                // Extract Steam AppID from URL if not already set
+                                if (!steamAppId.value) {
+                                    const appIdMatch = steamStore.url.match(/\/app\/(\d+)/);
+                                    if (appIdMatch && appIdMatch[1]) {
+                                        steamAppId.value = appIdMatch[1];
+                                    }
+                                }
                             }
                         }
                     } catch (storeError) {
@@ -377,6 +531,8 @@
                 game,
                 screenshots,
                 steamStoreUrl,
+                steamAppId,
+                cheapsharkRedirectUrl,
                 isLoading,
                 isLoadingDetails,
                 isRawgOnly,
@@ -385,7 +541,13 @@
                 allGenres,
                 formatDescription,
                 formatNumber,
-                openImageModal
+                openImageModal,
+                // Translation
+                showTranslation,
+                translatedDescription,
+                isTranslating,
+                translationError,
+                toggleTranslation
             };
         }
     }).mount('#gameDetailApp');

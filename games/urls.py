@@ -4,6 +4,9 @@ from . import views
 app_name = 'games'
 
 urlpatterns = [
+    # Search by title (for sale games - must be before game_id catch-all)
+    path('search/', views.game_search_by_title, name='search_by_title'),
+    
     # Game Detail & Management (수정: str로 변경하여 app123, bundle456 등 지원)
     path('<str:game_id>/', views.game_detail, name='detail'),
     path('<str:game_id>/wishlist/', views.toggle_wishlist, name='toggle_wishlist'),

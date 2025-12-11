@@ -1,6 +1,6 @@
 {% verbatim %}
 <!-- Community Tab -->
-<div v-else-if="currentTab === 'community'" class="animate-fade-in">
+<div v-if="currentTab === 'community'" class="animate-fade-in">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">유저 커뮤니티</h2>
         <button @click="isWritingPost = true"

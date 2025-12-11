@@ -78,6 +78,7 @@
             const popularGamesOnSale = ref([]);  // RAWG popular games on sale
             const isLoadingPopularGames = ref(false);
             const bestPrices = ref([]);  // Best historical prices
+            const bestPricesContainer = ref(null);  // Ref for best prices scroll container
 
             // Steam Library State
             const steamLibrary = ref([]);
@@ -222,11 +223,22 @@
 
                 isLoadingPopularGames.value = true;
                 try {
-                    // Fetch more games to have better chance of matches
-                    const response = await fetch('/games/api/popular/?limit=100');
+                    // Check if sale games data is loaded
+                    console.log(`Sale games loaded: ${games.value.length}`);
+
+                    if (games.value.length === 0) {
+                        console.warn("No sale games loaded yet, cannot match");
+                        popularGamesOnSale.value = [];
+                        return;
+                    }
+
+                    // Fetch all-time popular games (no date filter) for sale matching
+                    const response = await fetch('/games/api/popular/?limit=100&all_time=true');
                     const data = await response.json();
 
-                    if (data.games && games.value.length > 0) {
+                    console.log(`RAWG popular games fetched: ${data.games?.length || 0}`);
+
+                    if (data.games && data.games.length > 0) {
                         // Create a map of sale games by normalized title for fast lookup
                         const saleGamesMap = new Map();
                         games.value.forEach(saleGame => {
@@ -292,9 +304,13 @@
 
                         popularGamesOnSale.value = matchedGames;
                         console.log(`Matched ${matchedGames.length} popular games with sale data`);
+                    } else {
+                        console.warn("No games returned from RAWG API");
+                        popularGamesOnSale.value = [];
                     }
                 } catch (e) {
                     console.error("Failed to fetch popular games", e);
+                    popularGamesOnSale.value = [];
                 } finally {
                     isLoadingPopularGames.value = false;
                 }
@@ -364,6 +380,72 @@
                     return;
                 }
                 // ... implementation details ...
+            };
+
+            // Navigate to game detail page (for sale cards)
+            const navigateToGameDetail = (event, gameId) => {
+                // Don't navigate if user clicked on a button or link
+                if (event.target.closest('a') || event.target.closest('button')) {
+                    return;
+                }
+                window.location.href = `/games/${gameId}/`;
+            };
+
+            // Navigate to Steam store page (for sale cards - Steam AppID != RAWG ID)
+            const navigateToSteamStore = (event, storeLink) => {
+                // Don't navigate if user clicked on a button or link
+                if (event.target.closest('a') || event.target.closest('button')) {
+                    return;
+                }
+                if (storeLink) {
+                    window.open(storeLink, '_blank');
+                }
+            };
+
+            // Navigate to game detail by title (for sale cards - search RAWG by title)
+            const navigateToGameByTitle = (event, title, steamAppId, cheapsharkUrl) => {
+                // Don't navigate if user clicked on a button or link
+                if (event.target.closest('a') || event.target.closest('button')) {
+                    return;
+                }
+                // Pass title, steam appid, and cheapshark redirect URL as query params
+                const params = new URLSearchParams();
+                params.set('title', title);
+                if (steamAppId) params.set('steam_appid', steamAppId);
+                if (cheapsharkUrl) params.set('cheapshark_url', cheapsharkUrl);
+                window.location.href = `/games/search/?${params.toString()}`;
+            };
+
+            // Infinite scroll for best prices (repeat items for infinite effect)
+            const infiniteBestPrices = computed(() => {
+                if (!bestPrices.value || bestPrices.value.length === 0) return [];
+                // Repeat the list to create infinite scroll effect
+                return [...bestPrices.value, ...bestPrices.value, ...bestPrices.value];
+            });
+
+            // Scroll best prices list left or right
+            const scrollBestPrices = (direction) => {
+                if (!bestPricesContainer.value) return;
+                const container = bestPricesContainer.value;
+                const cardWidth = 256 + 16; // w-64 (256px) + gap-4 (16px)
+                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+                const maxScroll = container.scrollWidth - container.clientWidth;
+
+                if (direction === 'left') {
+                    if (container.scrollLeft <= 0) {
+                        // At the beginning, jump to end
+                        container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
+                    } else {
+                        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                    }
+                } else {
+                    if (container.scrollLeft >= maxScroll - 10) {
+                        // At the end, jump to beginning
+                        container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
+                    } else {
+                        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    }
+                }
             };
 
             const handleLogout = () => {
@@ -650,6 +732,13 @@
             };
 
             const formatPrice = (price) => price ? price.toLocaleString() : '무료';
+            const formatReviewCount = (count) => {
+                if (!count) return '0';
+                if (count >= 100000) return Math.round(count / 1000) + 'K';
+                if (count >= 10000) return (count / 1000).toFixed(1) + 'K';
+                if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+                return count.toLocaleString();
+            };
             const handleImageError = (e) => { e.target.src = "https://via.placeholder.com/460x215?text=No+Image"; };
             const goToHome = () => {
                 currentStep.value = 'main';
@@ -927,13 +1016,20 @@
                 toggleWishlist,
                 isWishlisted,
                 formatPrice,
+                formatReviewCount,
                 handleImageError,
                 goToHome,
                 openRawgGame,
                 scrollToTop,
                 loadMoreSaleGames,
+                navigateToGameDetail,
+                navigateToSteamStore,
+                navigateToGameByTitle,
                 gameListContainer,
                 scrollGameList,
+                bestPricesContainer,
+                infiniteBestPrices,
+                scrollBestPrices,
                 fetchSteamLibrary,
                 fetchRecommendations,
                 loadMoreRecommendations,

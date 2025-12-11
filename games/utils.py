@@ -517,42 +517,154 @@ def get_games_by_ordering(ordering='-added', page_size=20, platforms='4',
         return []
 
 
-def get_popular_games(page_size=20):
+def get_popular_games(page_size=20, all_time=False):
     """
-    Get most popular games (most added to user libraries).
-    Perfect for '요즘 뜨는 게임' section.
+    Get most popular games.
     
     Args:
         page_size: Number of results (default: 20)
+        all_time: If True, get all-time popular games without date filter
+                  If False, get popular games from last 2 years only
     
     Returns:
-        list: Most popular games (with at least 1000 users added)
+        list: Most popular games
     """
-    return get_games_by_ordering(
-        ordering='-added', 
-        page_size=page_size,
-        added_min=1000  # At least 1000 users added
-    )
+    if not RAWG_API_KEY:
+        logger.warning("RAWG_API_KEY not configured")
+        return []
+    
+    try:
+        params = {
+            'key': RAWG_API_KEY,
+            'ordering': '-added',  # Most added to libraries
+            'page_size': page_size * 3,  # Get more to filter
+            'platforms': '4',  # PC only
+            'exclude_additions': 'true'  # Exclude DLCs
+        }
+        
+        # Apply date filter only if not all_time
+        if not all_time:
+            from datetime import datetime, timedelta
+            today = datetime.now().strftime('%Y-%m-%d')
+            two_years_ago = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+            params['dates'] = f'{two_years_ago},{today}'  # Games from last 2 years
+        
+        response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        for game in data.get('results', []):
+            # Quality filter: at least 100 users added (relaxed)
+            added_count = game.get('added', 0)
+            if added_count < 100:
+                continue
+            
+            results.append({
+                'rawg_id': game['id'],
+                'slug': game.get('slug', ''),
+                'title': game['name'],
+                'image_url': game.get('background_image', ''),
+                'rating': game.get('rating'),
+                'ratings_count': game.get('ratings_count', 0),
+                'released': game.get('released'),
+                'genres': [g['name'] for g in game.get('genres', [])],
+                'metacritic': game.get('metacritic'),
+                'added': added_count
+            })
+            
+            if len(results) >= page_size:
+                break
+        
+        logger.info(f"Fetched {len(results)} popular games (all_time={all_time})")
+        return results
+    
+    except requests.RequestException as e:
+        logger.error(f"Error fetching popular games: {e}")
+        return []
 
 
 def get_top_rated_games(page_size=20):
     """
-    Get highest rated games with quality filtering.
-    Only includes games with significant number of ratings to avoid
-    obscure games with few but high ratings.
+    Get most popular games sorted by popularity (added count).
+    Only games with added >= 100, with scam filtering.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Top rated games (with at least 50 ratings)
+        list: Most popular games with scam filter
     """
-    return get_games_by_ordering(
-        ordering='-rating', 
-        page_size=page_size,
-        ratings_count_min=50,   # At least 50 ratings (lowered)
-        added_min=500           # At least 500 users added (lowered)
-    )
+    if not RAWG_API_KEY:
+        logger.warning("RAWG_API_KEY not configured")
+        return []
+    
+    # Blacklist for scam games
+    BLACKLIST_PATTERNS = [
+        'hot ', 'sexy ', 'nude', 'naked', 'hentai', 'porn', 'adult', 
+        'bikini', 'busty', 'boob', 'tits', 'ass ', 'tentacle', 'waifu'
+    ]
+    
+    try:
+        params = {
+            'key': RAWG_API_KEY,
+            'ordering': '-added',  # Popularity (most added to libraries)
+            'page_size': page_size * 3,  # Get more to filter
+            'platforms': '4',
+            'exclude_additions': 'true'
+        }
+        response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        for game in data.get('results', []):
+            title = game.get('name', '').lower()
+            added_count = game.get('added', 0)
+            image_url = game.get('background_image', '')
+            
+            # Must be popular (at least 500 added)
+            if added_count < 100:
+                continue
+            
+            # Must have image
+            if not image_url:
+                continue
+            
+            # Scam filter
+            is_blacklisted = False
+            for pattern in BLACKLIST_PATTERNS:
+                if pattern in title:
+                    is_blacklisted = True
+                    break
+            if is_blacklisted:
+                continue
+            
+            results.append({
+                'rawg_id': game['id'],
+                'slug': game.get('slug', ''),
+                'title': game['name'],
+                'image_url': image_url,
+                'rating': game.get('rating'),
+                'ratings_count': game.get('ratings_count', 0),
+                'released': game.get('released'),
+                'genres': [g['name'] for g in game.get('genres', [])],
+                'metacritic': game.get('metacritic'),
+                'added': added_count
+            })
+            
+            if len(results) >= page_size:
+                break
+        
+        # Sort by rating (highest first) among popular games
+        results.sort(key=lambda x: x.get('rating') or 0, reverse=True)
+        
+        logger.info(f"Fetched {len(results)} popular games sorted by rating")
+        return results
+    
+    except requests.RequestException as e:
+        logger.error(f"Error fetching top rated games: {e}")
+        return []
 
 
 def get_trending_games(page_size=20):
@@ -576,17 +688,23 @@ def get_trending_games(page_size=20):
 def get_new_releases(page_size=20):
     """
     Get recently released games (already released, not upcoming).
-    Only shows games that have been released up to today.
+    Includes quality filtering to remove scam/low-quality games.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Recently released games (past 1 year, already released)
+        list: Recently released games (past 1 year, with minimal scam filters)
     """
     if not RAWG_API_KEY:
         logger.warning("RAWG_API_KEY not configured")
         return []
+    
+    # Blacklist for obvious scam game title patterns (minimal)
+    BLACKLIST_PATTERNS = [
+        'hot ', 'sexy ', 'nude', 'naked', 'hentai', 'porn', 'adult', 
+        'bikini', 'busty', 'boob', 'tits', 'ass '
+    ]
     
     try:
         from datetime import datetime, timedelta
@@ -595,9 +713,9 @@ def get_new_releases(page_size=20):
         
         params = {
             'key': RAWG_API_KEY,
-            'dates': f'{one_year_ago},{today}',  # From 1 year ago to today (already released only)
+            'dates': f'{one_year_ago},{today}',  # Last 1 year
             'ordering': '-released',  # Most recent first
-            'page_size': page_size,
+            'page_size': page_size * 4,  # Get more to filter scams
             'platforms': '4',  # PC only
             'exclude_additions': 'true'  # Exclude DLCs
         }
@@ -607,20 +725,50 @@ def get_new_releases(page_size=20):
         
         results = []
         for game in data.get('results', []):
+            # --- Scam/Quality Filters ---
+            title = game.get('name', '').lower()
+            added_count = game.get('added', 0)
+            ratings_count = game.get('ratings_count', 0)
+            image_url = game.get('background_image', '')
+            
+            # 1. Must have an image (scam games often don't)
+            if not image_url:
+                continue
+            
+            # 2. Must have at least 3 users who added it (very relaxed)
+            if added_count < 3:
+                continue
+            
+            # 3. Check against blacklist patterns
+            is_blacklisted = False
+            for pattern in BLACKLIST_PATTERNS:
+                if pattern in title:
+                    is_blacklisted = True
+                    break
+            if is_blacklisted:
+                logger.debug(f"Filtered scam game: {game.get('name')}")
+                continue
+            
+            # 4. Prefer games with at least some ratings (more trustworthy)
+            # But don't require it for brand new games
+            
             results.append({
                 'rawg_id': game['id'],
                 'slug': game.get('slug', ''),
                 'title': game['name'],
-                'image_url': game.get('background_image', ''),
+                'image_url': image_url,
                 'rating': game.get('rating'),
-                'ratings_count': game.get('ratings_count', 0),
+                'ratings_count': ratings_count,
                 'released': game.get('released'),
                 'genres': [g['name'] for g in game.get('genres', [])],
                 'metacritic': game.get('metacritic'),
-                'added': game.get('added', 0)
+                'added': added_count
             })
+            
+            if len(results) >= page_size:
+                break
         
-        logger.info(f"Fetched {len(results)} new releases (released between {one_year_ago} and {today})")
+        logger.info(f"Fetched {len(results)} new releases (filtered for quality)")
         return results
     
     except requests.RequestException as e:

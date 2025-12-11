@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 from django.contrib import messages
+from django.utils import timezone
 import json
 import os
 from django.conf import settings
@@ -257,9 +258,18 @@ def steam_unlink(request):
 @login_required
 def steam_library_api(request):
     """
-    API endpoint to fetch user's Steam library
-    Returns owned games and recommendations
+    API endpoint to fetch user's Steam library - WITH DB CACHING
+    
+    Flow:
+    1. Check DB cache first (instant: 0.01s)
+    2. If cache exists and fresh (< 24h) → return cached data
+    3. If cache missing or stale → fetch from Steam API → update cache
+    
+    Query params:
+        force_refresh: If 'true', always fetch fresh data from Steam
     """
+    from .models import SteamLibraryCache
+    
     user = request.user
     
     if not user.is_steam_linked or not user.steam_id:
@@ -268,13 +278,62 @@ def steam_library_api(request):
             'is_linked': False
         }, status=400)
     
-    # Get library and recommendations
+    force_refresh = request.GET.get('force_refresh', 'false').lower() == 'true'
+    
+    # Step 1: Check DB cache
+    try:
+        cache = SteamLibraryCache.objects.get(user=user)
+        cache_exists = True
+        cache_is_fresh = not cache.is_stale(hours=24)
+    except SteamLibraryCache.DoesNotExist:
+        cache = None
+        cache_exists = False
+        cache_is_fresh = False
+    
+    # Step 2: Return cached data if fresh and not forcing refresh
+    if cache_exists and cache_is_fresh and not force_refresh:
+        print(f"[CACHE HIT] Returning cached library for {user.username}")
+        return JsonResponse({
+            'is_linked': True,
+            'steam_id': user.steam_id,
+            'library': cache.library_data,
+            'total_games': cache.total_games,
+            'total_playtime_hours': cache.total_playtime_hours,
+            'cached': True,
+            'cache_age_hours': round((timezone.now() - cache.last_updated).total_seconds() / 3600, 1)
+        })
+    
+    # Step 3: Fetch from Steam API
+    print(f"[CACHE MISS] Fetching fresh library from Steam for {user.username}")
     library_data = get_game_recommendations_from_library(user.steam_id)
+    
+    # Step 4: Update cache
+    library_list = library_data.get('library', [])
+    total_games = library_data.get('total_games', 0)
+    total_hours = library_data.get('total_playtime_hours', 0)
+    
+    if cache_exists:
+        cache.library_data = library_list
+        cache.total_games = total_games
+        cache.total_playtime_hours = total_hours
+        cache.save()
+    else:
+        SteamLibraryCache.objects.create(
+            user=user,
+            library_data=library_list,
+            total_games=total_games,
+            total_playtime_hours=total_hours
+        )
+    
+    print(f"[CACHE UPDATED] Saved {total_games} games to cache for {user.username}")
     
     return JsonResponse({
         'is_linked': True,
         'steam_id': user.steam_id,
-        **library_data
+        'library': library_list,
+        'total_games': total_games,
+        'total_playtime_hours': total_hours,
+        'cached': False
     })
 
 
@@ -591,5 +650,139 @@ def ai_chat_api(request):
         print(traceback.format_exc())
         return JsonResponse({
             'error': f'서버 오류가 발생했습니다: {str(e)}',
+            'success': False
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def translate_text_api(request):
+    """
+    Translate game description to Korean using Gemini 2.0 Flash Lite
+    Much faster than GPT!
+    """
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    # Get API key from environment
+    api_key = os.getenv('GMS_API_KEY')
+    
+    if not api_key:
+        return JsonResponse({
+            'error': 'API 키가 설정되지 않았습니다.',
+            'success': False
+        }, status=500)
+    
+    try:
+        data = json.loads(request.body)
+        text = data.get('text', '').strip()
+        
+        if not text:
+            return JsonResponse({
+                'error': '번역할 텍스트가 없습니다.',
+                'success': False
+            }, status=400)
+        
+        # Limit text length to prevent abuse
+        if len(text) > 5000:
+            text = text[:5000]
+        
+        # Build translation prompt for Gemini - Professional Game Translator Persona
+        prompt = f"""당신은 10년 경력의 전문 게임 로컬라이제이션 번역가입니다. 
+수많은 AAA 타이틀과 인디 게임의 한국어화 작업을 담당해온 베테랑으로, 게임 문화와 한국 게이머들의 언어 습관을 깊이 이해하고 있습니다.
+
+🎮 **번역 전문 분야:**
+- RPG, 액션, 어드벤처, 호러, 시뮬레이션 등 모든 장르
+- 스팀, 플레이스테이션, Xbox, 닌텐도 등 모든 플랫폼
+- 게임 스토리, UI 텍스트, 마케팅 문구
+
+📜 **번역 원칙:**
+1. **고유명사 보존**: 게임 타이틀, 캐릭터명, 지명, 아이템명 등은 원어 그대로 유지
+   - 예: "Geralt of Rivia" → "리비아의 게랄트" (유명한 경우 한글화된 이름 사용)
+   - 예: "Dark Souls" → "Dark Souls" (게임 타이틀은 그대로)
+
+2. **게임 용어 현지화**: 한국 게이머들에게 익숙한 표현 사용
+   - 예: "roguelike" → "로그라이크", "dungeon crawler" → "던전 크롤러"
+   - 예: "open world" → "오픈 월드", "sandbox" → "샌드박스"
+
+3. **자연스러운 한국어**: 번역투가 아닌 자연스러운 문장
+   - 직역 금지, 의역을 통해 매끄러운 한국어로 표현
+   - 한국어 어순과 표현에 맞게 재구성
+
+4. **마케팅 톤 유지**: 원문의 흥미와 기대감을 살려서 번역
+   - 게임의 분위기와 장르에 맞는 어조 사용
+   - 호러는 긴장감 있게, 어드벤처는 설렘 있게
+
+5. **출력 규칙**: 오직 번역된 텍스트만 출력. 설명, 주석, "번역:" 같은 라벨 없이 깔끔하게.
+
+---
+영어 원문:
+{text}
+
+한국어 번역:"""
+        
+        # Call Gemini 2.0 Flash Lite API (much faster!)
+        response = requests.post(
+            f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}",
+            headers={
+                "Content-Type": "application/json"
+            },
+            json={
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            },
+            timeout=30  # Gemini is much faster
+        )
+        
+        print(f"[DEBUG] Gemini Response Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            
+            # Parse Gemini response format
+            candidates = result.get('candidates', [])
+            if candidates and len(candidates) > 0:
+                content = candidates[0].get('content', {})
+                parts = content.get('parts', [])
+                if parts and len(parts) > 0:
+                    translated_text = parts[0].get('text', '')
+                    
+                    if translated_text:
+                        return JsonResponse({
+                            'success': True,
+                            'translated': translated_text.strip()
+                        })
+            
+            print(f"[DEBUG] Gemini result structure: {result}")
+            return JsonResponse({
+                'error': '번역 결과를 받지 못했습니다.',
+                'success': False
+            }, status=500)
+        else:
+            print(f"[DEBUG] Gemini error response: {response.text}")
+            return JsonResponse({
+                'error': f'번역 서버 오류 (Status: {response.status_code})',
+                'success': False
+            }, status=response.status_code)
+            
+    except requests.Timeout:
+        return JsonResponse({
+            'error': '번역 서버 응답 시간이 초과되었습니다.',
+            'success': False
+        }, status=504)
+    except Exception as e:
+        import traceback
+        print(f"Translation Error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'error': f'번역 오류: {str(e)}',
             'success': False
         }, status=500)

@@ -43,3 +43,42 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class SteamLibraryCache(models.Model):
+    """
+    Steam 라이브러리 캐시 - API 호출 최소화
+    
+    - 첫 로딩 시 Steam API 호출 후 DB에 저장
+    - 이후 요청은 DB에서 즉시 반환 (0.01초)
+    - 24시간마다 백그라운드 업데이트
+    """
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='steam_library_cache'
+    )
+    
+    # Steam 라이브러리 데이터 (JSON)
+    library_data = models.JSONField(default=list, help_text="Steam 라이브러리 게임 목록 JSON")
+    
+    # 통계
+    total_games = models.IntegerField(default=0)
+    total_playtime_hours = models.FloatField(default=0)
+    
+    # 캐시 관리
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Steam 라이브러리 캐시"
+        verbose_name_plural = "Steam 라이브러리 캐시"
+    
+    def __str__(self):
+        return f"{self.user.username}의 Steam 라이브러리 ({self.total_games}개)"
+    
+    def is_stale(self, hours=24):
+        """캐시가 오래되었는지 확인 (기본 24시간)"""
+        from django.utils import timezone
+        from datetime import timedelta
+        return timezone.now() - self.last_updated > timedelta(hours=hours)

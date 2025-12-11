@@ -75,12 +75,22 @@
                             </span>
                         </div>
                     </div>
-                    <div class="flex gap-3">
+                    <div class="flex gap-3 flex-wrap">
                         {% if game.steam_appid %}
                         <a href="https://store.steampowered.com/app/{{ game.steam_appid }}" target="_blank"
                             class="px-6 py-3 bg-[#171A21] hover:bg-[#2a2d33] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
                             <i class="ph-fill ph-steam-logo text-xl"></i>
                             Steam에서 보기
+                        </a>
+                        <!-- CheapShark Price Comparison Button -->
+                        <a href="https://www.cheapshark.com/redirect?dealID={{ game.steam_appid }}" target="_blank"
+                            id="cheapsharkBtn"
+                            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                            <i class="ph-bold ph-storefront text-xl"></i>
+                            <span class="flex flex-col items-start leading-tight">
+                                <span class="text-xs opacity-80">CheapShark</span>
+                                <span>최저가 비교</span>
+                            </span>
                         </a>
                         {% endif %}
                     </div>

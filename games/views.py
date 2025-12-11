@@ -34,6 +34,37 @@ def is_steam_id(game_id_str):
     return str(game_id_str).startswith(('app', 'bundle', 'sub'))
 
 @login_required
+def game_search_by_title(request):
+    """
+    Render game detail page for searching by title.
+    Used by sale tab where Steam AppID != RAWG ID.
+    
+    The client-side JavaScript will read the 'title' query param
+    and search RAWG API directly for better performance.
+    
+    Query params:
+        title (required): Game title to search
+        steam_appid (optional): Steam AppID for price comparison links
+    """
+    title = request.GET.get('title', '').strip()
+    steam_appid = request.GET.get('steam_appid', '')
+    
+    if not title:
+        return redirect('users:main')
+    
+    rawg_api_key = RAWG_API_KEY or os.getenv('RAWG_API_KEY', '')
+    
+    # Simply render detail.html - client-side JavaScript will handle the RAWG search
+    context = {
+        'game': None,
+        'is_rawg_only': True,
+        'rawg_api_key': rawg_api_key,
+        'search_title': title,
+        'steam_appid': steam_appid,
+    }
+    return render(request, 'games/detail.html', context)
+
+@login_required
 def game_detail(request, game_id):
     """
     Game detail view - optimized for lazy loading.
@@ -319,11 +350,13 @@ def api_popular_games(request):
     
     Query params:
         limit (optional): Number of results (default: 20)
+        all_time (optional): If 'true', get all-time popular games without date filter
     
-    Example: /api/games/popular/?limit=10
+    Example: /api/games/popular/?limit=10&all_time=true
     """
     limit = int(request.GET.get('limit', 20))
-    results = get_popular_games(page_size=limit)
+    all_time = request.GET.get('all_time', 'false').lower() == 'true'
+    results = get_popular_games(page_size=limit, all_time=all_time)
     
     return JsonResponse({
         'count': len(results),
