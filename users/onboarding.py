@@ -123,7 +123,7 @@ def get_onboarding_games(step=0, exclude_rated=None):
     }
 
 
-def calculate_game_similarity_batch():
+def calculate_game_similarity_batch(min_ratings=3, top_k=50, min_similarity=0.1):
     """
     배치 작업: 게임 간 유사도 계산
     
@@ -131,10 +131,27 @@ def calculate_game_similarity_batch():
     - Item-Based Collaborative Filtering 사용
     - 희소 행렬로 메모리 효율화
     - transaction.atomic()으로 안전한 데이터 갱신
+    
+    ⚠️ 새 스키마 규칙:
+    - game_a_id < game_b_id 정규화 (저장 공간 50% 절약)
+    - similarity_rank 계산 (Top-K 쿼리 최적화)
+    - 평점 정규화: -1→-1.0, 3.5→0.7, 5→1.0
+    
+    Args:
+        min_ratings: 최소 평가 수 (이보다 적은 평가를 받은 게임은 제외)
+        top_k: 각 게임마다 저장할 유사 게임 수
+        min_similarity: 저장할 최소 유사도
+    
+    Note:
+        이 함수 대신 Management Command 사용을 권장합니다:
+        python manage.py calculate_game_similarity --min-ratings 3 --top-k 50
     """
     from django.db import transaction
     from .models import GameRating, GameSimilarity
     from games.models import Game
+    
+    # 평점 정규화 (비선형 → 선형)
+    SCORE_NORMALIZATION = {-1: -1.0, 0: 0.0, 3.5: 0.7, 5: 1.0}
     
     logger.info("Starting game similarity batch calculation...")
     
@@ -143,57 +160,101 @@ def calculate_game_similarity_batch():
     
     if len(ratings) < 10:
         logger.warning("Not enough rating data for similarity calculation")
-        return
+        return {'success': False, 'message': 'Not enough rating data'}
     
     df = pd.DataFrame(ratings)
     
+    # 평점 정규화 적용
+    df['normalized_score'] = df['score'].apply(lambda x: SCORE_NORMALIZATION.get(x, x / 5.0))
+    
+    # 게임별 평가 수 계산 및 필터링
+    game_rating_counts = df.groupby('game_id').size()
+    valid_games = game_rating_counts[game_rating_counts >= min_ratings].index.tolist()
+    df = df[df['game_id'].isin(valid_games)]
+    
+    if len(df) < 10:
+        logger.warning("Not enough games with sufficient ratings")
+        return {'success': False, 'message': 'Not enough games with sufficient ratings'}
+    
     # 2. 희소 행렬 생성 (게임 x 유저)
-    # Category 코드로 변환하여 인덱싱
     user_cat = df['user_id'].astype('category')
     game_cat = df['game_id'].astype('category')
     
-    user_codes = user_cat.cat.codes
-    game_codes = game_cat.cat.codes
+    user_codes = user_cat.cat.codes.values
+    game_codes = game_cat.cat.codes.values
+    scores = df['normalized_score'].values  # 정규화된 점수 사용
     
-    # 희소 행렬 생성 (행: 게임, 열: 유저, 값: 점수)
+    # 희소 행렬 생성 (행: 게임, 열: 유저, 값: 정규화된 점수)
     sparse_matrix = csr_matrix(
-        (df['score'], (game_codes, user_codes)),
+        (scores, (game_codes, user_codes)),
         shape=(len(game_cat.cat.categories), len(user_cat.cat.categories))
     )
+    
+    logger.info(f"Created sparse matrix: {sparse_matrix.shape[0]} games x {sparse_matrix.shape[1]} users")
     
     # 3. 게임 간 코사인 유사도 계산
     similarity_matrix = cosine_similarity(sparse_matrix)
     
-    # 4. 유사도 저장 준비 (상위 50개만 저장하여 DB 절약)
+    # 4. 정규화 및 랭크 계산 (game_a_id < game_b_id)
     game_ids = game_cat.cat.categories.tolist()
+    pair_data = {}  # (game_a_id, game_b_id) -> {'score': float, 'rank': int}
     
-    similarities_to_create = []
-    for i, game_a_id in enumerate(game_ids):
-        # 유사도가 높은 상위 50개 게임 찾기
+    for i, game_x_id in enumerate(game_ids):
         sim_scores = similarity_matrix[i]
-        top_indices = np.argsort(sim_scores)[::-1][1:51]  # 자기 자신 제외
+        sorted_indices = np.argsort(sim_scores)[::-1]
         
-        for j in top_indices:
-            if sim_scores[j] > 0.1:  # 유사도 0.1 이상만 저장
-                game_b_id = game_ids[j]
-                similarities_to_create.append(GameSimilarity(
-                    game_a_id=game_a_id,
-                    game_b_id=game_b_id,
-                    similarity_score=float(sim_scores[j])
-                ))
+        rank = 0
+        for j in sorted_indices:
+            if i == j:
+                continue
+            
+            score = sim_scores[j]
+            if score < min_similarity:
+                break
+            
+            rank += 1
+            if rank > top_k:
+                break
+            
+            game_y_id = game_ids[j]
+            
+            # 정규화: 항상 작은 ID를 game_a로
+            game_a_id = min(game_x_id, game_y_id)
+            game_b_id = max(game_x_id, game_y_id)
+            pair_key = (game_a_id, game_b_id)
+            
+            if pair_key not in pair_data:
+                pair_data[pair_key] = {'score': score, 'rank': rank}
+            else:
+                pair_data[pair_key]['rank'] = min(pair_data[pair_key]['rank'], rank)
     
-    # 5. 트랜잭션으로 안전하게 저장 (삭제 + 생성이 원자적으로 처리)
+    # 5. 트랜잭션으로 안전하게 저장
     try:
         with transaction.atomic():
             # 기존 데이터 삭제
-            GameSimilarity.objects.all().delete()
-            # 새 데이터 벌크 생성
+            deleted_count, _ = GameSimilarity.objects.all().delete()
+            
+            # GameSimilarity 객체 생성 및 벌크 저장
+            similarities_to_create = [
+                GameSimilarity(
+                    game_a_id=pair[0],
+                    game_b_id=pair[1],
+                    similarity_score=data['score'],
+                    similarity_rank=data['rank']
+                ) for pair, data in pair_data.items()
+            ]
             GameSimilarity.objects.bulk_create(similarities_to_create, batch_size=1000)
         
-        logger.info(f"Created {len(similarities_to_create)} similarity records")
+        logger.info(f"Created {len(similarities_to_create)} similarity records (deleted {deleted_count} old)")
+        return {
+            'success': True, 
+            'created': len(similarities_to_create),
+            'deleted': deleted_count,
+            'normalized': True
+        }
     except Exception as e:
         logger.error(f"Batch calculation failed: {e}")
-        # 트랜잭션 덕분에 에러 시 delete()도 롤백되어 기존 데이터 유지
+        return {'success': False, 'message': str(e)}
 
 
 
@@ -307,20 +368,77 @@ def get_recommendations_for_user(user, limit=50):
             'message': '아직 좋아하는 게임이 없네요. 마음에 드는 게임에 👍를 눌러주세요!'
         }
     
-    # 3. Item-Based CF 시도 (DB 기반)
+    # 3. Item-Based CF 시도 (DB 기반) - 정규화된 스키마 사용
+    # ※ 새 스키마: game_a_id < game_b_id 로 정규화되어 저장됨
     try:
-        similar_games = GameSimilarity.objects.filter(
-            game_a_id__in=liked_games
+        # 유저가 좋아한 게임의 평점을 가중치로 사용
+        liked_ratings = {r.game_id: r.score for r in user_ratings.filter(score__gte=3.5)}
+        liked_game_ids = list(liked_ratings.keys())
+        
+        # 각 후보 게임에 대해 가중 점수 계산
+        # weighted_score = Σ(similarity * normalized_rating) / Σ(normalized_rating)
+        from collections import defaultdict
+        candidate_scores = defaultdict(lambda: {'weighted_sum': 0, 'weight_sum': 0})
+        
+        # 평점 정규화 함수 (비선형 → 선형)
+        def normalize_rating(score):
+            """3.5 → 0.7, 5 → 1.0"""
+            return {3.5: 0.7, 5: 1.0}.get(score, score / 5.0)
+        
+        # 정규화된 스키마에서는 양방향 쿼리 필요:
+        # 1) liked_game이 game_a에 있는 경우 → game_b가 추천 후보
+        # 2) liked_game이 game_b에 있는 경우 → game_a가 추천 후보
+        
+        # 쿼리 1: liked_game이 game_a 위치
+        similarities_a = GameSimilarity.objects.filter(
+            game_a_id__in=liked_game_ids,
+            similarity_rank__lte=30  # Top-K 최적화
         ).exclude(
             game_b_id__in=rated_game_ids
-        ).values('game_b_id').annotate(
-            total_score=Avg('similarity_score')
-        ).order_by('-total_score')[:limit]
+        ).values('game_a_id', 'game_b_id', 'similarity_score')
         
-        if similar_games.exists():
-            game_ids = [g['game_b_id'] for g in similar_games]
-            games = Game.objects.filter(id__in=game_ids)
-            db_recommendations = format_db_games(games, 85)
+        for sim in similarities_a:
+            liked_game_id = sim['game_a_id']
+            candidate_game_id = sim['game_b_id']
+            similarity = sim['similarity_score']
+            user_rating = normalize_rating(liked_ratings.get(liked_game_id, 3.5))
+            
+            candidate_scores[candidate_game_id]['weighted_sum'] += similarity * user_rating
+            candidate_scores[candidate_game_id]['weight_sum'] += user_rating
+        
+        # 쿼리 2: liked_game이 game_b 위치
+        similarities_b = GameSimilarity.objects.filter(
+            game_b_id__in=liked_game_ids,
+            similarity_rank__lte=30
+        ).exclude(
+            game_a_id__in=rated_game_ids
+        ).values('game_a_id', 'game_b_id', 'similarity_score')
+        
+        for sim in similarities_b:
+            liked_game_id = sim['game_b_id']
+            candidate_game_id = sim['game_a_id']
+            similarity = sim['similarity_score']
+            user_rating = normalize_rating(liked_ratings.get(liked_game_id, 3.5))
+            
+            candidate_scores[candidate_game_id]['weighted_sum'] += similarity * user_rating
+            candidate_scores[candidate_game_id]['weight_sum'] += user_rating
+        
+        # 가중 평균 계산 및 정렬
+        scored_games = []
+        for game_id, scores in candidate_scores.items():
+            if scores['weight_sum'] > 0:
+                weighted_avg = scores['weighted_sum'] / scores['weight_sum']
+                scored_games.append((game_id, weighted_avg))
+        
+        scored_games.sort(key=lambda x: x[1], reverse=True)
+        top_game_ids = [g[0] for g in scored_games[:limit]]
+        
+        if top_game_ids:
+            games = Game.objects.filter(id__in=top_game_ids)
+            # 정렬 순서 유지
+            game_dict = {g.id: g for g in games}
+            ordered_games = [game_dict[gid] for gid in top_game_ids if gid in game_dict]
+            db_recommendations = format_db_games(ordered_games, 85)
             
             if len(db_recommendations) >= limit // 2:
                 return {

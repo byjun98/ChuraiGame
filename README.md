@@ -150,6 +150,10 @@ python manage.py update_genres --limit=100  # 테스트용 100개만 우선 실�
 
 # 3. 메인 페이지용 캐시 생성 (속도 향상 핵심)
 python manage.py refresh_game_cache
+
+# 4. 게임 유사도 계산 (Item-Based CF 추천용, 평가 데이터 필요)
+python manage.py calculate_game_similarity
+# 옵션: --min-ratings 5 (최소 5개 평가받은 게임만), --top-k 30 (상위 30개 유사 게임 저장)
 ```
 
 ### 3. 서버 실행

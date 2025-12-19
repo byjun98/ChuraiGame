@@ -16,8 +16,13 @@ class User(AbstractUser):
     is_naver_linked = models.BooleanField(default=False)
     is_google_linked = models.BooleanField(default=False)
     
-    # 추천 시스템을 위한 유사 유저 목록 (Many-to-Many)
-    similar_users = models.ManyToManyField('self', blank=True)
+    # 추천 시스템을 위한 유사 유저 목록 (Many-to-Many with through model)
+    # ※ 참고: 대규모 추천에서는 유저 간 유사도 계산이 O(N²)로 비효율적이므로
+    #   메인 추천은 GameSimilarity(게임 간 유사도) 테이블을 사용합니다.
+    #   이 필드는 SNS 팔로우 추천, 비슷한 취향의 유저 보여주기 등 보조 용도입니다.
+    # 
+    # UserSimilarity through 모델을 사용하여 similarity_score, calculated_at 저장
+    # 직접 접근: user.similar_to_users.all() 또는 UserSimilarity.objects.filter(from_user=user)
 
     # 찜한 게임 목록
     wishlist = models.ManyToManyField('games.Game', related_name='wishlisted_by', blank=True)
@@ -167,10 +172,40 @@ class GameSimilarity(models.Model):
     
     - 매일 배치 작업으로 계산
     - Item-Based Collaborative Filtering에 사용
+    
+    ⚠️ 중요 규칙 (저장 공간 최적화):
+    - game_a_id < game_b_id 로 정규화하여 저장
+    - (A, B, 0.8)과 (B, A, 0.8) 중복 방지
+    - 저장 공간 50% 절약
+    
+    사용 예시:
+        # 특정 게임과 유사한 Top 20 게임 조회
+        GameSimilarity.objects.filter(
+            Q(game_a_id=game_id) | Q(game_b_id=game_id),
+            similarity_rank__lte=20
+        )
     """
-    game_a = models.ForeignKey('games.Game', on_delete=models.CASCADE, related_name='similarity_from')
-    game_b = models.ForeignKey('games.Game', on_delete=models.CASCADE, related_name='similarity_to')
+    game_a = models.ForeignKey(
+        'games.Game', 
+        on_delete=models.CASCADE, 
+        related_name='similarity_from',
+        help_text='항상 game_b보다 작은 ID'
+    )
+    game_b = models.ForeignKey(
+        'games.Game', 
+        on_delete=models.CASCADE, 
+        related_name='similarity_to',
+        help_text='항상 game_a보다 큰 ID'
+    )
     similarity_score = models.FloatField("유사도 점수")  # 0 ~ 1
+    
+    # Top-K 쿼리 최적화용 랭크 (배치 계산 시 설정)
+    similarity_rank = models.PositiveIntegerField(
+        "유사도 순위", 
+        default=0,
+        help_text='해당 게임 기준 유사도 순위 (1이 가장 유사)',
+        db_index=True
+    )
     
     # 배치 관리
     calculated_at = models.DateTimeField(auto_now=True)
@@ -180,9 +215,87 @@ class GameSimilarity(models.Model):
         verbose_name_plural = "게임 유사도"
         unique_together = ['game_a', 'game_b']
         indexes = [
-            models.Index(fields=['game_a', 'similarity_score']),
-            models.Index(fields=['game_b', 'similarity_score']),
+            models.Index(fields=['game_a', 'similarity_rank']),
+            models.Index(fields=['game_b', 'similarity_rank']),
+            models.Index(fields=['game_a', '-similarity_score']),
+            models.Index(fields=['game_b', '-similarity_score']),
+        ]
+        # game_a_id < game_b_id 제약은 배치 작업에서 보장
+    
+    def __str__(self):
+        return f"{self.game_a.title} ↔ {self.game_b.title}: {self.similarity_score:.2f} (rank: {self.similarity_rank})"
+    
+    @staticmethod
+    def normalize_game_ids(game_x_id, game_y_id):
+        """
+        두 게임 ID를 정규화하여 (min, max) 순서로 반환
+        
+        항상 game_a_id < game_b_id 규칙 적용
+        """
+        return (min(game_x_id, game_y_id), max(game_x_id, game_y_id))
+    
+    @classmethod
+    def get_similar_games(cls, game_id, limit=20):
+        """
+        특정 게임과 유사한 게임 목록 조회 (최적화된 쿼리)
+        
+        Args:
+            game_id: 기준 게임 ID
+            limit: 반환할 유사 게임 수
+            
+        Returns:
+            list: [(game_id, similarity_score), ...]
+        """
+        from django.db.models import Q, F, Case, When, Value
+        
+        results = cls.objects.filter(
+            Q(game_a_id=game_id) | Q(game_b_id=game_id),
+            similarity_rank__lte=limit
+        ).values_list('game_a_id', 'game_b_id', 'similarity_score')
+        
+        similar = []
+        for game_a_id, game_b_id, score in results:
+            # 자신이 아닌 쪽의 게임 ID 반환
+            other_id = game_b_id if game_a_id == game_id else game_a_id
+            similar.append((other_id, score))
+        
+        return sorted(similar, key=lambda x: x[1], reverse=True)[:limit]
+
+
+class UserSimilarity(models.Model):
+    """
+    유저 간 유사도 (SNS/팔로우 추천용)
+    
+    ⚠️ 주의: 이 테이블은 게임 추천의 핵심이 아닙니다!
+    - 게임 추천: GameSimilarity 사용
+    - 유저 추천: UserSimilarity 사용 (SNS, 프로필 추천 등)
+    
+    사용처:
+    - "취향이 비슷한 유저"
+    - SNS형 팔로우 추천
+    - 커뮤니티 노출
+    """
+    from_user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='similar_to_users'
+    )
+    to_user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='similar_from_users'
+    )
+    similarity_score = models.FloatField("유사도 점수", default=0)  # 0 ~ 1
+    calculated_at = models.DateTimeField("계산 시점", auto_now=True)
+    
+    class Meta:
+        verbose_name = "유저 유사도"
+        verbose_name_plural = "유저 유사도"
+        unique_together = ['from_user', 'to_user']
+        indexes = [
+            models.Index(fields=['from_user', '-similarity_score']),
         ]
     
     def __str__(self):
-        return f"{self.game_a.title} <-> {self.game_b.title}: {self.similarity_score:.2f}"
+        return f"{self.from_user.username} → {self.to_user.username}: {self.similarity_score:.2f}"
+

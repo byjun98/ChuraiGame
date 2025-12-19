@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Game, Rating, GameScreenshot, GameTrailer
+from .models import Game, Rating, GameScreenshot, GameTrailer, Tag
 
 class GameScreenshotInline(admin.TabularInline):
     model = GameScreenshot
@@ -9,13 +9,27 @@ class GameTrailerInline(admin.TabularInline):
     model = GameTrailer
     extra = 0
 
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'tag_type', 'weight']
+    list_filter = ['tag_type']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+
+
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ['title', 'genre', 'steam_appid', 'rawg_id', 'metacritic_score']
-    list_filter = ['genre']
+    list_display = ['title', 'genre', 'steam_appid', 'rawg_id', 'metacritic_score', 'tag_list']
+    list_filter = ['genre', 'tags']
     search_fields = ['title', 'steam_appid']
+    filter_horizontal = ['tags']  # 태그 선택 UI 개선
     inlines = [GameScreenshotInline, GameTrailerInline]
     readonly_fields = ['steam_appid']
+    
+    def tag_list(self, obj):
+        return ", ".join([t.name for t in obj.tags.all()[:5]])
+    tag_list.short_description = "태그"
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
