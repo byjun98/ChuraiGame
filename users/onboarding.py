@@ -123,7 +123,7 @@ def get_onboarding_games(step=0, exclude_rated=None):
     }
 
 
-def calculate_game_similarity_batch(min_ratings=3, top_k=50, min_similarity=0.1):
+def calculate_game_similarity_batch(min_ratings=1, top_k=50, min_similarity=0.1):
     """
     배치 작업: 게임 간 유사도 계산
     
