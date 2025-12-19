@@ -445,20 +445,25 @@ def personalized_recommendations_api(request):
         'rating_count': rating_count
     })
 
-
 # =============================================================================
-# AI Game Recommendation Chatbot (GPT-5 Nano)
+# AI Game Recommendation Chatbot (Gemini 2.5 Flash Lite)
 # =============================================================================
 
+import json
 import requests
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from .steam_auth import get_steam_owned_games, get_steam_recently_played
 
 @login_required
 @require_http_methods(["POST"])
 def ai_chat_api(request):
     """
     AI Game Recommendation Chatbot API
-    Uses GPT-5 Nano via GMS API for personalized game recommendations
+    Uses Google Gemini 2.5 Flash Lite via SSAFY GMS API
+    Native Google Generative Language API format
     """
     import os
     from dotenv import load_dotenv
@@ -484,145 +489,82 @@ def ai_chat_api(request):
                 'success': False
             }, status=400)
         
-        # Get user's Steam library info for context
+        # =================================================================
+        # [컨텍스트 수집] 사용자 데이터 (Steam, 온보딩 평가)
+        # =================================================================
         user = request.user
         steam_context = ""
         onboarding_context = ""
         is_steam_linked = user.is_steam_linked and user.steam_id
         user_nickname = user.nickname or user.username or "게이머"
         
-        # Games to exclude from recommendations (user's library + rated games)
+        # 제외할 게임 목록 (보유중 + 평가함)
         owned_games_list = []
         rated_games_list = []
-        low_playtime_games = []  # Games with < 2 hours playtime
+        low_playtime_games = []
         
-        # ========================================
-        # 1. 온보딩 평가 데이터 수집 (모든 사용자 공통)
-        # ========================================
+        # 1. 온보딩 및 평가 데이터
         from .models import GameRating
-        
-        user_ratings = GameRating.objects.filter(
-            user=user
-        ).select_related('game').order_by('-score', '-created_at')
+        user_ratings = GameRating.objects.filter(user=user).select_related('game').order_by('-score', '-created_at')
         
         if user_ratings.exists():
-            # 좋아하는 게임 (점수 3.5 이상)
             liked_games = []
-            # 싫어하는 게임 (점수 0 이하)
             disliked_games = []
-            # 모든 평가한 게임 (추천 제외용)
             all_rated = []
+            genre_counts = {}
             
             for rating in user_ratings:
                 game = rating.game
-                game_name = game.title
-                genre = game.genre if game.genre and game.genre != 'Unknown' else ''
-                score = rating.score
+                all_rated.append(game.title)
                 
-                all_rated.append(game_name)
-                
-                if score >= 3.5:
-                    if genre:
-                        liked_games.append(f"- {game_name} ({genre}) - ⭐{score}")
-                    else:
-                        liked_games.append(f"- {game_name} - ⭐{score}")
-                elif score <= 0:
-                    disliked_games.append(f"- {game_name}")
+                # 선호도 분류
+                if rating.score >= 3.5:
+                    liked_games.append(f"- {game.title} (⭐{rating.score})")
+                    # 장르 집계
+                    if game.genre and game.genre != 'Unknown':
+                        for g in game.genre.split(','):
+                            genre_counts[g.strip()] = genre_counts.get(g.strip(), 0) + 1
+                elif rating.score <= 0:
+                    disliked_games.append(f"- {game.title}")
             
             rated_games_list = all_rated
-            
-            # 장르 분석
-            genre_counts = {}
-            for rating in user_ratings.filter(score__gte=3.5):
-                if rating.game.genre and rating.game.genre != 'Unknown':
-                    for genre in rating.game.genre.split(', '):
-                        genre = genre.strip()
-                        if genre:
-                            genre_counts[genre] = genre_counts.get(genre, 0) + 1
-            
-            # 가장 선호하는 장르 추출
-            top_genres = sorted(genre_counts.items(), key=lambda x: x[1], reverse=True)[:3]
-            favorite_genres = [g[0] for g in top_genres] if top_genres else []
+            top_genres = [k for k, v in sorted(genre_counts.items(), key=lambda item: item[1], reverse=True)[:3]]
             
             onboarding_context = f"""
+[평가 데이터]
+- 선호 장르: {', '.join(top_genres)}
+- 좋아한 게임: {', '.join(liked_games[:7])}
+- 싫어한 게임: {', '.join(disliked_games[:5])}
+"""
 
-[유저 게임 평가 데이터 - {user_nickname}님의 취향 분석]
-📊 총 평가한 게임: {user_ratings.count()}개
-
-❤️ 좋아하는 게임 (높은 평점):
-{chr(10).join(liked_games[:10]) if liked_games else '- 아직 없음'}
-
-🎯 선호 장르: {', '.join(favorite_genres) if favorite_genres else '분석 중...'}
-
-👎 싫어하는/안 맞는 게임:
-{chr(10).join(disliked_games[:5]) if disliked_games else '- 없음'}
-
-⚠️ 이미 평가한 게임 (추천에서 제외):
-{', '.join(all_rated[:15])}{'...(총 ' + str(len(all_rated)) + '개)' if len(all_rated) > 15 else ''}"""
-            
-            print(f"[DEBUG] Onboarding context added: {user_ratings.count()} rated games, favorite genres: {favorite_genres}")
-        
-        # ========================================
-        # 2. Steam 라이브러리 데이터 수집 (연동된 경우)
-        # ========================================
+        # 2. Steam 라이브러리 데이터
         if is_steam_linked:
             try:
                 steam_library = get_steam_owned_games(user.steam_id)
                 if steam_library:
-                    # Get top played games with playtime
+                    # 플레이 시간순 정렬
                     sorted_games = sorted(steam_library, key=lambda x: x.get('playtime_forever', 0), reverse=True)
+                    owned_games_list = [g.get('name') for g in steam_library if g.get('name')]
                     
-                    # All owned game names for exclusion
-                    owned_games_list = [g.get('name', '') for g in steam_library if g.get('name')]
+                    # 상위 플레이 게임
+                    top_played = [f"{g['name']}({round(g['playtime_forever']/60, 1)}시간)" for g in sorted_games[:5]]
                     
-                    # Format top played games with playtime info
-                    game_list = []
-                    for g in sorted_games[:7]:
-                        name = g.get('name', '')
-                        playtime_hours = round(g.get('playtime_forever', 0) / 60, 1)
-                        if name and playtime_hours > 0:
-                            game_list.append(f"- {name} ({playtime_hours}시간)")
-                    
-                    # Find games with low playtime (< 2 hours) - potential recommendations
-                    for g in steam_library:
-                        name = g.get('name', '')
-                        playtime_hours = round(g.get('playtime_forever', 0) / 60, 1)
-                        if name and 0 < playtime_hours < 2:
-                            low_playtime_games.append(f"{name} ({playtime_hours}시간)")
-                    
-                    # Get recently played games
-                    recently_played = get_steam_recently_played(user.steam_id, count=5)
-                    recent_list = [g.get('name', '') for g in recently_played if g.get('name')] if recently_played else []
-                    
-                    # Calculate total stats
-                    total_games = len(steam_library)
-                    total_hours = round(sum(g.get('playtime_forever', 0) for g in steam_library) / 60, 1)
+                    # 찍먹 게임 (2시간 미만)
+                    low_playtime = [g['name'] for g in steam_library if 0 < g.get('playtime_forever', 0) < 120]
+                    low_playtime_games = low_playtime
                     
                     steam_context = f"""
-
-[유저 Steam 라이브러리 분석 - {user_nickname}님의 플레이 기록]
-📊 총 보유 게임: {total_games}개 | 총 플레이 시간: {total_hours}시간
-
-🎮 가장 많이 플레이한 게임 (취향 분석용):
-{chr(10).join(game_list) if game_list else '- 정보 없음'}
-
-🕹️ 최근 플레이한 게임: {', '.join(recent_list[:5]) if recent_list else '정보 없음'}
-
-⏳ 플레이 시간이 짧은 보유 게임 (숨겨진 명작일 수 있음):
-{', '.join(low_playtime_games[:5]) if low_playtime_games else '없음'}
-
-⚠️ 보유 중인 게임 (추천에서 제외, 일부만 표시):
-{', '.join(owned_games_list[:20])}{'...(총 ' + str(len(owned_games_list)) + '개)' if len(owned_games_list) > 20 else ''}"""
-                    
-                    print(f"[DEBUG] Steam context added: {len(steam_library)} games, {total_hours} hours, {len(low_playtime_games)} low-playtime games")
+[Steam 라이브러리]
+- 최다 플레이: {', '.join(top_played)}
+- 보유 게임 수: {len(steam_library)}개
+"""
             except Exception as e:
-                print(f"Steam library fetch error: {e}")
-        
-        # 전체 제외 게임 목록 합치기 (중복 제거)
-        all_excluded_games = list(set(owned_games_list + rated_games_list))
-        
-        # Build the system prompt (developer role in GPT-5)
-        system_prompt = f"""당신은 '게임 큐레이터 AI'입니다. 게임 추천 전문가로서 다음 역할을 수행합니다:
+                print(f"Steam fetch error: {e}")
+
+        # =================================================================
+        # [프롬프트 구성] 시스템 프롬프트 작성
+        # =================================================================
+        system_prompt_text = f"""당신은 '게임 큐레이터 AI'입니다. 게임 추천 전문가로서 다음 역할을 수행합니다:
 
 🎮 **전문 분야**
 - 모든 플랫폼(PC, 콘솔, 모바일)의 게임에 대한 깊은 지식
@@ -656,97 +598,106 @@ def ai_chat_api(request):
 
 사용자가 게임 외의 질문을 하면, 친절하게 게임 추천 관련 질문으로 유도해주세요."""
 
-        # Build messages for API
-        messages = [
-            {
-                "role": "developer",
-                "content": system_prompt
-            }
-        ]
+        # =================================================================
+        # [데이터 포맷팅] Gemini Native 형식으로 변환
+        # =================================================================
         
-        # Add chat history (limit to last 10 messages)
+        # 1. 채팅 히스토리 변환 (role: assistant -> model)
+        gemini_contents = []
         for msg in chat_history[-10:]:
-            messages.append({
-                "role": msg.get('role', 'user'),
-                "content": msg.get('content', '')
+            role = "model" if msg.get('role') == 'assistant' else "user"
+            gemini_contents.append({
+                "role": role,
+                "parts": [{"text": msg.get('content', '')}]
             })
         
-        # Add current user message
-        messages.append({
-            "role": "user", 
-            "content": user_message
+        # 2. 현재 사용자 메시지 추가
+        gemini_contents.append({
+            "role": "user",
+            "parts": [{"text": user_message}]
         })
+
+        # 3. Payload 구성
+        payload = {
+            "systemInstruction": {
+                "parts": [{"text": system_prompt_text}]
+            },
+            "contents": gemini_contents,
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 2048,  # 채팅용으로 충분한 길이
+                "topP": 0.8,
+                "topK": 40
+            }
+        }
+
+        # =================================================================
+        # [API 요청] Gemini API 호출 (Native EndPoint)
+        # =================================================================
+        # 주의: gms.ssafy.io 경로 사용, 모델명 gemini-2.5-flash-lite 적용
+        url = "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
         
-        # Call GPT-5 Nano API
+        # 인증은 쿼리 파라미터로 전달
+        params = {
+            'key': api_key
+        }
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
         response = requests.post(
-            "https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-            },
-            json={
-                "model": "gpt-5-nano",
-                "messages": messages,
-                "max_completion_tokens": 16000
-            },
-            timeout=120  # 2분 타임아웃 (reasoning model은 시간이 더 필요)
+            url,
+            params=params,
+            headers=headers,
+            json=payload,
+            timeout=30  # Flash 모델은 빠르므로 30초면 충분
         )
         
-        print(f"[DEBUG] GPT Response Status: {response.status_code}")
-        print(f"[DEBUG] GPT Response Body: {response.text[:500]}")
-        
+        # =================================================================
+        # [응답 처리] Gemini 응답 파싱
+        # =================================================================
         if response.status_code == 200:
             result = response.json()
-            print(f"[DEBUG] Parsed Result: {result}")
             
-            # Handle different response structures
-            choices = result.get('choices', [])
-            if choices and len(choices) > 0:
-                message_obj = choices[0].get('message', {})
-                ai_message = message_obj.get('content', '')
-            else:
-                ai_message = ''
-            
-            print(f"[DEBUG] AI Message: {ai_message[:200] if ai_message else 'EMPTY'}")
-            
-            if ai_message:
+            # Gemini 응답 구조: candidates[0].content.parts[0].text
+            try:
+                candidates = result.get('candidates', [])
+                if candidates and candidates[0].get('content'):
+                    ai_text = candidates[0]['content']['parts'][0]['text']
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'message': ai_text,
+                        'role': 'assistant'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'AI가 응답을 생성하지 못했습니다 (Blocked or Empty).'
+                    }, status=500)
+                    
+            except (KeyError, IndexError) as e:
+                print(f"Parsing Error: {e}")
                 return JsonResponse({
-                    'success': True,
-                    'message': ai_message,
-                    'role': 'assistant'
-                })
-            else:
-                return JsonResponse({
-                    'error': 'AI 응답을 받지 못했습니다.',
                     'success': False,
-                    'debug': str(result)[:500]
+                    'error': '응답 파싱 중 오류가 발생했습니다.'
                 }, status=500)
+                
         else:
-            print(f"GPT API Error: {response.status_code} - {response.text}")
+            print(f"Gemini API Error: {response.status_code} - {response.text}")
             return JsonResponse({
-                'error': f'AI 서버 오류가 발생했습니다. (Status: {response.status_code})',
-                'success': False
+                'success': False,
+                'error': f'AI 서버 오류: {response.status_code}',
+                'debug': response.text[:200]
             }, status=response.status_code)
-            
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error: {e}")
-        return JsonResponse({
-            'error': '잘못된 요청 형식입니다.',
-            'success': False
-        }, status=400)
-    except requests.Timeout:
-        return JsonResponse({
-            'error': 'AI 서버 응답 시간이 초과되었습니다. 다시 시도해주세요.',
-            'success': False
-        }, status=504)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': '잘못된 JSON 형식입니다.'}, status=400)
     except Exception as e:
         import traceback
-        print(f"AI Chat Error: {e}")
         print(traceback.format_exc())
-        return JsonResponse({
-            'error': f'서버 오류가 발생했습니다: {str(e)}',
-            'success': False
-        }, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
