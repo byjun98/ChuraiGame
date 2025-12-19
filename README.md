@@ -3,7 +3,6 @@
 > **"당신의 취향, AI가 찾아드립니다."**
 > 
 > **Steam 연동 기반 하이브리드 게임 추천 & AI 큐레이팅 플랫폼**  
-> *SSAFY 1학기 관통 프로젝트 - 최우수 기술 스택*
 
 <div align="center">
 
@@ -185,7 +184,7 @@ ChuraiGame/
 
 <div align="center">
 
-**Created by SSAFY 13기 1학기 관통 프로젝트 팀**
+**Created by SSAFY 14기 1학기 관통 프로젝트 팀**
 <br>
 사용된 모든 게임 이미지의 저작권은 각 개발사/배급사에 있습니다.
 
