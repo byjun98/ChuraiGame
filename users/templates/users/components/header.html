@@ -8,25 +8,25 @@
 
             <!-- Desktop Nav -->
             <nav class="hidden md:flex gap-6">
-                <button @click="currentTab = 'home'"
-                    :class="currentTab === 'home' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">요즘
+                <button @click="currentStep = 'main'; currentTab = 'home'"
+                    :class="currentTab === 'home' && currentStep === 'main' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">요즘
                     뜨는 게임</button>
-                <button @click="currentTab = 'recommend'"
-                    :class="currentTab === 'recommend' ? 'text-purple-600 font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">🎯
+                <button @click="currentStep = 'main'; currentTab = 'recommend'"
+                    :class="currentTab === 'recommend' && currentStep === 'main' ? 'text-purple-600 font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">🎯
                     추천</button>
-                <button @click="currentTab = 'ai'"
-                    :class="currentTab === 'ai' ? 'text-cyan-600 font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">🤖
+                <button @click="currentStep = 'main'; currentTab = 'ai'"
+                    :class="currentTab === 'ai' && currentStep === 'main' ? 'text-cyan-600 font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">🤖
                     AI 추천</button>
-                <button @click="currentTab = 'sale'"
-                    :class="currentTab === 'sale' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">세일</button>
-                <button @click="currentTab = 'community'"
-                    :class="currentTab === 'community' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">유저
+                <button @click="currentStep = 'main'; currentTab = 'sale'"
+                    :class="currentTab === 'sale' && currentStep === 'main' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">세일</button>
+                <button @click="currentStep = 'main'; currentTab = 'community'"
+                    :class="currentTab === 'community' && currentStep === 'main' ? 'text-[#191F28] font-bold' : 'text-[#8B95A1] hover:text-[#4E5968]'">유저
                     커뮤니티</button>
             </nav>
         </div>
 
         <!-- User Profile Widget -->
-        <div v-if="user" @click="currentStep = 'profile'"
+        <div v-if="user" @click="goToProfile"
             class="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity">
             <div class="text-right hidden sm:block leading-tight">
                 <p class="text-sm font-semibold">{{ user.nickname }}</p>

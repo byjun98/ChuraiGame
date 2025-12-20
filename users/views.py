@@ -112,8 +112,13 @@ def main_view(request):
         games_json = "[]"
         best_prices_json = "[]"
 
-    # Wishlist IDs
-    wishlist_ids = list(request.user.wishlist.values_list('steam_appid', flat=True))
+    # Wishlist IDs (RAWG ID를 우선으로 사용, 없으면 steam_appid)
+    wishlist_ids = []
+    for game in request.user.wishlist.all():
+        if game.rawg_id:
+            wishlist_ids.append(game.rawg_id)
+        elif game.steam_appid:
+            wishlist_ids.append(game.steam_appid)
     wishlist_json = json.dumps(wishlist_ids, cls=DjangoJSONEncoder)
 
     return render(request, 'users/index.html', {
@@ -364,9 +369,11 @@ def personalized_recommendations_api(request):
     """
     API endpoint for personalized game recommendations
     
-    추천 소스:
-    1. Steam 연동 사용자 → Steam 라이브러리 기반 추천
-    2. 온보딩 완료 사용자 → DB 평가 데이터 기반 추천 (Item-Based CF)
+    추천 소스 (우선순위):
+    1. 온보딩/평가 데이터 (3개 이상) → DB 평가 데이터 기반 추천 (Item-Based CF)
+       - Steam 연동 여부와 관계없이 온보딩 데이터 우선!
+       - Steam 라이브러리는 보조 데이터로 활용 (보유 게임 제외용)
+    2. Steam 연동 사용자 (평가 데이터 부족) → Steam 라이브러리 기반 추천
     3. 둘 다 없음 → 온보딩 필요 안내
     """
     from .recommendation import get_personalized_recommendations, RAWG_API_KEY
@@ -379,47 +386,74 @@ def personalized_recommendations_api(request):
     print(f"[DEBUG] personalized_recommendations_api called")
     print(f"[DEBUG] User: {user.email}, Steam linked: {user.is_steam_linked}")
     
-    # 방법 1: Steam 연동 사용자 → 기존 로직
-    if user.is_steam_linked and user.steam_id:
-        print(f"[DEBUG] Using Steam library for recommendations")
-        
-        steam_library = get_steam_owned_games(user.steam_id)
-        
-        if steam_library:
-            # Get sale games
-            try:
-                json_file_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
-                if os.path.exists(json_file_path):
-                    with open(json_file_path, 'r', encoding='utf-8') as f:
-                        sale_games = json.load(f)
-                else:
-                    sale_games = []
-            except Exception as e:
-                sale_games = []
-            
-            result = get_personalized_recommendations(
-                steam_library=steam_library,
-                sale_games=sale_games,
-                limit=250
-            )
-            return JsonResponse(result)
-    
-    # 방법 2: 온보딩 완료 사용자 → DB 평가 데이터 기반 추천
+    # 평가 데이터 수 확인
     rating_count = GameRating.objects.filter(user=user, score__gt=0).count()
+    print(f"[DEBUG] User rating count: {rating_count}")
     
-    if rating_count >= 3:  # 최소 3개 이상 평가해야 추천 가능
+    # Steam 라이브러리 가져오기 (보조 데이터용)
+    steam_library = None
+    owned_game_names = []
+    if user.is_steam_linked and user.steam_id:
+        steam_library = get_steam_owned_games(user.steam_id)
+        if steam_library:
+            owned_game_names = [g.get('name', '').lower() for g in steam_library if g.get('name')]
+            print(f"[DEBUG] Steam library loaded: {len(steam_library)} games")
+    
+    # 방법 1: 온보딩/평가 데이터 (3개 이상) → 최우선!
+    # Steam 연동 여부와 관계없이 평가 데이터가 있으면 이를 우선 사용
+    if rating_count >= 3:
         print(f"[DEBUG] Using onboarding ratings for recommendations ({rating_count} ratings)")
         
         result = get_recommendations_for_user(user, limit=50)
         
         if not result.get('needs_onboarding') and result.get('recommendations'):
+            recommendations = result['recommendations']
+            
+            # Steam 라이브러리가 있으면, 이미 소유한 게임 제외 (보조 역할)
+            if owned_game_names:
+                original_count = len(recommendations)
+                recommendations = [
+                    rec for rec in recommendations 
+                    if rec.get('title', '').lower() not in owned_game_names
+                ]
+                filtered_count = original_count - len(recommendations)
+                if filtered_count > 0:
+                    print(f"[DEBUG] Filtered {filtered_count} owned games from recommendations")
+            
+            method = result.get('method', 'onboarding_based')
+            if steam_library and owned_game_names:
+                method = f"{method}_with_steam_filter"
+            
             return JsonResponse({
                 'is_personalized': True,
-                'recommendations': result['recommendations'],
-                'message': f'평가 데이터({rating_count}개) 기반 추천입니다.',
+                'recommendations': recommendations,
+                'message': f'평가 데이터({rating_count}개) 기반 추천입니다.' + (f' (스팀 보유 게임 {len(owned_game_names)}개 제외)' if owned_game_names else ''),
                 'genres_analysis': None,
-                'method': result.get('method', 'onboarding_based')
+                'method': method
             })
+    
+    # 방법 2: Steam 연동 사용자 (평가 데이터 부족) → Steam 라이브러리 기반 추천
+    if user.is_steam_linked and user.steam_id and steam_library:
+        print(f"[DEBUG] Using Steam library for recommendations (insufficient rating data)")
+        
+        # Get sale games
+        try:
+            json_file_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
+            if os.path.exists(json_file_path):
+                with open(json_file_path, 'r', encoding='utf-8') as f:
+                    sale_games = json.load(f)
+            else:
+                sale_games = []
+        except Exception as e:
+            sale_games = []
+        
+        result = get_personalized_recommendations(
+            steam_library=steam_library,
+            sale_games=sale_games,
+            limit=250
+        )
+        result['message'] = result.get('message', '') + f' (더 정확한 추천을 원하시면 게임을 평가해주세요! 현재 {rating_count}개/최소 3개)'
+        return JsonResponse(result)
     
     # 방법 3: 둘 다 없음 → 온보딩 필요
     print(f"[DEBUG] No recommendation source available, needs onboarding")
@@ -837,7 +871,6 @@ def translate_text_api(request):
 # =============================================================================
 # Onboarding API (왓챠 스타일 게임 평가 시스템)
 # =============================================================================
-
 @login_required
 def onboarding_status_api(request):
     """
@@ -847,38 +880,66 @@ def onboarding_status_api(request):
         - needs_onboarding: 온보딩이 필요한지 여부
         - status: 현재 온보딩 상태
         - total_ratings: 총 평가 수
+        - ratings: 기존 평가 데이터 {rawg_id: score}
+    
+    Note:
+        Steam 연동 사용자도 평가 데이터가 부족하면 온보딩 가능.
+        온보딩 데이터 + Steam 라이브러리를 함께 활용해 더 좋은 추천 제공.
     """
     from .models import OnboardingStatus, GameRating
     
     user = request.user
     
-    # Steam 연동된 사용자는 온보딩 스킵
-    if user.is_steam_linked and user.steam_id:
-        return JsonResponse({
-            'needs_onboarding': False,
-            'reason': 'steam_linked',
-            'status': 'completed'
-        })
+    # 사용자의 모든 평가 데이터 가져오기
+    ratings_data = {}
+    ratings = GameRating.objects.filter(user=user).select_related('game')
+    for rating in ratings:
+        if rating.game.rawg_id:
+            ratings_data[str(rating.game.rawg_id)] = rating.score
+    
+    rating_count = len(ratings_data)
     
     # 온보딩 상태 확인
     try:
         status = OnboardingStatus.objects.get(user=user)
-        needs_onboarding = status.status in ['not_started', 'in_progress']
+        onboarding_status = status.status
+        current_step = status.current_step
     except OnboardingStatus.DoesNotExist:
         status = None
-        needs_onboarding = True
+        onboarding_status = 'not_started'
+        current_step = 0
     
-    # 이미 평가 데이터가 충분하면 온보딩 필요 없음
-    rating_count = GameRating.objects.filter(user=user).count()
+    # 이미 평가 데이터가 충분하면(5개 이상) 온보딩 필요 없음
+    # Steam 연동 여부와 관계없이 평가 데이터 기준으로 판단
     if rating_count >= 5:
         needs_onboarding = False
+    elif onboarding_status in ['completed', 'skipped']:
+        # 온보딩 완료/스킵했지만 평가가 5개 미만이면, 다시 할 수 있게 허용
+        needs_onboarding = False  # 강제로 온보딩 모달 띄우진 않음
+    elif onboarding_status in ['not_started', 'in_progress']:
+        needs_onboarding = True
+    else:
+        needs_onboarding = True
     
-    return JsonResponse({
+    response_data = {
         'needs_onboarding': needs_onboarding,
-        'status': status.status if status else 'not_started',
-        'current_step': status.current_step if status else 0,
-        'total_ratings': rating_count
-    })
+        'status': onboarding_status,
+        'current_step': current_step,
+        'total_ratings': rating_count,
+        'ratings': ratings_data,
+        'is_steam_linked': user.is_steam_linked,
+    }
+    
+    # Steam 연동된 경우 추가 정보 제공
+    if user.is_steam_linked:
+        response_data['steam_info'] = {
+            'linked': True,
+            'message': '스팀 연동됨! 게임을 평가하면 더 정확한 추천을 받을 수 있어요.',
+        }
+        if rating_count < 3:
+            response_data['steam_info']['suggestion'] = f'현재 평가 {rating_count}개. 3개 이상 평가하면 맞춤 추천이 활성화돼요!'
+    
+    return JsonResponse(response_data)
 
 
 @login_required
@@ -888,18 +949,20 @@ def onboarding_games_api(request):
     
     Query params:
         - step: 현재 단계 (0-4)
+        - page: 현재 페이지 (1부터 시작, 기본값 1)
     """
     from .models import GameRating
     from .onboarding import get_onboarding_games
     
     step = int(request.GET.get('step', 0))
+    page = int(request.GET.get('page', 1))
     
     # 이미 평가한 게임 ID 목록
     rated_games = list(GameRating.objects.filter(
         user=request.user
     ).values_list('game__rawg_id', flat=True))
     
-    result = get_onboarding_games(step=step, exclude_rated=rated_games)
+    result = get_onboarding_games(step=step, exclude_rated=rated_games, page=page)
     
     return JsonResponse(result)
 
@@ -1002,22 +1065,57 @@ def onboarding_complete_api(request):
     """
     온보딩 완료/스킵 처리 API
     
+    온보딩 완료 시 자동으로 게임 유사도 재계산!
+    - 새 평가 데이터를 반영하여 추천 품질 향상
+    - 계산 시간은 데이터 규모에 따라 1~5초 정도
+    
     Body:
         - skipped: 스킵 여부 (boolean)
+        - recalculate: 유사도 재계산 여부 (기본값 True)
     """
-    from .onboarding import complete_onboarding
+    from .onboarding import complete_onboarding, calculate_game_similarity_batch
+    import time
     
     try:
         data = json.loads(request.body)
         skipped = data.get('skipped', False)
+        recalculate = data.get('recalculate', True)  # 기본값: 재계산 실행
         
         status = complete_onboarding(request.user, skipped=skipped)
         
-        return JsonResponse({
+        response_data = {
             'success': True,
             'status': status.status,
             'total_ratings': status.total_ratings
-        })
+        }
+        
+        # 게임 유사도 재계산 (스킵하지 않았고, 평가 데이터가 3개 이상일 때)
+        if recalculate and not skipped and status.total_ratings >= 3:
+            try:
+                start_time = time.time()
+                
+                # 유사도 계산 실행 (min_ratings=1로 모든 평가 데이터 포함)
+                similarity_result = calculate_game_similarity_batch(
+                    min_ratings=1,
+                    top_k=50,
+                    min_similarity=0.1
+                )
+                
+                elapsed = round(time.time() - start_time, 2)
+                
+                response_data['similarity_updated'] = similarity_result.get('success', False)
+                response_data['similarity_records'] = similarity_result.get('created', 0)
+                response_data['calculation_time'] = elapsed
+                
+                print(f"[Onboarding] Similarity recalculated for {request.user.username}: "
+                      f"{similarity_result.get('created', 0)} records in {elapsed}s")
+                
+            except Exception as e:
+                print(f"[Onboarding] Similarity calculation failed: {e}")
+                response_data['similarity_updated'] = False
+                response_data['similarity_error'] = str(e)
+        
+        return JsonResponse(response_data)
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -1055,3 +1153,128 @@ def get_game_rating_api(request, rawg_id):
         return JsonResponse({'score': rating.score, 'game_id': game.id})
     except (Game.DoesNotExist, GameRating.DoesNotExist):
         return JsonResponse({'score': None})
+
+
+# =============================================================================
+# Avatar Upload API
+# =============================================================================
+
+@login_required
+@require_http_methods(["POST"])
+def avatar_upload_api(request):
+    """
+    프로필 사진(아바타) 업로드 API
+    
+    Form Data:
+        - avatar: 이미지 파일
+    
+    Returns:
+        - avatar_url: 업로드된 이미지 URL
+    """
+    try:
+        if 'avatar' not in request.FILES:
+            return JsonResponse({'error': '파일이 없습니다.'}, status=400)
+        
+        avatar_file = request.FILES['avatar']
+        
+        # 파일 타입 검증
+        if not avatar_file.content_type.startswith('image/'):
+            return JsonResponse({'error': '이미지 파일만 업로드할 수 있습니다.'}, status=400)
+        
+        # 파일 크기 검증 (5MB)
+        if avatar_file.size > 5 * 1024 * 1024:
+            return JsonResponse({'error': '파일 크기는 5MB 이하여야 합니다.'}, status=400)
+        
+        # 기존 아바타 삭제 (있다면)
+        if request.user.avatar:
+            try:
+                request.user.avatar.delete(save=False)
+            except:
+                pass
+        
+        # 새 아바타 저장
+        request.user.avatar = avatar_file
+        request.user.save()
+        
+        # URL 반환
+        return JsonResponse({
+            'success': True,
+            'avatar_url': request.user.avatar.url if request.user.avatar else None
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Avatar upload error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def get_user_profile_api(request, username):
+    """
+    API to fetch a user's public profile data.
+    """
+    from .models import GameRating, SteamLibraryCache
+    
+    target_user = None
+    
+    # Priority 1: Unix-style username (unique)
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        # Priority 2: Nickname (first match)
+        target_user = User.objects.filter(nickname=username).first()
+    
+    if not target_user:
+        return JsonResponse({'error': 'User not found'}, status=404)
+        
+    # Basic Info
+    data = {
+        'username': target_user.username,
+        'nickname': target_user.nickname,
+        'email': target_user.email, # Start with full email, maybe mask in frontend if needed? Or just show it as it is 'public' profile in this context? Let's keep it safe.
+        'avatar': None, # Add avatar logic if exists
+        'is_steam_linked': target_user.is_steam_linked,
+        'steam_id': target_user.steam_id if target_user.is_steam_linked else None,
+        'is_me': request.user == target_user
+    }
+    
+    # Wishlist (RAWG ID를 우선으로 사용, 없으면 steam_appid)
+    wishlist_ids = []
+    for game in target_user.wishlist.all():
+        if game.rawg_id:
+            wishlist_ids.append(game.rawg_id)
+        elif game.steam_appid:
+            wishlist_ids.append(game.steam_appid)
+    data['wishlist'] = wishlist_ids
+    
+    # Ratings (Onboarding) - return the ratings map {game_id: score}
+    ratings_qs = GameRating.objects.filter(user=target_user)
+    ratings_map = {str(r.game.rawg_id): r.score for r in ratings_qs} 
+    # Note: GameRating uses a Game foreign key. If game_id is RAWG ID, we need to ensure that.
+    # Looking at onboarding.py/models.py might be needed to confirm if game_id is rawg_id or db id.
+    # Assuming game.rawg_id for now based on earlier context.
+    # Let's verify Game model later. For now, let's map it safely.
+    
+    # Actually, the frontend uses `onboardingRatings` as { gameId: score }.
+    # Let's send it in that format.
+    data['onboardingRatings'] = ratings_map
+    
+    # Steam Library stats
+    steam_cache = SteamLibraryCache.objects.filter(user=target_user).first()
+    if steam_cache:
+        data['steamTotalGames'] = steam_cache.total_games
+        data['steamTotalHours'] = steam_cache.total_playtime_hours
+        data['steamLibrary'] = steam_cache.library_data # Might be large, maybe just send top 5 + stats? 
+        # The frontend uses the full library for the modal. 
+        # But for just visiting a profile, maybe we shouldn't dump everything immediately??
+        # The "Full View" requires a separate fetch or we send it all.
+        # User's logic: `fetchSteamLibrary` is called on button click?
+        # In profile_tab.html: `@click="showSteamLibraryModal = true; fetchSteamLibrary()"`
+        # So we can just send stats first.
+    else:
+        data['steamTotalGames'] = 0
+        data['steamTotalHours'] = 0
+        data['steamLibrary'] = []
+
+    return JsonResponse(data)

@@ -65,6 +65,7 @@ class Game(models.Model):
     image_url = models.URLField()
     rawg_id = models.IntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
+    description_kr = models.TextField(blank=True, help_text='한국어 설명 (AI 번역)')
     background_image = models.URLField(max_length=500, blank=True)
     metacritic_score = models.IntegerField(null=True, blank=True)
     

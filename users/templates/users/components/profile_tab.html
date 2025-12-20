@@ -1,95 +1,171 @@
 <!-- PAGE 3: Profile (My Page) -->
 <div v-else-if="currentStep === 'profile'" key="profile" class="max-w-2xl mx-auto px-4 sm:px-6 py-10 w-full">
-    <button @click="currentStep = 'main'" class="mb-6 flex items-center text-gray-500 hover:text-gray-900">
+    <button @click="currentStep = 'main'; window.location.hash = ''"
+        class="mb-6 flex items-center text-gray-500 hover:text-gray-900">
         <i class="ph-bold ph-arrow-left mr-2"></i> 뒤로가기
     </button>
 
-    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
+    <!-- Loading State -->
+    <div v-if="isLoadingProfile" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-gray-500">프로필 정보를 불러오는 중입니다...</p>
+    </div>
+
+    <div v-else class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
         <div class="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-50">
-            <div class="w-24 h-24 rounded-full bg-gray-100 relative overflow-hidden group cursor-pointer">
-                <img v-if="user.avatar" :src="user.avatar" class="w-full h-full object-cover">
-                <i v-else
-                    class="ph-fill ph-user text-4xl text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
-                <div
-                    class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white text-xs">
-                    수정</div>
+            <!-- Avatar with Edit Button -->
+            <div class="relative">
+                <div class="w-24 h-24 rounded-full bg-gray-100 relative overflow-hidden group cursor-pointer"
+                    @click="isMe && triggerAvatarUpload()">
+                    <img v-if="displayUser.avatar" :src="displayUser.avatar" class="w-full h-full object-cover">
+                    <i v-else
+                        class="ph-fill ph-user text-4xl text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+
+                    <div v-if="isMe"
+                        class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="ph-bold ph-camera text-white text-xl"></i>
+                    </div>
+                </div>
+                <!-- Hidden file input -->
+                <input v-if="isMe" type="file" ref="avatarInput" @change="handleAvatarUpload" accept="image/*"
+                    class="hidden">
             </div>
             <div class="text-center sm:text-left flex-1">
-                <h2 class="text-2xl font-bold text-gray-900">{% verbatim %}{{ user.nickname }}{% endverbatim %}</h2>
-                <p class="text-gray-500">{% verbatim %}{{ user.email }}{% endverbatim %}</p>
+                {% verbatim %}
+                <h2 class="text-2xl font-bold text-gray-900">{{ displayUser.nickname }}</h2>
+                <p class="text-gray-500">{{ displayUser.email }}</p>
+                {% endverbatim %}
                 <div class="flex gap-2 mt-3 justify-center sm:justify-start flex-wrap">
+                    {% verbatim %}
                     <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">LV.
-                        {% verbatim %}{{ Math.floor(wishlist.length * 1.5) + 1 }}{% endverbatim %}</span>
-                    {% if user.is_steam_linked %}
-                    <span
+                        {{ Math.floor(displayWishlist.length * 1.5) + 1 }}</span>
+                    {% endverbatim %}
+
+                    <span v-if="displayUser.is_steam_linked"
                         class="px-3 py-1 bg-[#171A21] text-white text-xs font-bold rounded-full flex items-center gap-1">
                         <i class="ph-fill ph-steam-logo"></i> Steam 연동
                     </span>
-                    {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-{% if user.is_steam_linked %}3{% else %}2{% endif %} divide-x divide-gray-50">
-            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-                @click="currentTab = 'wishlist'; currentStep = 'main'">
-                <p class="text-2xl font-bold text-gray-900">{% verbatim %}{{ wishlist.length }}{% endverbatim %}</p>
+        <div class="grid" :class="displayUser.is_steam_linked ? 'grid-cols-3' : 'grid-cols-2'">
+            {% verbatim %}
+            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer group border-r border-gray-50"
+                @click="showWishlistModal = true">
+                <p class="text-2xl font-bold text-gray-900">{{ displayWishlist.length }}</p>
                 <p class="text-xs text-gray-500 font-medium mt-1">찜한 게임</p>
+                <p class="text-[10px] text-blue-500 mt-1 group-hover:underline flex items-center justify-center gap-1">
+                    <span>자세히 보기</span>
+                    <i class="ph-bold ph-caret-right"></i>
+                </p>
             </div>
-            <div class="p-6 text-center hover:bg-gray-50 transition-colors">
-                <p class="text-2xl font-bold text-gray-900">0</p>
-                <p class="text-xs text-gray-500 font-medium mt-1">작성 리뷰</p>
+            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer group"
+                :class="{'border-r border-gray-50': displayUser.is_steam_linked}" @click="showReviewsModal = true">
+                <p class="text-2xl font-bold text-gray-900">{{ Object.keys(displayRatings).filter(k =>
+                    displayRatings[k] !== 0).length }}</p>
+                <p class="text-xs text-gray-500 font-medium mt-1">평가한 게임</p>
+                <p class="text-[10px] text-blue-500 mt-1 group-hover:underline flex items-center justify-center gap-1">
+                    <span>자세히 보기</span>
+                    <i class="ph-bold ph-caret-right"></i>
+                </p>
             </div>
-            {% if user.is_steam_linked %}
-            <div class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" @click="fetchSteamLibrary">
-                <p class="text-2xl font-bold text-gray-900">{% verbatim %}{{ steamTotalGames }}{% endverbatim %}</p>
+
+            <div v-if="displayUser.is_steam_linked"
+                class="p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer group"
+                @click="showSteamLibraryModal = true; if(isMe) fetchSteamLibrary()">
+                <p class="text-2xl font-bold text-gray-900">{{ displaySteamTotalGames }}</p>
                 <p class="text-xs text-gray-500 font-medium mt-1">Steam 보유</p>
+                <p class="text-[10px] text-blue-500 mt-1 group-hover:underline flex items-center justify-center gap-1">
+                    <span>전체 보기</span>
+                    <i class="ph-bold ph-caret-right"></i>
+                </p>
             </div>
-            {% endif %}
+            {% endverbatim %}
         </div>
     </div>
 
-    {% if user.is_steam_linked %}
+    <!-- 게임 취향 분석 섹션 -->
+    <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-sm p-6 mb-6 text-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <i class="ph-fill ph-game-controller"></i>
+                게임 취향 분석
+            </h3>
+            <button v-if="isMe" @click="restartOnboarding"
+                class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                <i class="ph-bold ph-arrows-clockwise"></i>
+                다시 분석하기
+            </button>
+        </div>
+        <p class="text-white/80 text-sm">
+            평가한 게임을 바탕으로 더 정확한 추천을 받아보세요!
+        </p>
+        {% verbatim %}
+        <div class="mt-4 flex items-center gap-4">
+            <div class="flex-1 bg-white/10 rounded-lg p-3">
+                <p class="text-xs opacity-70">평가 완료</p>
+                <p class="text-xl font-bold">{{ Object.keys(displayRatings).filter(k => displayRatings[k] !==
+                    0).length }}개</p>
+            </div>
+            <div class="flex-1 bg-white/10 rounded-lg p-3">
+                <p class="text-xs opacity-70">좋아요</p>
+                <p class="text-xl font-bold">{{ Object.keys(displayRatings).filter(k => displayRatings[k] > 0 &&
+                    displayRatings[k] !== 0).length }}개</p>
+            </div>
+        </div>
+        {% endverbatim %}
+    </div>
+
     <!-- Steam Library Section -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    <div v-if="displayUser.is_steam_linked" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg flex items-center gap-2">
                 <i class="ph-fill ph-steam-logo text-[#171A21]"></i>
                 Steam 라이브러리
             </h3>
-            <button @click="fetchSteamLibrary" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                :disabled="isLoadingSteamLibrary">
-                <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin': isLoadingSteamLibrary}"></i>
-                새로고침
-            </button>
+            <div class="flex items-center gap-2">
+                <button v-if="isMe" @click="fetchSteamLibrary"
+                    class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    :disabled="isLoadingSteamLibrary">
+                    <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin': isLoadingSteamLibrary}"></i>
+                    새로고침
+                </button>
+                <button @click="showSteamLibraryModal = true; if(isMe) fetchSteamLibrary()"
+                    class="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1">
+                    <i class="ph-bold ph-list"></i>
+                    전체 보기
+                </button>
+            </div>
         </div>
 
         <!-- Loading State -->
-        <div v-if="isLoadingSteamLibrary" class="flex items-center justify-center py-8">
+        <div v-if="isMe && isLoadingSteamLibrary" class="flex items-center justify-center py-8">
             <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
 
         <!-- Steam Stats -->
         {% verbatim %}
-        <div v-else-if="steamLibrary.length > 0" class="space-y-4">
+        <div v-else-if="displaySteamLibrary.length > 0 || displaySteamTotalGames > 0" class="space-y-4">
             <div class="flex items-center gap-4 p-4 bg-gradient-to-r from-[#171A21] to-[#2a3f5f] rounded-xl text-white">
                 <div class="text-center flex-1">
-                    <p class="text-2xl font-bold">{{ steamTotalGames }}</p>
+                    <p class="text-2xl font-bold">{{ displaySteamTotalGames }}</p>
                     <p class="text-xs opacity-70">보유 게임</p>
                 </div>
                 <div class="w-px h-10 bg-white/20"></div>
                 <div class="text-center flex-1">
-                    <p class="text-2xl font-bold">{{ steamTotalHours }}h</p>
+                    <p class="text-2xl font-bold">{{ typeof displaySteamTotalHours === 'number' ?
+                        Math.round(displaySteamTotalHours) : displaySteamTotalHours }}h</p>
                     <p class="text-xs opacity-70">총 플레이</p>
                 </div>
             </div>
 
             <!-- Most Played Games -->
-            <div>
+            <div v-if="displaySteamLibrary.length > 0">
                 <p class="text-sm font-bold text-gray-700 mb-3">가장 많이 플레이한 게임</p>
                 <div class="space-y-2">
-                    <div v-for="game in steamLibrary.slice(0, 5)" :key="game.appid"
+                    <div v-for="game in displaySteamLibrary.slice(0, 5)" :key="game.appid"
                         class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                         <img :src="game.img_logo_url" class="w-16 h-8 object-cover rounded" @error="handleImageError">
                         <div class="flex-1 min-w-0">
@@ -98,76 +174,235 @@
                         </div>
                     </div>
                 </div>
+                <!-- View All Button -->
+                <button v-if="displaySteamTotalGames > 5"
+                    @click="showSteamLibraryModal = true; if(isMe) fetchSteamLibrary()"
+                    class="w-full mt-3 py-2 text-center text-sm text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-1">
+                    <i class="ph-bold ph-caret-down"></i>
+                    {{ displaySteamTotalGames - 5 }}개 더 보기
+                </button>
             </div>
         </div>
         {% endverbatim %}
-
         <!-- Empty State -->
         <div v-else class="text-center py-8 text-gray-400">
             <i class="ph ph-game-controller text-4xl mb-2"></i>
-            <p>Steam 라이브러리를 가져오려면 새로고침을 클릭하세요</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Linked Accounts -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h3 class="font-bold text-lg mb-4">계정 연동</h3>
-        <div class="space-y-4">
-            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#171A21] text-white flex items-center justify-center">
-                        <i class="ph-fill ph-steam-logo text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold">Steam</p>
-                        {% if user.is_steam_linked %}
-                        <p class="text-xs text-gray-500">연동됨 ({{ user.steam_id }})</p>
-                        {% else %}
-                        <p class="text-xs text-gray-500">미연동</p>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if user.is_steam_linked %}
-                <form action="{% url 'users:steam_unlink' %}" method="POST" class="inline">
-                    {% csrf_token %}
-                    <button type="submit"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
-                        해제
-                    </button>
-                </form>
-                {% else %}
-                <a href="{% url 'users:steam_login' %}?next=/"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
-                    연동
-                </a>
-                {% endif %}
-            </div>
-            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-[#03C75A] text-white flex items-center justify-center">
-                        <span class="font-black text-xs">N</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold">Naver</p>
-                        <p class="text-xs text-gray-500">미연동</p>
-                    </div>
-                </div>
-                <button
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100">연동</button>
-            </div>
+            <p v-if="isMe">Steam 라이브러리를 가져오려면 새로고침을 클릭하세요</p>
+            <p v-else>Steam 라이브러리 정보가 없습니다.</p>
         </div>
     </div>
 
-    <!-- Account Actions -->
-    <div class="space-y-3">
-        <button @click="handleLogout"
-            class="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-            로그아웃
-        </button>
-        <button @click="deleteAccount"
-            class="w-full py-4 text-gray-400 text-sm underline decoration-gray-300 hover:text-red-500">
-            회원 탈퇴
-        </button>
+
+    <!-- Linked Accounts (Settings) & Account Actions - ONLY FOR ME -->
+    <div v-if="isMe">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h3 class="font-bold text-lg mb-4">계정 연동</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#171A21] text-white flex items-center justify-center">
+                            <i class="ph-fill ph-steam-logo text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Steam</p>
+                            <p v-if="user.is_steam_linked" class="text-xs text-gray-500">연동됨 ({{ user.steam_id }})</p>
+                            <p v-else class="text-xs text-gray-500">미연동</p>
+                        </div>
+                    </div>
+                    {% if user.is_steam_linked %}
+                    <form v-if="user.is_steam_linked" action="{% url 'users:steam_unlink' %}" method="POST"
+                        class="inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
+                            해제
+                        </button>
+                    </form>
+                    <a v-else href="{% url 'users:steam_login' %}?next=/"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        연동
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#03C75A] text-white flex items-center justify-center">
+                            <span class="font-black text-xs">N</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Naver</p>
+                            <p class="text-xs text-gray-500">미연동</p>
+                        </div>
+                    </div>
+                    <button
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100">연동</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Actions -->
+        <div class="space-y-3">
+            <button @click="handleLogout"
+                class="w-full py-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                로그아웃
+            </button>
+            <button @click="deleteAccount"
+                class="w-full py-4 text-gray-400 text-sm underline decoration-gray-300 hover:text-red-500">
+                회원 탈퇴
+            </button>
+        </div>
     </div>
 </div>
+
+<!-- Wishlist Modal -->
+{% verbatim %}
+<Teleport to="body">
+    <div v-if="showWishlistModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showWishlistModal = false"></div>
+        <div
+            class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="ph-fill ph-heart text-pink-500"></i>
+                    찜한 게임
+                </h3>
+                <button @click="showWishlistModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div v-if="displayWishlist.length === 0" class="text-center py-12 text-gray-400">
+                    <i class="ph ph-heart text-4xl mb-2"></i>
+                    <p>찜한 게임이 없습니다</p>
+                </div>
+                <div v-else class="space-y-3">
+                    <div v-for="gameId in displayWishlist" :key="gameId"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold">
+                            {{ gameId }}
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-800 dark:text-white">게임 #{{ gameId }}</p>
+                            <p class="text-xs text-gray-500">찜한 게임</p>
+                        </div>
+                        <button v-if="isMe" @click.stop="toggleWishlist({ game_id: gameId })"
+                            class="text-pink-500 hover:text-pink-700">
+                            <i class="ph-fill ph-heart-break"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Teleport>
+{% endverbatim %}
+
+<!-- Reviews Modal (평가한 게임) -->
+{% verbatim %}
+<Teleport to="body">
+    <div v-if="showReviewsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showReviewsModal = false"></div>
+        <div
+            class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="ph-fill ph-star text-yellow-500"></i>
+                    평가한 게임
+                </h3>
+                <button @click="showReviewsModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div v-if="Object.keys(displayRatings).filter(k => displayRatings[k] !== 0).length === 0"
+                    class="text-center py-12 text-gray-400">
+                    <i class="ph ph-star text-4xl mb-2"></i>
+                    <p>평가한 게임이 없습니다</p>
+                    <button v-if="isMe" @click="showReviewsModal = false; restartOnboarding()"
+                        class="mt-4 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                        게임 평가하러 가기
+                    </button>
+                </div>
+                <div v-else class="space-y-3">
+                    <div v-for="(score, gameId) in displayRatings" :key="gameId" v-if="score !== 0"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold" :class="{
+                            'bg-red-500': score === -1,
+                            'bg-blue-500': score === 3.5,
+                            'bg-yellow-500': score === 5
+                        }">
+                            <span v-if="score === -1">👎</span>
+                            <span v-else-if="score === 3.5">👍</span>
+                            <span v-else-if="score === 5">👍👍</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-800 dark:text-white">게임 ID: {{ gameId }}</p>
+                            <p class="text-xs text-gray-500">
+                                <span v-if="score === -1">별로예요</span>
+                                <span v-else-if="score === 3.5">재밌어요</span>
+                                <span v-else-if="score === 5">인생게임!</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Teleport>
+{% endverbatim %}
+
+<!-- Steam Library Full Modal -->
+{% verbatim %}
+<Teleport to="body">
+    <div v-if="showSteamLibraryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showSteamLibraryModal = false"></div>
+        <div
+            class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div
+                class="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#171A21] to-[#2a3f5f] text-white">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <i class="ph-fill ph-steam-logo"></i>
+                    Steam 라이브러리
+                </h3>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm">
+                        <span class="opacity-70">총</span>
+                        <span class="font-bold ml-1">{{ displaySteamTotalGames }}개</span>
+                    </div>
+                    <button @click="showSteamLibraryModal = false" class="text-white/80 hover:text-white">
+                        <i class="ph-bold ph-x text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[calc(90vh-100px)]">
+                <!-- Loading -->
+                <div v-if="isMe && isLoadingSteamLibrary" class="flex items-center justify-center py-12">
+                    <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin">
+                    </div>
+                </div>
+                <!-- Games Grid -->
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div v-for="game in displaySteamLibrary" :key="game.appid"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <img :src="game.img_logo_url" class="w-20 h-10 object-cover rounded" @error="handleImageError">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ game.name
+                                }}</p>
+                            <p class="text-xs text-gray-500">{{ Math.round(game.playtime_forever / 60) }}시간 플레이
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Empty -->
+                <div v-if="!isLoadingSteamLibrary && displaySteamLibrary.length === 0"
+                    class="text-center py-12 text-gray-400">
+                    <i class="ph ph-game-controller text-4xl mb-2"></i>
+                    <p v-if="isMe">Steam 라이브러리를 가져오려면 새로고침을 클릭하세요</p>
+                    <p v-else>Steam 라이브러리 정보가 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</Teleport>
+{% endverbatim %}

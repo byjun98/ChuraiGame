@@ -134,6 +134,53 @@ def fetch_rawg_trailers(game_id):
         logger.error(f"Error fetching trailers for RAWG game {game_id}: {e}")
         return []
 
+def translate_text_gemini(text):
+    """
+    Translate text using Gemini API (or other available method).
+    """
+    api_key = os.getenv('GMS_API_KEY')
+    if not api_key:
+        logger.warning("GMS_API_KEY for translation not configured")
+        return None
+
+    try:
+        prompt = f"""당신은 10년 경력의 전문 게임 로컬라이제이션 번역가입니다. 
+게임의 재미와 분위기를 살려서 자연스러운 한국어로 번역해주세요.
+
+규칙:
+1. 고유명사(타이틀, 캐릭터 등)는 필요시 원어 병기 또는 통용되는 표기 사용
+2. 게임 용어(로그라이크, 오픈월드 등)는 한국 게이머들에게 익숙한 표현 사용
+3. 번역투를 피하고 자연스러운 한국어 문장으로 의역
+4. 오직 번역된 텍스트만 출력하세요. 설명이나 잡담 금지.
+
+원문:
+{text}
+
+한국어 번역:"""
+
+        response = requests.post(
+            f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}",
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}]
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            candidates = result.get('candidates', [])
+            if candidates:
+                translation = candidates[0]['content']['parts'][0]['text'].strip()
+                return translation
+        else:
+            logger.error(f"Gemini translation failed: {response.status_code} {response.text}")
+            
+    except Exception as e:
+        logger.error(f"Error calling Gemini translation API: {e}")
+        
+    return None
+
 def update_game_with_rawg(game, force_refresh=False):
     """
     Update a Game instance with enriched data from RAWG API.

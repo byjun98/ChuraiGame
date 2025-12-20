@@ -90,7 +90,7 @@
 </div>
 
 <!-- Post Detail Modal -->
-<div v-if="selectedPost" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+<div v-cloak v-if="selectedPost" class="fixed inset-0 z-50 flex items-center justify-center px-4">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closePostDetail"></div>
     <div
         class="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl z-10 overflow-hidden flex flex-col animate-fade-in">
@@ -181,7 +181,7 @@
 </div>
 
 <!-- Share Toast -->
-<div v-if="showShareToast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+<div v-cloak v-if="showShareToast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
     <div class="bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2">
         <i class="ph-bold ph-check-circle text-green-400"></i>
         링크가 클립보드에 복사되었습니다!

@@ -1,0 +1,41 @@
+<!-- Game Detail Page Header (Static) -->
+<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+    <div class="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
+        <div class="flex items-center gap-8">
+            <a href="/"
+                class="text-2xl font-bold text-blue-600 tracking-tight cursor-pointer select-none hover:text-blue-700 transition-colors">
+                GameMatch
+            </a>
+
+            <!-- Desktop Nav -->
+            <nav class="hidden md:flex gap-6">
+                <a href="/#home" class="text-[#8B95A1] hover:text-[#4E5968] transition-colors">요즘 뜨는 게임</a>
+                <a href="/#recommend" class="text-[#8B95A1] hover:text-[#4E5968] transition-colors">🎯 추천</a>
+                <a href="/#ai" class="text-[#8B95A1] hover:text-[#4E5968] transition-colors">🤖 AI 추천</a>
+                <a href="/#sale" class="text-[#8B95A1] hover:text-[#4E5968] transition-colors">세일</a>
+                <a href="/#community" class="text-[#8B95A1] hover:text-[#4E5968] transition-colors">유저 커뮤니티</a>
+            </nav>
+        </div>
+
+        <!-- User Profile Widget -->
+        {% if user.is_authenticated %}
+        <a href="/#profile" class="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity">
+            <div class="text-right hidden sm:block leading-tight">
+                <p class="text-sm font-semibold">{{ user.nickname }}</p>
+                <p class="text-[11px] text-gray-400">{{ user.email }}</p>
+            </div>
+            <div
+                class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" class="w-full h-full object-cover">
+                {% else %}
+                <i class="ph-fill ph-user text-gray-400"></i>
+                {% endif %}
+            </div>
+        </a>
+        {% else %}
+        <a href="{% url 'users:login' %}"
+            class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">로그인</a>
+        {% endif %}
+    </div>
+</header>

@@ -39,4 +39,10 @@ urlpatterns = [
     
     # Game Rating API (상세 페이지에서 사용)
     path('api/game-rating/<int:rawg_id>/', views.get_game_rating_api, name='get_game_rating'),
+    
+    # Avatar Upload API (프로필 사진)
+    path('api/avatar/', views.avatar_upload_api, name='avatar_upload'),
+    
+    # Public User Profile API
+    path('api/profile/<str:username>/', views.get_user_profile_api, name='get_user_profile'),
 ]

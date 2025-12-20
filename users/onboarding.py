@@ -88,16 +88,18 @@ ONBOARDING_STEPS = [
 ]
 
 
-def get_onboarding_games(step=0, exclude_rated=None):
+def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
     """
-    온보딩 단계별 게임 목록 반환
+    온보딩 단계별 게임 목록 반환 (페이지네이션 지원)
     
     Args:
         step: 현재 단계 (0만 사용)
         exclude_rated: 이미 평가한 게임 ID 리스트
+        page: 현재 페이지 (1부터 시작)
+        per_page: 페이지당 게임 수 (기본값: 8 - 2행x4열)
     
     Returns:
-        dict: {games: [...], step_info: {...}}
+        dict: {games: [...], step_info: {...}, pagination: {...}}
     """
     # JSON에서 게임 로드
     onboarding_games = load_onboarding_games_from_json()
@@ -113,13 +115,32 @@ def get_onboarding_games(step=0, exclude_rated=None):
     if exclude_rated:
         games = [g for g in games if g['rawg_id'] not in exclude_rated]
     
+    # 페이지네이션 계산
+    total_games = len(games)
+    total_pages = (total_games + per_page - 1) // per_page  # 올림 나눗셈
+    
+    # 페이지 범위 제한
+    page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+    
+    # 현재 페이지의 게임만 추출
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_games = games[start_idx:end_idx]
+    
     return {
-
-        'games': games,
+        'games': paginated_games,
         'step_info': step_info,
         'current_step': step,
         'total_steps': len(ONBOARDING_STEPS),
-        'is_complete': False
+        'is_complete': False,
+        'pagination': {
+            'current_page': page,
+            'total_pages': total_pages,
+            'per_page': per_page,
+            'total_games': total_games,
+            'has_prev': page > 1,
+            'has_next': page < total_pages
+        }
     }
 
 

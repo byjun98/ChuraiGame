@@ -110,6 +110,22 @@ class Command(BaseCommand):
                 if (i + 1) % 100 == 0:
                     self.stdout.write(f"⏳ Processed {i + 1}/{len(data)} games...")
 
+                # 4. (Optional) Auto-Translate Logic
+                # Only if specifically requested or if you want to force it every time.
+                # However, calling API for every game in `load_games` might be too slow.
+                # It's better to do this in `refresh_game_cache` or a new command.
+                # User asked for: "load games... then RAWG fetch... then translate" during these steps.
+                # Since `load_games` usually just loads the JSON shell, let's keep it fast.
+                
+                # BUT, the user explicitly said "when I do load_games... I want resources saved".
+                # Actually, `load_games` reads from a JSON file which might NOT have descriptions.
+                # `update_game_with_rawg` fetches from RAWG.
+                # Does `load_games` call `update_game_with_rawg`? No.
+                
+                # So we should probably modify `refresh_game_cache` instead if that is what they run next.
+                # "python manage.py refresh_game_cache" is in the list.
+                pass
+
             self.stdout.write("")
             self.stdout.write(self.style.SUCCESS(f"✅ Import completed!"))
             self.stdout.write(f"   📥 Created: {created_count} new games")

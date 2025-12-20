@@ -25,8 +25,18 @@ urlpatterns = [
     path('api/upcoming/', views.api_upcoming_games, name='api_upcoming_games'),
     path('api/ordered/', views.api_games_by_ordering, name='api_games_by_ordering'),
 
+    # API Endpoints - Translate Game Description
+    path('api/translate/', views.api_translate_game, name='api_translate_game'),
+
     # API Endpoints - Existing (Generic Catch-all should be last)
     path('api/wishlist/', views.api_wishlist_list, name='api_wishlist_list'),
     path('api/<str:game_id>/wishlist/toggle/', views.api_toggle_wishlist, name='api_toggle_wishlist'),
     path('api/<str:game_id>/', views.api_game_detail, name='api_game_detail'),
+    
+    # API Endpoints - Reviews for RAWG Games
+    path('api/reviews/<int:rawg_id>/', views.api_reviews_by_rawg_id, name='api_reviews_by_rawg_id'),
+    path('api/reviews/<int:rawg_id>/submit/', views.api_submit_review_by_rawg_id, name='api_submit_review'),
+    
+    # API Endpoints - Wishlist for RAWG Games (RAWG ID 기반 찜하기 - 자동 게임 생성)
+    path('api/wishlist/<int:rawg_id>/toggle/', views.api_toggle_wishlist_by_rawg_id, name='api_toggle_wishlist_rawg'),
 ]

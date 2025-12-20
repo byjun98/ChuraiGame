@@ -537,3 +537,283 @@ def api_games_by_ordering(request):
         'count': len(results),
         'games': results
     })
+
+
+# ============================================================================
+# REST API Endpoints - Reviews for RAWG Games
+# ============================================================================
+
+import json
+from django.views.decorators.http import require_http_methods
+
+@login_required
+@require_http_methods(["GET"])
+def api_reviews_by_rawg_id(request, rawg_id):
+    """
+    RAWG ID로 게임 리뷰 목록 가져오기
+    
+    Returns:
+        - reviews: 리뷰 목록
+        - my_review: 현재 사용자의 리뷰 (있을 경우)
+        - game_exists: DB에 게임이 있는지 여부
+    """
+    try:
+        game = Game.objects.get(rawg_id=rawg_id)
+        reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
+        my_review = reviews.filter(user=request.user).first()
+        
+        reviews_data = [{
+            'id': r.id,
+            'user': r.user.nickname,
+            'score': r.score,
+            'content': r.content,
+            'created_at': r.updated_at.strftime('%Y.%m.%d'),
+        } for r in reviews]
+        
+        return JsonResponse({
+            'game_exists': True,
+            'game_id': game.id,
+            'reviews': reviews_data,
+            'review_count': len(reviews_data),
+            'my_review': {
+                'score': my_review.score,
+                'content': my_review.content,
+            } if my_review else None
+        })
+    except Game.DoesNotExist:
+        return JsonResponse({
+            'game_exists': False,
+            'reviews': [],
+            'review_count': 0,
+            'my_review': None
+        })
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_toggle_wishlist_by_rawg_id(request, rawg_id):
+    """
+    RAWG ID로 게임 찜하기 토글 (게임이 DB에 없으면 자동 생성)
+    
+    Body:
+        - game_title: 게임 제목 (게임 생성 시 필요)
+        - game_image: 게임 이미지 URL (optional)
+    """
+    try:
+        data = json.loads(request.body)
+        game_title = data.get('game_title', f'Game {rawg_id}')
+        game_image = data.get('game_image', '')
+        
+        # 게임 찾기 또는 생성
+        game, created = Game.objects.get_or_create(
+            rawg_id=rawg_id,
+            defaults={
+                'title': game_title,
+                'image_url': game_image,
+                'background_image': game_image,
+                'genre': '게임',
+            }
+        )
+        
+        if created:
+            print(f"Created new game for wishlist from RAWG: {game_title} (rawg_id: {rawg_id})")
+        
+        # 찜하기 토글
+        user = request.user
+        if user.wishlist.filter(pk=game.pk).exists():
+            user.wishlist.remove(game)
+            is_wishlisted = False
+        else:
+            user.wishlist.add(game)
+            is_wishlisted = True
+        
+        return JsonResponse({
+            'success': True,
+            'is_wishlisted': is_wishlisted,
+            'game_id': game.rawg_id,
+            'steam_appid': game.steam_appid,
+            'game_created': created,
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        import traceback
+        print(f"Wishlist toggle error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_submit_review_by_rawg_id(request, rawg_id):
+    """
+    RAWG ID로 게임 리뷰 작성 (게임이 DB에 없으면 자동 생성)
+    
+    Body:
+        - score: 평점 (1~5)
+        - content: 리뷰 내용 (optional)
+        - game_title: 게임 제목 (게임 생성 시 필요)
+        - game_image: 게임 이미지 URL (optional)
+    """
+    try:
+        data = json.loads(request.body)
+        score = float(data.get('score', 0))
+        content = data.get('content', '')
+        game_title = data.get('game_title', f'Game {rawg_id}')
+        game_image = data.get('game_image', '')
+        
+        if score < 1 or score > 5:
+            return JsonResponse({'error': '평점은 1~5 사이여야 합니다.'}, status=400)
+        
+        # 게임 찾기 또는 생성
+        game, created = Game.objects.get_or_create(
+            rawg_id=rawg_id,
+            defaults={
+                'title': game_title,
+                'image_url': game_image,
+                'background_image': game_image,
+                'genre': '게임',
+            }
+        )
+        
+        if created:
+            print(f"Created new game from RAWG: {game_title} (rawg_id: {rawg_id})")
+        
+        # 리뷰 저장/업데이트
+        rating, rating_created = Rating.objects.update_or_create(
+            user=request.user,
+            game=game,
+            defaults={
+                'score': score,
+                'content': content
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'review_id': rating.id,
+            'created': rating_created,
+            'game_id': game.id,
+            'game_created': created,
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        import traceback
+        print(f"Review error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_translate_game(request):
+    """
+    Translate game description to Korean and save to DB.
+    
+    Body:
+        - game_pk: Game DB ID (optional)
+        - rawg_id: RAWG ID (optional)
+        - text: Text to translate (only used if game not found yet)
+        - game_title: Title for creating new game (optional)
+    """
+    import os
+    import json
+    import requests
+    from dotenv import load_dotenv
+    from .utils import translate_text_gemini
+    load_dotenv()
+    
+    api_key = os.getenv('GMS_API_KEY')
+    if not api_key:
+        return JsonResponse({'error': 'API 키가 설정되지 않았습니다.', 'success': False}, status=500)
+        
+    try:
+        data = json.loads(request.body)
+        game_pk = data.get('game_pk')
+        rawg_id = data.get('rawg_id')
+        text_to_translate = data.get('text', '').strip()
+        
+        game = None
+        
+        # 1. Find Game
+        if game_pk:
+            game = get_object_or_404(Game, pk=game_pk)
+        elif rawg_id:
+            game = Game.objects.filter(rawg_id=rawg_id).first()
+            
+        # 2. If Game found, check existing translation
+        if game:
+            if game.description_kr:
+                return JsonResponse({
+                    'success': True,
+                    'translated': game.description_kr,
+                    'cached': True
+                })
+            
+            # Use game description if text not provided/empty
+            if not text_to_translate:
+                text_to_translate = game.description
+                
+            # If description is empty also, try to fetch from RAWG (if rawg_id)
+            if not text_to_translate and game.rawg_id:
+                details = fetch_rawg_game_details(game.rawg_id)
+                if details:
+                    text_to_translate = details.get('description_raw', '') or details.get('description', '')
+                    game.description = text_to_translate
+                    game.save(update_fields=['description'])
+
+        # 3. Use text provided if game not found (for new games)
+        if not game and rawg_id:
+             # Create game shell to store translation
+            game_title = data.get('game_title', f'Game {rawg_id}')
+            game = Game.objects.create(
+                rawg_id=rawg_id,
+                title=game_title,
+                genre='Unknown'
+            )
+            # Try to fetch full details
+            details = fetch_rawg_game_details(rawg_id)
+            if details:
+                game.title = details.get('name', game_title)
+                game.image_url = details.get('background_image', '')
+                game.background_image = details.get('background_image', '')
+                game.description = details.get('description_raw', '') or details.get('description', '')
+                text_to_translate = game.description
+                
+                # Genres
+                if details.get('genres'):
+                     game.genre = ', '.join([g['name'] for g in details['genres'][:3]])
+                
+                game.save()
+            
+        if not text_to_translate:
+             return JsonResponse({'error': '번역할 텍스트가 없습니다.', 'success': False}, status=400)
+
+        # 4. Call Gemini API
+        translated_text = translate_text_gemini(text_to_translate)
+        
+        if translated_text:
+            # Save to DB if game exists
+            if game:
+                game.description_kr = translated_text
+                # Also save original if it was empty
+                if not game.description:
+                    game.description = text_to_translate
+                game.save()
+                
+            return JsonResponse({
+                'success': True,
+                'translated': translated_text,
+                'cached': False
+            })
+                
+        return JsonResponse({'error': 'AI 번역 실패', 'success': False}, status=500)
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e), 'success': False}, status=500)
+

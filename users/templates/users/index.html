@@ -1,7 +1,7 @@
 {% extends 'users/base.html' %}
 
 {% block content %}
-<div id="app" class="min-h-screen flex flex-col relative">
+<div id="app" v-cloak class="min-h-screen flex flex-col relative">
 
     {% include 'users/components/header.html' %}
 
@@ -42,1294 +42,1594 @@
             const currentStep = ref('main'); // Forced main view for logged-in users
             const currentTab = ref('home'); // 'home', 'sale'
             const isLoginMode = ref(true); // Toggle between Login and Signup
-            const user = ref({ nickname: '{{ user.nickname }}', email: '{{ user.email }}' }); // Inject Django user data
-            const games = ref([]);
-            const wishlist = ref([]);
-
-            // RAWG Game Tabs State
-            const gameTab = ref('popular');
-            const rawgGames = ref([]);
-            const isLoadingGames = ref(false);
-
-            // Community State
-            const communityPosts = ref([]);
-            const isWritingPost = ref(false);
-            const communityCategory = ref('all');
-            const selectedPost = ref(null);
-            const fileInput = ref(null);
-            const newPost = reactive({ title: '', content: '', category: 'free', file: null });
-
-            // Game List Container ref for scrolling
-            const gameListContainer = ref(null);
-
-            // Auth Form State
-            const authForm = reactive({
-                email: '',
-                password: '',
-                nickname: ''
-            });
-
-            // Sorting State
-            const sortBy = ref('interest');
-
-            // Infinite Scroll State for Sale Tab
-            const saleItemsPerPage = ref(12);
-            const currentSaleCount = ref(12);
-            const saleSearchQuery = ref('');  // Search query for sale games
-            const showScrollTopBtn = ref(false);
-            const isLoadingMoreSales = ref(false);
-            const infiniteScrollTrigger = ref(null);
-            const popularGamesOnSale = ref([]);  // RAWG popular games on sale
-            const isLoadingPopularGames = ref(false);
-            const bestPrices = ref([]);  // Best historical prices
-            const bestPricesContainer = ref(null);  // Ref for best prices scroll container
-            const popularGamesContainer = ref(null);  // Ref for popular games scroll container
-
-            // Steam Library State
-            const steamLibrary = ref([]);
-            const steamTotalGames = ref(0);
-            const steamTotalHours = ref(0);
-            const isLoadingSteamLibrary = ref(false);
-
-            // Recommendation State
-            const recommendations = ref([]);
-            const recommendSortBy = ref('score');
-            const genreAnalysis = ref(null);
-            const recommendationMessage = ref('');
-            const isLoadingRecommendations = ref(false);
-            const currentRecommendCount = ref(12);
-            const recommendItemsPerPage = ref(12);
-            const isLoadingMoreRecommendations = ref(false);
-            const infiniteScrollTriggerRecommend = ref(null);
-
-            // AI Chatbot State
-            const aiChatMessages = ref([]);
-            const aiUserInput = ref('');
-            const isAiLoading = ref(false);
-            const aiError = ref('');
-            const chatContainer = ref(null);
-            const aiQuickSuggestions = ref([
-                '액션 RPG 추천해줘',
-                '혼자 할 수 있는 힐링 게임',
-                '스토리가 좋은 게임',
-                '친구랑 같이 할 게임',
-                '인디 게임 추천'
-            ]);
-
-            // Onboarding State (왓챠 스타일)
-            const showOnboarding = ref(false);
-            const isLoadingOnboarding = ref(false);
-            const onboardingGames = ref([]);
-            const onboardingRatings = ref({});  // { gameId: score }
-            const onboardingCurrentStep = ref(0);
-            const onboardingTotalSteps = ref(5);
-            const onboardingStep = ref(null);
-
-            onMounted(async () => {
-                // Initialize Game Data from Django
-                // Use verbatim block or different delimiters if mixing Vue and Django extensively
-                // Here we initialize from rawSaleData for demo purposes, but ideally this comes from views.py context
-
-                const serverData = JSON.parse('{{ games_json|escapejs }}');
-                if (serverData.length > 0) {
-                    games.value = serverData.map(game => ({
-                        ...game,
-                        matchScore: Math.floor(Math.random() * (99 - 70) + 70),
-                    }));
-                } else {
-                    console.log("No game data found.");
-                }
-                // Initialize Wishlist
-                try {
-                    const wishlistData = JSON.parse('{{ wishlist_json|escapejs }}');
-                    wishlist.value = wishlistData;
-                } catch (e) {
-                    console.error("Wishlist init failed", e);
-                }
-
-                // Initialize Best Prices (historic best deals)
-                try {
-                    const bestPricesData = JSON.parse('{{ best_prices_json|escapejs }}');
-                    bestPrices.value = bestPricesData;
-                } catch (e) {
-                    console.error("Best prices init failed", e);
-                }
-
-                // Fetch RAWG Popular Games for Sale tab
-                fetchPopularGames();
-
-                // URL Hash based tab navigation
-                const validTabs = ['home', 'recommend', 'ai', 'sale', 'community'];
-                const hash = window.location.hash.replace('#', '');
-                if (validTabs.includes(hash)) {
-                    currentTab.value = hash;
-                }
-
-                // Listen for hash changes (browser back/forward)
-                window.addEventListener('hashchange', () => {
-                    const newHash = window.location.hash.replace('#', '');
-                    if (validTabs.includes(newHash)) {
-                        currentTab.value = newHash;
-                    }
-                });
-
-                // Load Default Tab Games
-                await loadGameTab('popular');
-
-                // Fetch Community Posts
-                await fetchPosts();
-
-                // Setup scroll listener for scroll-to-top button
-                window.addEventListener('scroll', handleScroll);
-
-                // Setup infinite scroll
-                setupInfiniteScroll();
-
-                // Check if user needs onboarding (Steam 미연동 사용자)
-                checkOnboardingStatus();
-            });
-
-            const loadGameTab = async (tabName) => {
-                gameTab.value = tabName;
-                isLoadingGames.value = true;
-                rawgGames.value = [];
-
-                try {
-                    let url = '/games/api/popular/?limit=50';
-                    if (tabName === 'top-rated') {
-                        url = '/games/api/top-rated/?limit=50';
-                    } else if (tabName === 'new-releases') {
-                        url = '/games/api/new-releases/?limit=50';
-                    } else if (tabName === 'trending') {
-                        url = '/games/api/trending/?limit=50';
-                    }
-
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    if (data.games) {
-                        rawgGames.value = data.games;
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch games for tab " + tabName, e);
-                } finally {
-                    isLoadingGames.value = false;
-                    // Reset scroll position when tab changes
-                    if (gameListContainer.value) {
-                        gameListContainer.value.scrollLeft = 0;
-                    }
-                }
-            };
-
-            // Scroll game list left or right
-            const scrollGameList = (direction) => {
-                if (!gameListContainer.value) return;
-                const container = gameListContainer.value;
-                const cardWidth = 256 + 20; // w-64 (256px) + gap-5 (20px)
-                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
-
-                if (direction === 'left') {
-                    container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-                } else {
-                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-                }
-            };
-
-            // Fetch RAWG Popular Games and match with Steam Sale data
-            const fetchPopularGames = async () => {
-                if (isLoadingPopularGames.value) return;
-
-                isLoadingPopularGames.value = true;
-                try {
-                    // Check if sale games data is loaded
-                    console.log(`Sale games loaded: ${games.value.length}`);
-
-                    if (games.value.length === 0) {
-                        console.warn("No sale games loaded yet, cannot match");
-                        popularGamesOnSale.value = [];
-                        return;
-                    }
-
-                    // Fetch all-time popular games (no date filter) for sale matching
-                    const response = await fetch('/games/api/popular/?limit=100&all_time=true');
-                    const data = await response.json();
-
-                    console.log(`RAWG popular games fetched: ${data.games?.length || 0}`);
-
-                    if (data.games && data.games.length > 0) {
-                        // Create a map of sale games by normalized title for fast lookup
-                        const saleGamesMap = new Map();
-                        games.value.forEach(saleGame => {
-                            // Normalize title: lowercase, remove special chars
-                            const normalizedTitle = saleGame.title
-                                .toLowerCase()
-                                .replace(/[®™©:!?'-]/g, '')
-                                .replace(/\s+/g, ' ')
-                                .trim();
-                            saleGamesMap.set(normalizedTitle, saleGame);
-
-                            // Also try shorter version (first part before -)
-                            const shortTitle = normalizedTitle.split(/[\-–—]/)[0].trim();
-                            if (shortTitle.length > 3 && !saleGamesMap.has(shortTitle)) {
-                                saleGamesMap.set(shortTitle, saleGame);
-                            }
-                        });
-
-                        // Match popular games with sale data
-                        const matchedGames = [];
-                        for (const rawgGame of data.games) {
-                            const normalizedRawgTitle = rawgGame.title
-                                .toLowerCase()
-                                .replace(/[®™©:!?'-]/g, '')
-                                .replace(/\s+/g, ' ')
-                                .trim();
-
-                            // Try exact match
-                            let saleMatch = saleGamesMap.get(normalizedRawgTitle);
-
-                            // Try short title match if no exact match
-                            if (!saleMatch) {
-                                const shortRawgTitle = normalizedRawgTitle.split(/[\-–—]/)[0].trim();
-                                if (shortRawgTitle.length > 3) {
-                                    saleMatch = saleGamesMap.get(shortRawgTitle);
-                                }
-                            }
-
-                            // Try partial match (contains)
-                            if (!saleMatch) {
-                                for (const [saleTitle, saleGame] of saleGamesMap) {
-                                    if (saleTitle.length > 5 && (normalizedRawgTitle.includes(saleTitle) || saleTitle.includes(normalizedRawgTitle))) {
-                                        saleMatch = saleGame;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (saleMatch) {
-                                matchedGames.push({
-                                    ...rawgGame,
-                                    discount_rate: saleMatch.discount_rate,
-                                    current_price: saleMatch.current_price,
-                                    original_price: saleMatch.original_price,
-                                    steam_game_id: saleMatch.game_id,
-                                    isOnSale: true
-                                });
-
-                                // Stop when we have enough matches
-                                if (matchedGames.length >= 15) break;
-                            }
-                        }
-
-                        popularGamesOnSale.value = matchedGames;
-                        console.log(`Matched ${matchedGames.length} popular games with sale data`);
-                    } else {
-                        console.warn("No games returned from RAWG API");
-                        popularGamesOnSale.value = [];
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch popular games", e);
-                    popularGamesOnSale.value = [];
-                } finally {
-                    isLoadingPopularGames.value = false;
-                }
-            };
-
-            // --- Computed ---
-            const popularGames = computed(() => games.value.slice(0, 5));
-
-            // Calculate recommendation score for sale games (similar to recommendation.py)
-            const calculateSaleScore = (game) => {
-                let score = 0;
-
-                // 1. Steam Rating (40 points max)
-                const steamRating = game.steam_rating || 0;
-                if (steamRating > 0) {
-                    // Scale: 70-100% rating → 0-40 points
-                    score += Math.min(40, Math.max(0, (steamRating - 70) / 30 * 40));
-                }
-
-                // 2. Review count popularity (25 points max)
-                const reviewCount = game.review_count || 0;
-                if (reviewCount > 0) {
-                    // Log scale for review count (more reviews = more trusted)
-                    const logReviews = Math.log10(reviewCount + 1);
-                    score += Math.min(25, logReviews * 5);
-                }
-
-                // 3. Discount rate (20 points max)
-                const discountRate = game.discount_rate || 0;
-                score += Math.min(20, discountRate * 100 * 0.2);
-
-                // 4. Historical low bonus (15 points)
-                if (game.is_historical_low) {
-                    score += 15;
-                }
-
-                return Math.round(score * 10) / 10;
-            };
-
-            // Filter by search query first, then sort
-            const filteredSaleGames = computed(() => {
-                let filtered = [...games.value];
-
-                // Apply search filter
-                if (saleSearchQuery.value.trim()) {
-                    const query = saleSearchQuery.value.toLowerCase().trim();
-                    filtered = filtered.filter(game =>
-                        game.title && game.title.toLowerCase().includes(query)
-                    );
-                }
-
-                return filtered;
-            });
-
-            const sortedSaleGames = computed(() => {
-                let sorted = [...filteredSaleGames.value];
-
-                if (sortBy.value === 'interest') {
-                    // Apply recommendation algorithm
-                    sorted = sorted.map(game => ({
-                        ...game,
-                        saleScore: calculateSaleScore(game)
-                    }));
-                    sorted.sort((a, b) => b.saleScore - a.saleScore);
-                } else if (sortBy.value === 'rating') {
-                    sorted.sort((a, b) => (b.steam_rating || 0) - (a.steam_rating || 0));
-                } else if (sortBy.value === 'discount') {
-                    sorted.sort((a, b) => (b.discount_rate || 0) - (a.discount_rate || 0));
-                } else if (sortBy.value === 'price_asc') {
-                    sorted.sort((a, b) => (a.current_price || 0) - (b.current_price || 0));
-                }
-
-                return sorted;
-            });
-
-            // Displayed games with infinite scroll
-            const displayedSaleGames = computed(() => {
-                return sortedSaleGames.value.slice(0, currentSaleCount.value);
-            });
-
-            const hasMoreSaleGames = computed(() => {
-                return currentSaleCount.value < sortedSaleGames.value.length;
-            });
-
-            // Recommendation computed properties
-            const sortedRecommendations = computed(() => {
-                let sorted = [...recommendations.value];
-                if (recommendSortBy.value === 'score') {
-                    sorted.sort((a, b) => (b.recommendation_score || 0) - (a.recommendation_score || 0));
-                } else if (recommendSortBy.value === 'rating') {
-                    sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                } else if (recommendSortBy.value === 'sale') {
-                    // Show on-sale games first, then by discount
-                    sorted.sort((a, b) => {
-                        if (a.is_on_sale && !b.is_on_sale) return -1;
-                        if (!a.is_on_sale && b.is_on_sale) return 1;
-                        return (b.discount_rate || 0) - (a.discount_rate || 0);
-                    });
-                }
-                return sorted;
-            });
-
-            const displayedRecommendations = computed(() => {
-                return sortedRecommendations.value.slice(0, currentRecommendCount.value);
-            });
-
-            const hasMoreRecommendations = computed(() => {
-                return currentRecommendCount.value < sortedRecommendations.value.length;
-            });
-
-            // --- Methods for CRUD & Auth ---
-
-            const toggleAuthMode = () => {
-                isLoginMode.value = !isLoginMode.value;
-                authForm.email = '';
-                authForm.password = '';
-                authForm.nickname = '';
-            };
-
-            const handleAuthAction = () => {
-                // Backend Integration Note: 
-                // Replace this with axios.post('/api/login/' or '/api/register/', authForm)
-
-                if (!authForm.email || !authForm.password) {
-                    alert('이메일과 비밀번호를 입력해주세요.');
-                    return;
-                }
-                // ... implementation details ...
-            };
-
-            // Navigate to game detail page (for sale cards)
-            const navigateToGameDetail = (event, gameId) => {
-                // Don't navigate if user clicked on a button or link
-                if (event.target.closest('a') || event.target.closest('button')) {
-                    return;
-                }
-                window.location.href = `/games/${gameId}/`;
-            };
-
-            // Navigate to Steam store page (for sale cards - Steam AppID != RAWG ID)
-            const navigateToSteamStore = (event, storeLink) => {
-                // Don't navigate if user clicked on a button or link
-                if (event.target.closest('a') || event.target.closest('button')) {
-                    return;
-                }
-                if (storeLink) {
-                    window.open(storeLink, '_blank');
-                }
-            };
-
-            // Navigate to game detail by title (for sale cards - search RAWG by title)
-            const navigateToGameByTitle = (event, title, steamAppId, cheapsharkUrl) => {
-                // Don't navigate if user clicked on a button or link
-                if (event.target.closest('a') || event.target.closest('button')) {
-                    return;
-                }
-                // Pass title, steam appid, and cheapshark redirect URL as query params
-                const params = new URLSearchParams();
-                params.set('title', title);
-                if (steamAppId) params.set('steam_appid', steamAppId);
-                if (cheapsharkUrl) params.set('cheapshark_url', cheapsharkUrl);
-                window.location.href = `/games/search/?${params.toString()}`;
-            };
-
-            // Infinite scroll for best prices (repeat items for infinite effect)
-            const infiniteBestPrices = computed(() => {
-                if (!bestPrices.value || bestPrices.value.length === 0) return [];
-                // Repeat the list to create infinite scroll effect
-                return [...bestPrices.value, ...bestPrices.value, ...bestPrices.value];
-            });
-
-            // Infinite scroll for popular games on sale (repeat items for infinite effect)
-            const infinitePopularGames = computed(() => {
-                if (!popularGamesOnSale.value || popularGamesOnSale.value.length === 0) return [];
-                // Repeat the list to create infinite scroll effect
-                return [...popularGamesOnSale.value, ...popularGamesOnSale.value, ...popularGamesOnSale.value];
-            });
-
-            // Scroll best prices list left or right
-            const scrollBestPrices = (direction) => {
-                if (!bestPricesContainer.value) return;
-                const container = bestPricesContainer.value;
-                const cardWidth = 256 + 16; // w-64 (256px) + gap-4 (16px)
-                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
-                const maxScroll = container.scrollWidth - container.clientWidth;
-
-                if (direction === 'left') {
-                    if (container.scrollLeft <= 0) {
-                        // At the beginning, jump to end
-                        container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
-                    } else {
-                        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-                    }
-                } else {
-                    if (container.scrollLeft >= maxScroll - 10) {
-                        // At the end, jump to beginning
-                        container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
-                    } else {
-                        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-                    }
-                }
-            };
-
-            // Scroll popular games list left or right
-            const scrollPopularGames = (direction) => {
-                if (!popularGamesContainer.value) return;
-                const container = popularGamesContainer.value;
-                const cardWidth = 288 + 16; // w-72 (288px) + gap-4 (16px)
-                const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
-                const maxScroll = container.scrollWidth - container.clientWidth;
-
-                if (direction === 'left') {
-                    if (container.scrollLeft <= 0) {
-                        // At the beginning, jump to end
-                        container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
-                    } else {
-                        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-                    }
-                } else {
-                    if (container.scrollLeft >= maxScroll - 10) {
-                        // At the end, jump to beginning
-                        container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
-                    } else {
-                        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-                    }
-                }
-            };
-
-            const handleLogout = () => {
-                // Redirect to Django logout URL
-                window.location.href = "{% url 'users:logout' %}";
-            };
-
-            const deleteAccount = () => {
-                // Redirect/Form submit to Django delete URL
-                if (confirm("정말로 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.")) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = "{% url 'users:delete' %}";
-                    const csrf = document.createElement('input');
-                    csrf.type = 'hidden';
-                    csrf.name = 'csrfmiddlewaretoken';
-                    csrf.value = '{{ csrf_token }}';
-                    form.appendChild(csrf);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            };
-
-            const socialLogin = (provider) => {
-                alert(`${provider} 로그인 연동 기능은 준비 중입니다.`);
-            };
-
-            const toggleLink = (provider) => {
-                // Toggle Linked Account Status (Update)
-                if (provider === 'steam') {
-                    user.value.linked_steam = !user.value.linked_steam;
-                }
-            };
-
-            // --- Community Methods ---
-            const newComment = ref('');
-            const showShareToast = ref(false);
-
-            const fetchPosts = async () => {
-                try {
-                    let url = '/community/posts/';
-                    if (communityCategory.value !== 'all') {
-                        url += `?category=${communityCategory.value}`;
-                    }
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const data = await response.json();
-                        communityPosts.value = data.map(post => ({
-                            id: post.id,
-                            title: post.title,
-                            content: post.content,
-                            author: post.author_name || '익명',
-                            category: post.category,
-                            created_at: new Date(post.created_at).toLocaleDateString(),
-                            likes: post.likes_count || 0,
-                            comments_count: post.comments_count || 0,
-                            comments: (post.comments || []).map(c => ({
-                                ...c,
-                                is_own: c.author_name === user.value.nickname
-                            })),
-                            image_url: post.image_url || null,
-                            video: post.video || null,
-                            is_liked: post.is_liked || false
-                        }));
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch posts", e);
-                }
-            };
-
-            const handleFileUpload = (event) => {
-                newPost.file = event.target.files[0];
-            };
-
-            const submitPost = async () => {
-                if (!newPost.title || !newPost.content) return alert('제목과 내용을 입력해주세요.');
-
-                try {
-                    const formData = new FormData();
-                    formData.append('title', newPost.title);
-                    formData.append('content', newPost.content);
-                    formData.append('category', newPost.category);
-                    if (newPost.file) {
-                        if (newPost.file.type.startsWith('image/')) {
-                            formData.append('image', newPost.file);
-                        } else if (newPost.file.type.startsWith('video/')) {
-                            formData.append('video', newPost.file);
-                        }
-                    }
-
-                    const response = await fetch('/community/posts/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        isWritingPost.value = false;
-                        newPost.title = '';
-                        newPost.content = '';
-                        newPost.file = null;
-                        if (fileInput.value) fileInput.value.value = '';
-                        await fetchPosts();
-                    } else {
-                        alert('게시글 작성 실패');
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-            };
-
-            const openPostDetail = async (post) => {
-                // Fetch full post detail with comments
-                try {
-                    const response = await fetch(`/community/posts/${post.id}/`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        selectedPost.value = {
-                            id: data.id,
-                            title: data.title,
-                            content: data.content,
-                            author: data.author_name || '익명',
-                            category: data.category,
-                            created_at: new Date(data.created_at).toLocaleDateString(),
-                            likes: data.likes_count || 0,
-                            comments: (data.comments || []).map(c => ({
-                                ...c,
-                                is_own: c.author_name === user.value.nickname
-                            })),
-                            image_url: data.image_url || null,
-                            video: data.video || null,
-                            is_liked: data.is_liked || false
-                        };
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch post detail", e);
-                    selectedPost.value = post;
-                }
-                document.body.style.overflow = 'hidden';
-            };
-
-            const closePostDetail = () => {
-                selectedPost.value = null;
-                newComment.value = '';
-                document.body.style.overflow = '';
-            };
-
-            const submitComment = async () => {
-                if (!newComment.value.trim() || !selectedPost.value) return;
-
-                try {
-                    const response = await fetch(`/community/posts/${selectedPost.value.id}/comments/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({ content: newComment.value })
-                    });
-
-                    if (response.ok) {
-                        const comment = await response.json();
-                        selectedPost.value.comments.push({
-                            ...comment,
-                            is_own: true
-                        });
-                        newComment.value = '';
-                        // Update the post in the list
-                        const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
-                        if (postIndex !== -1) {
-                            communityPosts.value[postIndex].comments_count++;
-                        }
-                    } else {
-                        alert('댓글 작성에 실패했습니다.');
-                    }
-                } catch (e) {
-                    console.error("Failed to submit comment", e);
-                }
-            };
-
-            const deleteComment = async (commentId) => {
-                if (!confirm('댓글을 삭제하시겠습니까?')) return;
-
-                try {
-                    const response = await fetch(`/community/posts/${selectedPost.value.id}/comments/${commentId}/`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        }
-                    });
-
-                    if (response.ok) {
-                        selectedPost.value.comments = selectedPost.value.comments.filter(c => c.id !== commentId);
-                        // Update the post in the list
-                        const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
-                        if (postIndex !== -1) {
-                            communityPosts.value[postIndex].comments_count--;
-                        }
-                    } else {
-                        alert('댓글 삭제에 실패했습니다.');
-                    }
-                } catch (e) {
-                    console.error("Failed to delete comment", e);
-                }
-            };
-
-            const togglePostLike = async () => {
-                if (!selectedPost.value) return;
-
-                try {
-                    const response = await fetch(`/community/posts/${selectedPost.value.id}/like/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        selectedPost.value.is_liked = data.is_liked;
-                        selectedPost.value.likes = data.likes_count;
-                        // Update the post in the list
-                        const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
-                        if (postIndex !== -1) {
-                            communityPosts.value[postIndex].is_liked = data.is_liked;
-                            communityPosts.value[postIndex].likes = data.likes_count;
-                        }
-                    }
-                } catch (e) {
-                    console.error("Failed to toggle like", e);
-                }
-            };
-
-            const sharePost = async () => {
-                if (!selectedPost.value) return;
-
-                const shareUrl = `${window.location.origin}/community/posts/${selectedPost.value.id}/`;
-
-                try {
-                    await navigator.clipboard.writeText(shareUrl);
-                    showShareToast.value = true;
-                    setTimeout(() => {
-                        showShareToast.value = false;
-                    }, 2000);
-                } catch (e) {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = shareUrl;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    showShareToast.value = true;
-                    setTimeout(() => {
-                        showShareToast.value = false;
-                    }, 2000);
-                }
-            };
-
-            const formatDate = (dateString) => {
-                return new Date(dateString).toLocaleDateString();
-            };
-
-            // Watch category change
-            Vue.watch(communityCategory, () => {
-                fetchPosts();
-            });
-
-            // --- Feature Methods ---
-
-            const toggleWishlist = (game) => {
-                const index = wishlist.value.findIndex(id => id === game.game_id);
-                if (index === -1) {
-                    wishlist.value.push(game.game_id);
-                } else {
-                    wishlist.value.splice(index, 1);
-                }
-            };
-
-            const isWishlisted = (gameId) => {
-                return wishlist.value.includes(gameId);
-            };
-
-            const formatPrice = (price) => price ? price.toLocaleString() : '무료';
-            const formatReviewCount = (count) => {
-                if (!count) return '0';
-                if (count >= 100000) return Math.round(count / 1000) + 'K';
-                if (count >= 10000) return (count / 1000).toFixed(1) + 'K';
-                if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-                return count.toLocaleString();
-            };
-            const handleImageError = (e) => { e.target.src = "https://via.placeholder.com/460x215?text=No+Image"; };
-            const goToHome = () => {
+            const user = ref({
+                nickname: '{{ user.nickname }}',
+                email: '{{ user.email }}',
+                username: '{{ user.username }}',
+                is_steam_linked: {% if user.is_steam_linked %}true{% else %}false{% endif %}, steam_id: '{{ user.steam_id|default:"" }}',
+        avatar: '{% if user.avatar %}{{ user.avatar.url }}{% endif %}'
+    }); // Inject Django user data
+
+    const games = ref([]);
+    const wishlist = ref([]);
+
+    // RAWG Game Tabs State
+    const gameTab = ref('popular');
+    const rawgGames = ref([]);
+    const isLoadingGames = ref(false);
+
+    // Community State
+    const communityPosts = ref([]);
+    const isWritingPost = ref(false);
+    const communityCategory = ref('all');
+    const selectedPost = ref(null);
+    const fileInput = ref(null);
+    const newPost = reactive({ title: '', content: '', category: 'free', file: null });
+
+    // Game List Container ref for scrolling
+    const gameListContainer = ref(null);
+
+    // Auth Form State
+    const authForm = reactive({
+        email: '',
+        password: '',
+        nickname: ''
+    });
+
+    // Sorting State
+    const sortBy = ref('interest');
+
+    // Infinite Scroll State for Sale Tab
+    const saleItemsPerPage = ref(12);
+    const currentSaleCount = ref(12);
+    const saleSearchQuery = ref('');  // Search query for sale games
+    const showScrollTopBtn = ref(false);
+    const isLoadingMoreSales = ref(false);
+    const infiniteScrollTrigger = ref(null);
+    const popularGamesOnSale = ref([]);  // RAWG popular games on sale
+    const isLoadingPopularGames = ref(false);
+    const bestPrices = ref([]);  // Best historical prices
+    const bestPricesContainer = ref(null);  // Ref for best prices scroll container
+    const popularGamesContainer = ref(null);  // Ref for popular games scroll container
+
+    // Steam Library State
+    const steamLibrary = ref([]);
+    const steamTotalGames = ref(0);
+    const steamTotalHours = ref(0);
+    const isLoadingSteamLibrary = ref(false);
+
+    // Recommendation State
+    const recommendations = ref([]);
+    const recommendSortBy = ref('score');
+    const genreAnalysis = ref(null);
+    const recommendationMessage = ref('');
+    const isLoadingRecommendations = ref(false);
+    const currentRecommendCount = ref(12);
+    const recommendItemsPerPage = ref(12);
+    const isLoadingMoreRecommendations = ref(false);
+    const infiniteScrollTriggerRecommend = ref(null);
+
+    // AI Chatbot State
+    const aiChatMessages = ref([]);
+    const aiUserInput = ref('');
+    const isAiLoading = ref(false);
+    const aiError = ref('');
+    const chatContainer = ref(null);
+    const aiQuickSuggestions = ref([
+        '액션 RPG 추천해줘',
+        '혼자 할 수 있는 힐링 게임',
+        '스토리가 좋은 게임',
+        '친구랑 같이 할 게임',
+        '인디 게임 추천'
+    ]);
+
+    // Onboarding State (왓챠 스타일)
+    const showOnboarding = ref(false);
+    const isLoadingOnboarding = ref(false);
+    const onboardingGames = ref([]);
+    const onboardingRatings = ref({});  // { gameId: score }
+    const onboardingCurrentStep = ref(0);
+    const onboardingTotalSteps = ref(5);
+    const onboardingStep = ref(null);
+    // 온보딩 페이지네이션 State
+    const onboardingCurrentPage = ref(1);
+    const onboardingTotalPages = ref(1);
+    const onboardingTotalGames = ref(0);
+
+    // Profile Page State
+    const showWishlistModal = ref(false);
+    const showReviewsModal = ref(false);
+    const showSteamLibraryModal = ref(false);
+    const avatarInput = ref(null);
+
+    // Dynamic Profile State
+    const targetUsername = ref(null); // If null, viewing self
+    const otherUser = ref(null);
+    const otherWishlist = ref([]);
+    const otherRatings = ref({});
+    const otherSteamLibrary = ref([]);
+    const otherSteamStats = ref({ total: 0, hours: 0 });
+    const isLoadingProfile = ref(false);
+
+    // Computed Properties for Profile Display (Switch between Me and Other)
+    const isMe = computed(() => !targetUsername.value || targetUsername.value === user.value.nickname || targetUsername.value === user.value.username); // Assuming nickname is unique or we use username. API uses username. 
+    // NOTE: user.value has nickname and email. It might not have 'username' explicitly if not passed from Django context. 
+    // In mounted, we see: const user = ref({ nickname: '{{ user.nickname }}', email: '{{ user.email }}' });
+    // We should use nickname for the URL if that's what the user asked (profile/유저닉네임).
+    // But API expects username?
+    // User requested: /#profile/유저닉네임 (Nickname).
+    // But DB lookup is usually by username.
+    // Let's assume username == nickname or we look up by username in URL.
+    // Safe bet: The URL should use the identifier required by backend. The user said "User Nickname" but might mean "Identifier". 
+    // Let's assume the user wants to use the unique identifier.
+
+    const displayUser = computed(() => {
+        if (isMe.value) {
+            return user.value || {};
+        }
+        return otherUser.value || {};
+    });
+    const displayWishlist = computed(() => isMe.value ? wishlist.value : otherWishlist.value);
+    const displayRatings = computed(() => isMe.value ? onboardingRatings.value : otherRatings.value);
+    const displaySteamLibrary = computed(() => isMe.value ? steamLibrary.value : otherSteamLibrary.value);
+    const displaySteamTotalGames = computed(() => isMe.value ? steamTotalGames.value : otherSteamStats.value.total);
+    const displaySteamTotalHours = computed(() => isMe.value ? steamTotalHours.value : otherSteamStats.value.hours); // Note: steamTotalHours in 'me' might be number, API returns number.
+
+
+    onMounted(async () => {
+        // Initialize Game Data from Django
+        // Use verbatim block or different delimiters if mixing Vue and Django extensively
+        // Here we initialize from rawSaleData for demo purposes, but ideally this comes from views.py context
+
+        const serverData = JSON.parse('{{ games_json|escapejs }}');
+        if (serverData.length > 0) {
+            games.value = serverData.map(game => ({
+                ...game,
+                matchScore: Math.floor(Math.random() * (99 - 70) + 70),
+            }));
+        } else {
+            console.log("No game data found.");
+        }
+        // Initialize Wishlist
+        try {
+            const wishlistData = JSON.parse('{{ wishlist_json|escapejs }}');
+            wishlist.value = wishlistData;
+        } catch (e) {
+            console.error("Wishlist init failed", e);
+        }
+
+        // Initialize Best Prices (historic best deals)
+        try {
+            const bestPricesData = JSON.parse('{{ best_prices_json|escapejs }}');
+            bestPrices.value = bestPricesData;
+        } catch (e) {
+            console.error("Best prices init failed", e);
+        }
+
+        // Fetch RAWG Popular Games for Sale tab
+        fetchPopularGames();
+
+        // URL Hash based tab navigation
+        const validTabs = ['home', 'recommend', 'ai', 'sale', 'community'];
+
+        const handleHashChange = async () => {
+            const hash = window.location.hash.replace('#', '');
+            if (!hash) return;
+
+            if (validTabs.includes(hash)) {
                 currentStep.value = 'main';
-                currentTab.value = 'home';
-            };
-
-            const openRawgGame = (game) => {
-                if (!game) return;
-
-                // rawg_id가 있으면 RAWG 기반 상세 페이지로
-                if (game.rawg_id) {
-                    window.location.href = `/games/${game.rawg_id}/`;
-                }
-                // 게임 제목이 있으면 검색 페이지로
-                else if (game.title) {
-                    const params = new URLSearchParams({ title: game.title });
-                    window.location.href = `/games/search/?${params.toString()}`;
-                }
-            };
-
-
-            // --- Infinite Scroll Methods ---
-            const scrollToTop = () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            const loadMoreSaleGames = () => {
-                if (isLoadingMoreSales.value || !hasMoreSaleGames.value) return;
-
-                isLoadingMoreSales.value = true;
-                setTimeout(() => {
-                    currentSaleCount.value += saleItemsPerPage.value;
-                    isLoadingMoreSales.value = false;
-                }, 300); // Small delay for smooth UX
-            };
-
-            const setupInfiniteScroll = () => {
-                // Observer for Sale tab
-                const saleObserver = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting && currentTab.value === 'sale') {
-                        loadMoreSaleGames();
-                    }
-                }, { threshold: 0.1 });
-
-                // Observer for Recommend tab
-                const recommendObserver = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting && currentTab.value === 'recommend') {
-                        loadMoreRecommendations();
-                    }
-                }, { threshold: 0.1 });
-
-                // Watch for the sale trigger element
-                Vue.watch(infiniteScrollTrigger, (el) => {
-                    if (el) saleObserver.observe(el);
-                });
-
-                // Watch for the recommend trigger element
-                Vue.watch(infiniteScrollTriggerRecommend, (el) => {
-                    if (el) recommendObserver.observe(el);
-                });
-            };
-
-            // Scroll position watcher
-            const handleScroll = () => {
-                showScrollTopBtn.value = window.scrollY > 300;
-            };
-
-            // Reset count when items per page changes
-            Vue.watch(saleItemsPerPage, (newVal) => {
-                currentSaleCount.value = newVal;
-            });
-
-            // Reset count when sort changes
-            Vue.watch(sortBy, () => {
-                currentSaleCount.value = saleItemsPerPage.value;
-            });
-
-            // Reset count when search query changes
-            Vue.watch(saleSearchQuery, () => {
-                currentSaleCount.value = saleItemsPerPage.value;
-            });
-
-            // --- Steam Library Methods ---
-            const fetchSteamLibrary = async () => {
-                if (isLoadingSteamLibrary.value) return;
-
-                isLoadingSteamLibrary.value = true;
-                try {
-                    const response = await fetch('/users/api/steam/library/');
-                    if (response.ok) {
-                        const data = await response.json();
-                        steamLibrary.value = data.library || [];
-                        steamTotalGames.value = data.total_games || 0;
-                        steamTotalHours.value = data.total_playtime_hours || 0;
+                currentTab.value = hash;
+                targetUsername.value = null; // Reset profile view
+            } else if (hash.startsWith('profile/')) {
+                const username = decodeURIComponent(hash.split('/')[1]); // Handle Korean characters
+                if (username) {
+                    // If it's me, just switch to profile mode (fetched data is optional/optimization, but local data is fresher)
+                    // But for consistency we should check if it matches my nickname?
+                    // For now, fetch every time or check locally.
+                    if (username === user.value.nickname || username === user.value.username) { // Assuming URL uses nickname
+                        targetUsername.value = null; // Treat as 'Me'
+                        currentStep.value = 'profile';
                     } else {
-                        console.error('Failed to fetch Steam library');
+                        targetUsername.value = username;
+                        currentStep.value = 'profile';
+                        await fetchUserProfile(username);
                     }
-                } catch (e) {
-                    console.error('Error fetching Steam library:', e);
-                } finally {
-                    isLoadingSteamLibrary.value = false;
                 }
-            };
+            } else if (hash === 'profile') {
+                targetUsername.value = null;
+                currentStep.value = 'profile';
+            }
+        };
 
-            // --- Recommendation Methods ---
-            const fetchRecommendations = async () => {
-                if (isLoadingRecommendations.value) return;
+        // Initial check
+        handleHashChange();
 
-                isLoadingRecommendations.value = true;
-                recommendations.value = [];
+        // Listen for hash changes (browser back/forward)
+        window.addEventListener('hashchange', handleHashChange);
 
-                try {
-                    const response = await fetch('/users/api/recommendations/');
-                    if (response.ok) {
-                        const data = await response.json();
-                        recommendations.value = data.recommendations || [];
-                        genreAnalysis.value = data.genres_analysis || null;
-                        recommendationMessage.value = data.message || '';
-                        currentRecommendCount.value = recommendItemsPerPage.value;
-                    } else {
-                        console.error('Failed to fetch recommendations');
+        // Load Default Tab Games
+        await loadGameTab('popular');
+
+        // Fetch Community Posts
+        await fetchPosts();
+
+        // Setup scroll listener for scroll-to-top button
+        window.addEventListener('scroll', handleScroll);
+
+        // Setup infinite scroll
+        setupInfiniteScroll();
+
+        // Check if user needs onboarding (Steam 미연동 사용자)
+        checkOnboardingStatus();
+    });
+
+    const loadGameTab = async (tabName) => {
+        gameTab.value = tabName;
+        isLoadingGames.value = true;
+        rawgGames.value = [];
+
+        try {
+            let url = '/games/api/popular/?limit=50';
+            if (tabName === 'top-rated') {
+                url = '/games/api/top-rated/?limit=50';
+            } else if (tabName === 'new-releases') {
+                url = '/games/api/new-releases/?limit=50';
+            } else if (tabName === 'trending') {
+                url = '/games/api/trending/?limit=50';
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.games) {
+                rawgGames.value = data.games;
+            }
+        } catch (e) {
+            console.error("Failed to fetch games for tab " + tabName, e);
+        } finally {
+            isLoadingGames.value = false;
+            // Reset scroll position when tab changes
+            if (gameListContainer.value) {
+                gameListContainer.value.scrollLeft = 0;
+            }
+        }
+    };
+
+    // Scroll game list left or right
+    const scrollGameList = (direction) => {
+        if (!gameListContainer.value) return;
+        const container = gameListContainer.value;
+        const cardWidth = 256 + 20; // w-64 (256px) + gap-5 (20px)
+        const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+
+        if (direction === 'left') {
+            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    };
+
+    // Fetch RAWG Popular Games and match with Steam Sale data
+    const fetchPopularGames = async () => {
+        if (isLoadingPopularGames.value) return;
+
+        isLoadingPopularGames.value = true;
+        try {
+            // Check if sale games data is loaded
+            console.log(`Sale games loaded: ${games.value.length}`);
+
+            if (games.value.length === 0) {
+                console.warn("No sale games loaded yet, cannot match");
+                popularGamesOnSale.value = [];
+                return;
+            }
+
+            // Fetch all-time popular games (no date filter) for sale matching
+            const response = await fetch('/games/api/popular/?limit=100&all_time=true');
+            const data = await response.json();
+
+            console.log(`RAWG popular games fetched: ${data.games?.length || 0}`);
+
+            if (data.games && data.games.length > 0) {
+                // Create a map of sale games by normalized title for fast lookup
+                const saleGamesMap = new Map();
+                games.value.forEach(saleGame => {
+                    // Normalize title: lowercase, remove special chars
+                    const normalizedTitle = saleGame.title
+                        .toLowerCase()
+                        .replace(/[®™©:!?'-]/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    saleGamesMap.set(normalizedTitle, saleGame);
+
+                    // Also try shorter version (first part before -)
+                    const shortTitle = normalizedTitle.split(/[\-–—]/)[0].trim();
+                    if (shortTitle.length > 3 && !saleGamesMap.has(shortTitle)) {
+                        saleGamesMap.set(shortTitle, saleGame);
                     }
-                } catch (e) {
-                    console.error('Error fetching recommendations:', e);
-                } finally {
-                    isLoadingRecommendations.value = false;
-                }
-            };
-
-            const loadMoreRecommendations = () => {
-                if (isLoadingMoreRecommendations.value || !hasMoreRecommendations.value) return;
-
-                isLoadingMoreRecommendations.value = true;
-                setTimeout(() => {
-                    currentRecommendCount.value += recommendItemsPerPage.value;
-                    isLoadingMoreRecommendations.value = false;
-                }, 300);
-            };
-
-            // Watch for tab change to load recommendations and update URL hash
-            Vue.watch(currentTab, (newTab) => {
-                // Update URL hash for tab persistence
-                window.history.replaceState(null, '', `#${newTab}`);
-
-                // Load recommendations if needed
-                if (newTab === 'recommend' && recommendations.value.length === 0) {
-                    fetchRecommendations();
-                }
-            });
-
-            // --- AI Chatbot Methods ---
-            const scrollToBottom = () => {
-                if (chatContainer.value) {
-                    setTimeout(() => {
-                        chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-                    }, 100);
-                }
-            };
-
-            const formatAIMessage = (content) => {
-                if (!content) return '';
-                // Convert markdown-style bold to HTML
-                let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                // Convert line breaks
-                formatted = formatted.replace(/\n/g, '<br>');
-                return formatted;
-            };
-
-            const sendAiMessage = async () => {
-                const message = aiUserInput.value.trim();
-                if (!message || isAiLoading.value) return;
-
-                // Add user message to chat
-                aiChatMessages.value.push({
-                    role: 'user',
-                    content: message
                 });
 
-                aiUserInput.value = '';
-                aiError.value = '';
-                isAiLoading.value = true;
-                scrollToBottom();
+                // Match popular games with sale data
+                const matchedGames = [];
+                for (const rawgGame of data.games) {
+                    const normalizedRawgTitle = rawgGame.title
+                        .toLowerCase()
+                        .replace(/[®™©:!?'-]/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
 
-                try {
-                    const response = await fetch('/users/api/ai-chat/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            history: aiChatMessages.value.slice(0, -1) // Exclude current message
-                        })
-                    });
+                    // Try exact match
+                    let saleMatch = saleGamesMap.get(normalizedRawgTitle);
 
-                    const data = await response.json();
+                    // Try short title match if no exact match
+                    if (!saleMatch) {
+                        const shortRawgTitle = normalizedRawgTitle.split(/[\-–—]/)[0].trim();
+                        if (shortRawgTitle.length > 3) {
+                            saleMatch = saleGamesMap.get(shortRawgTitle);
+                        }
+                    }
 
-                    if (data.success && data.message) {
-                        aiChatMessages.value.push({
-                            role: 'assistant',
-                            content: data.message
+                    // Try partial match (contains)
+                    if (!saleMatch) {
+                        for (const [saleTitle, saleGame] of saleGamesMap) {
+                            if (saleTitle.length > 5 && (normalizedRawgTitle.includes(saleTitle) || saleTitle.includes(normalizedRawgTitle))) {
+                                saleMatch = saleGame;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (saleMatch) {
+                        matchedGames.push({
+                            ...rawgGame,
+                            discount_rate: saleMatch.discount_rate,
+                            current_price: saleMatch.current_price,
+                            original_price: saleMatch.original_price,
+                            steam_game_id: saleMatch.game_id,
+                            isOnSale: true
                         });
-                    } else {
-                        aiError.value = data.error || 'AI 응답을 받지 못했습니다.';
+
+                        // Stop when we have enough matches
+                        if (matchedGames.length >= 15) break;
                     }
-                } catch (e) {
-                    console.error('AI Chat Error:', e);
-                    aiError.value = '서버와 통신 중 오류가 발생했습니다.';
-                } finally {
-                    isAiLoading.value = false;
-                    scrollToBottom();
                 }
-            };
 
-            // --- Onboarding Methods (왓챠 스타일) ---
+                popularGamesOnSale.value = matchedGames;
+                console.log(`Matched ${matchedGames.length} popular games with sale data`);
+            } else {
+                console.warn("No games returned from RAWG API");
+                popularGamesOnSale.value = [];
+            }
+        } catch (e) {
+            console.error("Failed to fetch popular games", e);
+            popularGamesOnSale.value = [];
+        } finally {
+            isLoadingPopularGames.value = false;
+        }
+    };
 
-            // 온보딩 필요 여부 체크
-            const checkOnboardingStatus = async () => {
-                try {
-                    const response = await fetch('/users/api/onboarding/status/');
-                    const data = await response.json();
+    // --- Computed ---
+    const popularGames = computed(() => games.value.slice(0, 5));
 
-                    if (data.needs_onboarding) {
-                        // 온보딩이 필요하면 모달 표시
-                        showOnboarding.value = true;
-                        onboardingCurrentStep.value = data.current_step || 0;
-                        await loadOnboardingGames(onboardingCurrentStep.value);
+    // Calculate recommendation score for sale games (similar to recommendation.py)
+    const calculateSaleScore = (game) => {
+        let score = 0;
+
+        // 1. Steam Rating (40 points max)
+        const steamRating = game.steam_rating || 0;
+        if (steamRating > 0) {
+            // Scale: 70-100% rating → 0-40 points
+            score += Math.min(40, Math.max(0, (steamRating - 70) / 30 * 40));
+        }
+
+        // 2. Review count popularity (25 points max)
+        const reviewCount = game.review_count || 0;
+        if (reviewCount > 0) {
+            // Log scale for review count (more reviews = more trusted)
+            const logReviews = Math.log10(reviewCount + 1);
+            score += Math.min(25, logReviews * 5);
+        }
+
+        // 3. Discount rate (20 points max)
+        const discountRate = game.discount_rate || 0;
+        score += Math.min(20, discountRate * 100 * 0.2);
+
+        // 4. Historical low bonus (15 points)
+        if (game.is_historical_low) {
+            score += 15;
+        }
+
+        return Math.round(score * 10) / 10;
+    };
+
+    // Filter by search query first, then sort
+    const filteredSaleGames = computed(() => {
+        let filtered = [...games.value];
+
+        // Apply search filter
+        if (saleSearchQuery.value.trim()) {
+            const query = saleSearchQuery.value.toLowerCase().trim();
+            filtered = filtered.filter(game =>
+                game.title && game.title.toLowerCase().includes(query)
+            );
+        }
+
+        return filtered;
+    });
+
+    const sortedSaleGames = computed(() => {
+        let sorted = [...filteredSaleGames.value];
+
+        if (sortBy.value === 'interest') {
+            // Apply recommendation algorithm
+            sorted = sorted.map(game => ({
+                ...game,
+                saleScore: calculateSaleScore(game)
+            }));
+            sorted.sort((a, b) => b.saleScore - a.saleScore);
+        } else if (sortBy.value === 'rating') {
+            sorted.sort((a, b) => (b.steam_rating || 0) - (a.steam_rating || 0));
+        } else if (sortBy.value === 'discount') {
+            sorted.sort((a, b) => (b.discount_rate || 0) - (a.discount_rate || 0));
+        } else if (sortBy.value === 'price_asc') {
+            sorted.sort((a, b) => (a.current_price || 0) - (b.current_price || 0));
+        }
+
+        return sorted;
+    });
+
+    // Displayed games with infinite scroll
+    const displayedSaleGames = computed(() => {
+        return sortedSaleGames.value.slice(0, currentSaleCount.value);
+    });
+
+    const hasMoreSaleGames = computed(() => {
+        return currentSaleCount.value < sortedSaleGames.value.length;
+    });
+
+    // Recommendation computed properties
+    const sortedRecommendations = computed(() => {
+        let sorted = [...recommendations.value];
+        if (recommendSortBy.value === 'score') {
+            sorted.sort((a, b) => (b.recommendation_score || 0) - (a.recommendation_score || 0));
+        } else if (recommendSortBy.value === 'rating') {
+            sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        } else if (recommendSortBy.value === 'sale') {
+            // Show on-sale games first, then by discount
+            sorted.sort((a, b) => {
+                if (a.is_on_sale && !b.is_on_sale) return -1;
+                if (!a.is_on_sale && b.is_on_sale) return 1;
+                return (b.discount_rate || 0) - (a.discount_rate || 0);
+            });
+        }
+        return sorted;
+    });
+
+    const displayedRecommendations = computed(() => {
+        return sortedRecommendations.value.slice(0, currentRecommendCount.value);
+    });
+
+    const hasMoreRecommendations = computed(() => {
+        return currentRecommendCount.value < sortedRecommendations.value.length;
+    });
+
+    // --- Methods for CRUD & Auth ---
+
+    const toggleAuthMode = () => {
+        isLoginMode.value = !isLoginMode.value;
+        authForm.email = '';
+        authForm.password = '';
+        authForm.nickname = '';
+    };
+
+    const handleAuthAction = () => {
+        // Backend Integration Note: 
+        // Replace this with axios.post('/api/login/' or '/api/register/', authForm)
+
+        if (!authForm.email || !authForm.password) {
+            alert('이메일과 비밀번호를 입력해주세요.');
+            return;
+        }
+        // ... implementation details ...
+    };
+
+    // Navigate to game detail page (for sale cards)
+    const navigateToGameDetail = (event, gameId) => {
+        // Don't navigate if user clicked on a button or link
+        if (event.target.closest('a') || event.target.closest('button')) {
+            return;
+        }
+        window.location.href = `/games/${gameId}/`;
+    };
+
+    // Navigate to Steam store page (for sale cards - Steam AppID != RAWG ID)
+    const navigateToSteamStore = (event, storeLink) => {
+        // Don't navigate if user clicked on a button or link
+        if (event.target.closest('a') || event.target.closest('button')) {
+            return;
+        }
+        if (storeLink) {
+            window.open(storeLink, '_blank');
+        }
+    };
+
+    // Navigate to game detail by title (for sale cards - search RAWG by title)
+    const navigateToGameByTitle = (event, title, steamAppId, cheapsharkUrl) => {
+        // Don't navigate if user clicked on a button or link
+        if (event.target.closest('a') || event.target.closest('button')) {
+            return;
+        }
+        // Pass title, steam appid, and cheapshark redirect URL as query params
+        const params = new URLSearchParams();
+        params.set('title', title);
+        if (steamAppId) params.set('steam_appid', steamAppId);
+        if (cheapsharkUrl) params.set('cheapshark_url', cheapsharkUrl);
+        window.location.href = `/games/search/?${params.toString()}`;
+    };
+
+    // Infinite scroll for best prices (repeat items for infinite effect)
+    const infiniteBestPrices = computed(() => {
+        if (!bestPrices.value || bestPrices.value.length === 0) return [];
+        // Repeat the list to create infinite scroll effect
+        return [...bestPrices.value, ...bestPrices.value, ...bestPrices.value];
+    });
+
+    // Infinite scroll for popular games on sale (repeat items for infinite effect)
+    const infinitePopularGames = computed(() => {
+        if (!popularGamesOnSale.value || popularGamesOnSale.value.length === 0) return [];
+        // Repeat the list to create infinite scroll effect
+        return [...popularGamesOnSale.value, ...popularGamesOnSale.value, ...popularGamesOnSale.value];
+    });
+
+    // Scroll best prices list left or right
+    const scrollBestPrices = (direction) => {
+        if (!bestPricesContainer.value) return;
+        const container = bestPricesContainer.value;
+        const cardWidth = 256 + 16; // w-64 (256px) + gap-4 (16px)
+        const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+        const maxScroll = container.scrollWidth - container.clientWidth;
+
+        if (direction === 'left') {
+            if (container.scrollLeft <= 0) {
+                // At the beginning, jump to end
+                container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
+            } else {
+                container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            }
+        } else {
+            if (container.scrollLeft >= maxScroll - 10) {
+                // At the end, jump to beginning
+                container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
+            } else {
+                container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+    };
+
+    // Scroll popular games list left or right
+    const scrollPopularGames = (direction) => {
+        if (!popularGamesContainer.value) return;
+        const container = popularGamesContainer.value;
+        const cardWidth = 288 + 16; // w-72 (288px) + gap-4 (16px)
+        const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+        const maxScroll = container.scrollWidth - container.clientWidth;
+
+        if (direction === 'left') {
+            if (container.scrollLeft <= 0) {
+                // At the beginning, jump to end
+                container.scrollTo({ left: maxScroll / 2, behavior: 'auto' });
+            } else {
+                container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            }
+        } else {
+            if (container.scrollLeft >= maxScroll - 10) {
+                // At the end, jump to beginning
+                container.scrollTo({ left: maxScroll / 3, behavior: 'auto' });
+            } else {
+                container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+    };
+
+    const handleLogout = () => {
+        // Redirect to Django logout URL
+        window.location.href = "{% url 'users:logout' %}";
+    };
+
+    const deleteAccount = () => {
+        // Redirect/Form submit to Django delete URL
+        if (confirm("정말로 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.")) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{% url 'users:delete' %}";
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    const socialLogin = (provider) => {
+        alert(`${provider} 로그인 연동 기능은 준비 중입니다.`);
+    };
+
+    const toggleLink = (provider) => {
+        // Toggle Linked Account Status (Update)
+        if (provider === 'steam') {
+            user.value.linked_steam = !user.value.linked_steam;
+        }
+    };
+
+    const fetchUserProfile = async (username) => {
+        isLoadingProfile.value = true;
+        try {
+            const response = await fetch(`/users/api/profile/${encodeURIComponent(username)}/`);
+            if (response.ok) {
+                const data = await response.json();
+
+                // Check if the fetched user is actually 'me' (server side check)
+                if (data.is_me) {
+                    targetUsername.value = null; // Switch back to 'Me' mode
+                    return;
+                }
+
+                otherUser.value = {
+                    nickname: data.nickname, // Use nickname for display
+                    email: data.email,
+                    avatar: data.avatar,
+                    is_steam_linked: data.is_steam_linked,
+                    steam_id: data.steam_id,
+                    username: data.username
+                };
+                otherWishlist.value = data.wishlist;
+                otherRatings.value = data.onboardingRatings;
+                otherSteamStats.value = {
+                    total: data.steamTotalGames,
+                    hours: data.steamTotalHours
+                };
+                otherSteamLibrary.value = data.steamLibrary;
+            } else {
+                console.error("User not found");
+                // Redirect to main or show error
+                alert("사용자를 찾을 수 없습니다.");
+                window.location.hash = '';
+                currentStep.value = 'main';
+            }
+        } catch (e) {
+            console.error("Fetch profile failed", e);
+        } finally {
+            isLoadingProfile.value = false;
+        }
+    };
+
+    // --- Community Methods ---
+    const newComment = ref('');
+    const showShareToast = ref(false);
+
+    const fetchPosts = async () => {
+        try {
+            let url = '/community/posts/';
+            if (communityCategory.value !== 'all') {
+                url += `?category=${communityCategory.value}`;
+            }
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                communityPosts.value = data.map(post => ({
+                    id: post.id,
+                    title: post.title,
+                    content: post.content,
+                    author: post.author_name || '익명',
+                    category: post.category,
+                    created_at: new Date(post.created_at).toLocaleDateString(),
+                    likes: post.likes_count || 0,
+                    comments_count: post.comments_count || 0,
+                    comments: (post.comments || []).map(c => ({
+                        ...c,
+                        is_own: c.author_name === user.value.nickname
+                    })),
+                    image_url: post.image_url || null,
+                    video: post.video || null,
+                    is_liked: post.is_liked || false
+                }));
+            }
+        } catch (e) {
+            console.error("Failed to fetch posts", e);
+        }
+    };
+
+    const handleFileUpload = (event) => {
+        newPost.file = event.target.files[0];
+    };
+
+    const submitPost = async () => {
+        if (!newPost.title || !newPost.content) return alert('제목과 내용을 입력해주세요.');
+
+        try {
+            const formData = new FormData();
+            formData.append('title', newPost.title);
+            formData.append('content', newPost.content);
+            formData.append('category', newPost.category);
+            if (newPost.file) {
+                if (newPost.file.type.startsWith('image/')) {
+                    formData.append('image', newPost.file);
+                } else if (newPost.file.type.startsWith('video/')) {
+                    formData.append('video', newPost.file);
+                }
+            }
+
+            const response = await fetch('/community/posts/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                isWritingPost.value = false;
+                newPost.title = '';
+                newPost.content = '';
+                newPost.file = null;
+                if (fileInput.value) fileInput.value.value = '';
+                await fetchPosts();
+            } else {
+                alert('게시글 작성 실패');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const openPostDetail = async (post) => {
+        // Fetch full post detail with comments
+        try {
+            const response = await fetch(`/community/posts/${post.id}/`);
+            if (response.ok) {
+                const data = await response.json();
+                selectedPost.value = {
+                    id: data.id,
+                    title: data.title,
+                    content: data.content,
+                    author: data.author_name || '익명',
+                    category: data.category,
+                    created_at: new Date(data.created_at).toLocaleDateString(),
+                    likes: data.likes_count || 0,
+                    comments: (data.comments || []).map(c => ({
+                        ...c,
+                        is_own: c.author_name === user.value.nickname
+                    })),
+                    image_url: data.image_url || null,
+                    video: data.video || null,
+                    is_liked: data.is_liked || false
+                };
+            }
+        } catch (e) {
+            console.error("Failed to fetch post detail", e);
+            selectedPost.value = post;
+        }
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closePostDetail = () => {
+        selectedPost.value = null;
+        newComment.value = '';
+        document.body.style.overflow = '';
+    };
+
+    const submitComment = async () => {
+        if (!newComment.value.trim() || !selectedPost.value) return;
+
+        try {
+            const response = await fetch(`/community/posts/${selectedPost.value.id}/comments/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ content: newComment.value })
+            });
+
+            if (response.ok) {
+                const comment = await response.json();
+                selectedPost.value.comments.push({
+                    ...comment,
+                    is_own: true
+                });
+                newComment.value = '';
+                // Update the post in the list
+                const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
+                if (postIndex !== -1) {
+                    communityPosts.value[postIndex].comments_count++;
+                }
+            } else {
+                alert('댓글 작성에 실패했습니다.');
+            }
+        } catch (e) {
+            console.error("Failed to submit comment", e);
+        }
+    };
+
+    const deleteComment = async (commentId) => {
+        if (!confirm('댓글을 삭제하시겠습니까?')) return;
+
+        try {
+            const response = await fetch(`/community/posts/${selectedPost.value.id}/comments/${commentId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+
+            if (response.ok) {
+                selectedPost.value.comments = selectedPost.value.comments.filter(c => c.id !== commentId);
+                // Update the post in the list
+                const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
+                if (postIndex !== -1) {
+                    communityPosts.value[postIndex].comments_count--;
+                }
+            } else {
+                alert('댓글 삭제에 실패했습니다.');
+            }
+        } catch (e) {
+            console.error("Failed to delete comment", e);
+        }
+    };
+
+    const togglePostLike = async () => {
+        if (!selectedPost.value) return;
+
+        try {
+            const response = await fetch(`/community/posts/${selectedPost.value.id}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                selectedPost.value.is_liked = data.is_liked;
+                selectedPost.value.likes = data.likes_count;
+                // Update the post in the list
+                const postIndex = communityPosts.value.findIndex(p => p.id === selectedPost.value.id);
+                if (postIndex !== -1) {
+                    communityPosts.value[postIndex].is_liked = data.is_liked;
+                    communityPosts.value[postIndex].likes = data.likes_count;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to toggle like", e);
+        }
+    };
+
+    const sharePost = async () => {
+        if (!selectedPost.value) return;
+
+        const shareUrl = `${window.location.origin}/community/posts/${selectedPost.value.id}/`;
+
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            showShareToast.value = true;
+            setTimeout(() => {
+                showShareToast.value = false;
+            }, 2000);
+        } catch (e) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showShareToast.value = true;
+            setTimeout(() => {
+                showShareToast.value = false;
+            }, 2000);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    // Watch category change
+    Vue.watch(communityCategory, () => {
+        fetchPosts();
+    });
+
+    // --- Feature Methods ---
+
+    const toggleWishlist = async (game) => {
+        // game can have: rawg_id, game_id, steam_appid, title, background_image/image
+        const rawgId = game.rawg_id || game.id;
+        const gameTitle = game.title || game.name || `Game ${rawgId}`;
+        const gameImage = game.background_image || game.image || game.image_url || '';
+
+        try {
+            // Use RAWG-based API for all games (auto-creates game if needed)
+            const response = await fetch(`/games/api/wishlist/${rawgId}/toggle/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    game_title: gameTitle,
+                    game_image: gameImage
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Update local state based on server response
+                if (data.is_wishlisted) {
+                    // Add to wishlist if not already present
+                    if (!wishlist.value.includes(rawgId)) {
+                        wishlist.value.push(rawgId);
                     }
-                } catch (e) {
-                    console.error('Onboarding status check failed:', e);
-                }
-            };
-
-            // 온보딩 게임 목록 로드
-            const loadOnboardingGames = async (step) => {
-                isLoadingOnboarding.value = true;
-                try {
-                    const response = await fetch(`/users/api/onboarding/games/?step=${step}`);
-                    const data = await response.json();
-
-                    onboardingGames.value = data.games || [];
-                    onboardingStep.value = data.step_info;
-                    onboardingTotalSteps.value = data.total_steps || 5;
-
-                    if (data.is_complete) {
-                        // 모든 단계 완료
-                        await completeOnboarding();
-                    }
-                } catch (e) {
-                    console.error('Failed to load onboarding games:', e);
-                } finally {
-                    isLoadingOnboarding.value = false;
-                }
-            };
-
-            // 게임 평가
-            const rateGame = async (game, score) => {
-                try {
-                    // 로컬 상태 업데이트 (즉각 반응)
-                    onboardingRatings.value = {
-                        ...onboardingRatings.value,
-                        [game.rawg_id]: score
-                    };
-
-                    // 서버에 저장
-                    await fetch('/users/api/onboarding/rate/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            game_id: game.rawg_id,
-                            game_title: game.title,
-                            game_image: game.image,
-                            score: score
-                        })
-                    });
-                } catch (e) {
-                    console.error('Failed to save rating:', e);
-                }
-            };
-
-            // 다음 단계
-            const nextOnboardingStep = async () => {
-                const nextStep = onboardingCurrentStep.value + 1;
-
-                if (nextStep >= onboardingTotalSteps.value) {
-                    // 마지막 단계 완료
-                    await completeOnboarding();
                 } else {
-                    onboardingCurrentStep.value = nextStep;
-
-                    // 서버에 진행 상황 저장
-                    await fetch('/users/api/onboarding/next-step/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({ step: nextStep })
-                    });
-
-                    // 다음 단계 게임 로드
-                    await loadOnboardingGames(nextStep);
+                    // Remove from wishlist
+                    const index = wishlist.value.indexOf(rawgId);
+                    if (index !== -1) {
+                        wishlist.value.splice(index, 1);
+                    }
                 }
-            };
+            } else {
+                console.error('Failed to toggle wishlist:', await response.text());
+            }
+        } catch (e) {
+            console.error('Wishlist toggle error:', e);
+            // Fallback to local-only toggle for offline experience
+            const index = wishlist.value.findIndex(id => id === rawgId);
+            if (index === -1) {
+                wishlist.value.push(rawgId);
+            } else {
+                wishlist.value.splice(index, 1);
+            }
+        }
+    };
 
-            // 이전 단계
-            const prevOnboardingStep = async () => {
-                if (onboardingCurrentStep.value > 0) {
-                    const prevStep = onboardingCurrentStep.value - 1;
-                    onboardingCurrentStep.value = prevStep;
-                    await loadOnboardingGames(prevStep);
+    const isWishlisted = (gameId) => {
+        return wishlist.value.includes(gameId);
+    };
+
+    const formatPrice = (price) => price ? price.toLocaleString() : '무료';
+    const formatReviewCount = (count) => {
+        if (!count) return '0';
+        if (count >= 100000) return Math.round(count / 1000) + 'K';
+        if (count >= 10000) return (count / 1000).toFixed(1) + 'K';
+        if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+        return count.toLocaleString();
+    };
+    const handleImageError = (e) => { e.target.src = "https://via.placeholder.com/460x215?text=No+Image"; };
+    const goToHome = () => {
+        currentStep.value = 'main';
+        currentTab.value = 'home';
+        window.location.hash = '';
+    };
+
+    const goToProfile = () => {
+        targetUsername.value = null; // View my own profile
+        currentStep.value = 'profile';
+        window.location.hash = 'profile';
+    };
+
+    const openRawgGame = (game) => {
+        if (!game) return;
+
+        // rawg_id가 있으면 RAWG 기반 상세 페이지로
+        if (game.rawg_id) {
+            window.location.href = `/games/${game.rawg_id}/`;
+        }
+        // 게임 제목이 있으면 검색 페이지로
+        else if (game.title) {
+            const params = new URLSearchParams({ title: game.title });
+            window.location.href = `/games/search/?${params.toString()}`;
+        }
+    };
+
+
+    // --- Infinite Scroll Methods ---
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const loadMoreSaleGames = () => {
+        if (isLoadingMoreSales.value || !hasMoreSaleGames.value) return;
+
+        isLoadingMoreSales.value = true;
+        setTimeout(() => {
+            currentSaleCount.value += saleItemsPerPage.value;
+            isLoadingMoreSales.value = false;
+        }, 300); // Small delay for smooth UX
+    };
+
+    const setupInfiniteScroll = () => {
+        // Observer for Sale tab
+        const saleObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && currentTab.value === 'sale') {
+                loadMoreSaleGames();
+            }
+        }, { threshold: 0.1 });
+
+        // Observer for Recommend tab
+        const recommendObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && currentTab.value === 'recommend') {
+                loadMoreRecommendations();
+            }
+        }, { threshold: 0.1 });
+
+        // Watch for the sale trigger element
+        Vue.watch(infiniteScrollTrigger, (el) => {
+            if (el) saleObserver.observe(el);
+        });
+
+        // Watch for the recommend trigger element
+        Vue.watch(infiniteScrollTriggerRecommend, (el) => {
+            if (el) recommendObserver.observe(el);
+        });
+    };
+
+    // Scroll position watcher
+    const handleScroll = () => {
+        showScrollTopBtn.value = window.scrollY > 300;
+    };
+
+    // Reset count when items per page changes
+    Vue.watch(saleItemsPerPage, (newVal) => {
+        currentSaleCount.value = newVal;
+    });
+
+    // Reset count when sort changes
+    Vue.watch(sortBy, () => {
+        currentSaleCount.value = saleItemsPerPage.value;
+    });
+
+    // Reset count when search query changes
+    Vue.watch(saleSearchQuery, () => {
+        currentSaleCount.value = saleItemsPerPage.value;
+    });
+
+    // --- Steam Library Methods ---
+    const fetchSteamLibrary = async () => {
+        if (isLoadingSteamLibrary.value) return;
+
+        isLoadingSteamLibrary.value = true;
+        try {
+            const response = await fetch('/users/api/steam/library/');
+            if (response.ok) {
+                const data = await response.json();
+                steamLibrary.value = data.library || [];
+                steamTotalGames.value = data.total_games || 0;
+                steamTotalHours.value = data.total_playtime_hours || 0;
+            } else {
+                console.error('Failed to fetch Steam library');
+            }
+        } catch (e) {
+            console.error('Error fetching Steam library:', e);
+        } finally {
+            isLoadingSteamLibrary.value = false;
+        }
+    };
+
+    // --- Recommendation Methods ---
+    const fetchRecommendations = async () => {
+        if (isLoadingRecommendations.value) return;
+
+        isLoadingRecommendations.value = true;
+        recommendations.value = [];
+
+        try {
+            const response = await fetch('/users/api/recommendations/');
+            if (response.ok) {
+                const data = await response.json();
+                recommendations.value = data.recommendations || [];
+                genreAnalysis.value = data.genres_analysis || null;
+                recommendationMessage.value = data.message || '';
+                currentRecommendCount.value = recommendItemsPerPage.value;
+            } else {
+                console.error('Failed to fetch recommendations');
+            }
+        } catch (e) {
+            console.error('Error fetching recommendations:', e);
+        } finally {
+            isLoadingRecommendations.value = false;
+        }
+    };
+
+    const loadMoreRecommendations = () => {
+        if (isLoadingMoreRecommendations.value || !hasMoreRecommendations.value) return;
+
+        isLoadingMoreRecommendations.value = true;
+        setTimeout(() => {
+            currentRecommendCount.value += recommendItemsPerPage.value;
+            isLoadingMoreRecommendations.value = false;
+        }, 300);
+    };
+
+    // Watch for tab change to load recommendations and update URL hash
+    Vue.watch(currentTab, (newTab) => {
+        // Update URL hash for tab persistence
+        window.history.replaceState(null, '', `#${newTab}`);
+
+        // Load recommendations if needed
+        if (newTab === 'recommend' && recommendations.value.length === 0) {
+            fetchRecommendations();
+        }
+    });
+
+    // --- AI Chatbot Methods ---
+    const scrollToBottom = () => {
+        if (chatContainer.value) {
+            setTimeout(() => {
+                chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+            }, 100);
+        }
+    };
+
+    const formatAIMessage = (content) => {
+        if (!content) return '';
+        // Convert markdown-style bold to HTML
+        let formatted = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Convert line breaks
+        formatted = formatted.replace(/\n/g, '<br>');
+        return formatted;
+    };
+
+    const sendAiMessage = async () => {
+        const message = aiUserInput.value.trim();
+        if (!message || isAiLoading.value) return;
+
+        // Add user message to chat
+        aiChatMessages.value.push({
+            role: 'user',
+            content: message
+        });
+
+        aiUserInput.value = '';
+        aiError.value = '';
+        isAiLoading.value = true;
+        scrollToBottom();
+
+        try {
+            const response = await fetch('/users/api/ai-chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: aiChatMessages.value.slice(0, -1) // Exclude current message
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.message) {
+                aiChatMessages.value.push({
+                    role: 'assistant',
+                    content: data.message
+                });
+            } else {
+                aiError.value = data.error || 'AI 응답을 받지 못했습니다.';
+            }
+        } catch (e) {
+            console.error('AI Chat Error:', e);
+            aiError.value = '서버와 통신 중 오류가 발생했습니다.';
+        } finally {
+            isAiLoading.value = false;
+            scrollToBottom();
+        }
+    };
+
+    // --- Onboarding Methods (왓챠 스타일) ---
+
+    // 온보딩 필요 여부 체크 및 기존 평가 로드
+    const checkOnboardingStatus = async () => {
+        try {
+            const response = await fetch('/users/api/onboarding/status/');
+            const data = await response.json();
+
+            // 기존 평가 데이터 로드 (DB에서 가져옴)
+            if (data.ratings) {
+                // rawg_id를 숫자로 변환하여 저장
+                const loadedRatings = {};
+                for (const [rawgId, score] of Object.entries(data.ratings)) {
+                    loadedRatings[parseInt(rawgId)] = score;
                 }
-            };
+                onboardingRatings.value = loadedRatings;
+                console.log(`Loaded ${Object.keys(loadedRatings).length} existing ratings from DB`);
+            }
 
-            // 온보딩 완료
-            const completeOnboarding = async () => {
-                try {
-                    await fetch('/users/api/onboarding/complete/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({ skipped: false })
-                    });
-                } catch (e) {
-                    console.error('Failed to complete onboarding:', e);
-                }
-                showOnboarding.value = false;
-            };
-
-            // 온보딩 스킵
-            const skipOnboarding = async () => {
-                try {
-                    await fetch('/users/api/onboarding/complete/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({ skipped: true })
-                    });
-                } catch (e) {
-                    console.error('Failed to skip onboarding:', e);
-                }
-                showOnboarding.value = false;
-            };
-
-            // 온보딩 다시 시작 (마이페이지에서 호출)
-            const restartOnboarding = async () => {
-                onboardingCurrentStep.value = 0;
-                onboardingRatings.value = {};
+            if (data.needs_onboarding) {
+                // 온보딩이 필요하면 모달 표시
                 showOnboarding.value = true;
-                await loadOnboardingGames(0);
+                onboardingCurrentStep.value = data.current_step || 0;
+                await loadOnboardingGames(onboardingCurrentStep.value);
+            }
+        } catch (e) {
+            console.error('Onboarding status check failed:', e);
+        }
+    };
+
+
+    // 온보딩 게임 목록 로드 (페이지네이션 지원)
+    const loadOnboardingGames = async (step, page = 1) => {
+        isLoadingOnboarding.value = true;
+        try {
+            const response = await fetch(`/users/api/onboarding/games/?step=${step}&page=${page}`);
+            const data = await response.json();
+
+            onboardingGames.value = data.games || [];
+            onboardingStep.value = data.step_info;
+            onboardingTotalSteps.value = data.total_steps || 5;
+
+            // 페이지네이션 정보 업데이트
+            if (data.pagination) {
+                onboardingCurrentPage.value = data.pagination.current_page;
+                onboardingTotalPages.value = data.pagination.total_pages;
+                onboardingTotalGames.value = data.pagination.total_games;
+            }
+
+            if (data.is_complete) {
+                // 모든 단계 완료
+                await completeOnboarding();
+            }
+        } catch (e) {
+            console.error('Failed to load onboarding games:', e);
+        } finally {
+            isLoadingOnboarding.value = false;
+        }
+    };
+
+    // 게임 평가
+    const rateGame = async (game, score) => {
+        try {
+            // 로컬 상태 업데이트 (즉각 반응)
+            onboardingRatings.value = {
+                ...onboardingRatings.value,
+                [game.rawg_id]: score
             };
 
-            return {
+            // 서버에 저장
+            await fetch('/users/api/onboarding/rate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    game_id: game.rawg_id,
+                    game_title: game.title,
+                    game_image: game.image,
+                    score: score
+                })
+            });
+        } catch (e) {
+            console.error('Failed to save rating:', e);
+        }
+    };
 
-                // State
-                currentStep,
-                currentTab,
-                user,
-                authForm,
-                isLoginMode,
-                popularGames,
-                sortedSaleGames,
-                displayedSaleGames,
-                hasMoreSaleGames,
-                saleItemsPerPage,
-                currentSaleCount,
-                saleSearchQuery,
-                showScrollTopBtn,
-                isLoadingMoreSales,
-                infiniteScrollTrigger,
-                popularGamesOnSale,
-                isLoadingPopularGames,
-                fetchPopularGames,
-                bestPrices,
-                sortBy,
-                wishlist,
-                gameTab,
-                rawgGames,
-                isLoadingGames,
-                loadGameTab,
-                communityPosts,
-                isWritingPost,
-                communityCategory,
-                newPost,
-                selectedPost,
-                fileInput,
+    // 다음 페이지
+    const nextOnboardingPage = async () => {
+        if (onboardingCurrentPage.value < onboardingTotalPages.value) {
+            const nextPage = onboardingCurrentPage.value + 1;
+            await loadOnboardingGames(onboardingCurrentStep.value, nextPage);
+        }
+    };
 
-                // Steam Library State
-                steamLibrary,
-                steamTotalGames,
-                steamTotalHours,
-                isLoadingSteamLibrary,
+    // 이전 페이지
+    const prevOnboardingPage = async () => {
+        if (onboardingCurrentPage.value > 1) {
+            const prevPage = onboardingCurrentPage.value - 1;
+            await loadOnboardingGames(onboardingCurrentStep.value, prevPage);
+        }
+    };
 
-                // Recommendation State
-                recommendations,
-                recommendSortBy,
-                genreAnalysis,
-                recommendationMessage,
-                isLoadingRecommendations,
-                sortedRecommendations,
-                displayedRecommendations,
-                hasMoreRecommendations,
-                currentRecommendCount,
-                isLoadingMoreRecommendations,
-                infiniteScrollTriggerRecommend,
+    // 특정 페이지로 이동
+    const goToOnboardingPage = async (page) => {
+        if (page >= 1 && page <= onboardingTotalPages.value) {
+            await loadOnboardingGames(onboardingCurrentStep.value, page);
+        }
+    };
 
-                // Community Methods
-                fetchPosts,
-                submitPost,
-                handleFileUpload,
-                openPostDetail,
-                closePostDetail,
-                newComment,
-                showShareToast,
-                submitComment,
-                deleteComment,
-                togglePostLike,
-                sharePost,
-                formatDate,
+    // 페이지 번호 계산 헬퍼 (현재 페이지를 중심으로 표시)
+    const getPageNumber = (index) => {
+        const current = onboardingCurrentPage.value;
+        const total = onboardingTotalPages.value;
 
-                // Methods
-                toggleAuthMode,
-                handleAuthAction,
-                handleLogout,
-                deleteAccount,
-                socialLogin,
-                toggleLink,
-                toggleWishlist,
-                isWishlisted,
-                formatPrice,
-                formatReviewCount,
-                handleImageError,
-                goToHome,
-                openRawgGame,
-                scrollToTop,
-                loadMoreSaleGames,
-                navigateToGameDetail,
-                navigateToSteamStore,
-                navigateToGameByTitle,
-                gameListContainer,
-                scrollGameList,
-                bestPricesContainer,
-                infiniteBestPrices,
-                scrollBestPrices,
-                popularGamesContainer,
-                infinitePopularGames,
-                scrollPopularGames,
-                fetchSteamLibrary,
-                fetchRecommendations,
-                loadMoreRecommendations,
+        // 최대 5개 페이지 표시
+        let start = Math.max(1, current - 2);
+        let end = Math.min(total, start + 4);
 
-                // AI Chatbot State & Methods
-                aiChatMessages,
-                aiUserInput,
-                isAiLoading,
-                aiError,
-                chatContainer,
-                aiQuickSuggestions,
-                sendAiMessage,
-                formatAIMessage,
+        // 끝에서 시작점 조정
+        if (end - start < 4) {
+            start = Math.max(1, end - 4);
+        }
 
-                // Onboarding State & Methods (왓챠 스타일)
-                showOnboarding,
-                isLoadingOnboarding,
-                onboardingGames,
-                onboardingRatings,
-                onboardingCurrentStep,
-                onboardingTotalSteps,
-                onboardingStep,
-                rateGame,
-                nextOnboardingStep,
-                prevOnboardingStep,
-                skipOnboarding,
-                restartOnboarding
-            };
+        return start + index - 1;
+    };
+
+    // 온보딩 완료
+    const completeOnboarding = async () => {
+        try {
+            await fetch('/users/api/onboarding/complete/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ skipped: false })
+            });
+        } catch (e) {
+            console.error('Failed to complete onboarding:', e);
+        }
+        showOnboarding.value = false;
+    };
+
+    // 온보딩 완료 중 로딩 상태
+    const isCompletingOnboarding = ref(false);
+
+    // 온보딩 완료 (유사도 재계산 포함)
+    const finishOnboarding = async () => {
+        isCompletingOnboarding.value = true;
+        try {
+            const response = await fetch('/users/api/onboarding/complete/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    skipped: false,
+                    recalculate: true // 유사도 재계산 요청
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Onboarding completed:', data);
+
+                // 완료 후 추천 목록 새로고침을 위해 페이지 리로드
+                // (유사도 데이터가 갱신되었으므로)
+                window.location.reload();
+            }
+        } catch (e) {
+            console.error('Failed to complete onboarding:', e);
+            isCompletingOnboarding.value = false;
+        }
+    };
+
+    // 온보딩 스킵
+    const skipOnboarding = async () => {
+        try {
+            await fetch('/users/api/onboarding/complete/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ skipped: true })
+            });
+        } catch (e) {
+            console.error('Failed to skip onboarding:', e);
+        }
+        showOnboarding.value = false;
+    };
+
+    // 온보딩 다시 시작 (마이페이지에서 호출) - 기존 평가는 유지
+    const restartOnboarding = async () => {
+        onboardingCurrentStep.value = 0;
+        // onboardingRatings는 초기화하지 않음 - 기존 DB 평가 유지
+        showOnboarding.value = true;
+        await loadOnboardingGames(0);
+    };
+
+    // 프로필 사진 업로드 트리거
+    const triggerAvatarUpload = () => {
+        if (avatarInput.value) {
+            avatarInput.value.click();
+        }
+    };
+
+    // 프로필 사진 업로드 핸들러
+    const handleAvatarUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 이미지 파일 검증
+        if (!file.type.startsWith('image/')) {
+            alert('이미지 파일만 업로드할 수 있습니다.');
+            return;
+        }
+
+        // 파일 크기 검증 (5MB 제한)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('파일 크기는 5MB 이하여야 합니다.');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await fetch('/users/api/avatar/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                user.value.avatar = data.avatar_url;
+                alert('프로필 사진이 업데이트되었습니다!');
+            } else {
+                alert('프로필 사진 업로드에 실패했습니다.');
+            }
+        } catch (e) {
+            console.error('Avatar upload error:', e);
+            alert('프로필 사진 업로드 중 오류가 발생했습니다.');
+        }
+    };
+
+    return {
+
+        // State
+        currentStep,
+        currentTab,
+        user,
+        authForm,
+        isLoginMode,
+        popularGames,
+        sortedSaleGames,
+        displayedSaleGames,
+        hasMoreSaleGames,
+        saleItemsPerPage,
+        currentSaleCount,
+        saleSearchQuery,
+        showScrollTopBtn,
+        isLoadingMoreSales,
+        infiniteScrollTrigger,
+        popularGamesOnSale,
+        isLoadingPopularGames,
+        fetchPopularGames,
+        bestPrices,
+        sortBy,
+        wishlist,
+        gameTab,
+        rawgGames,
+        isLoadingGames,
+        loadGameTab,
+        communityPosts,
+        isWritingPost,
+        communityCategory,
+        newPost,
+        selectedPost,
+        fileInput,
+
+        // Steam Library State
+        steamLibrary,
+        steamTotalGames,
+        steamTotalHours,
+        isLoadingSteamLibrary,
+
+        // Recommendation State
+        recommendations,
+        recommendSortBy,
+        genreAnalysis,
+        recommendationMessage,
+        isLoadingRecommendations,
+        sortedRecommendations,
+        displayedRecommendations,
+        hasMoreRecommendations,
+        currentRecommendCount,
+        isLoadingMoreRecommendations,
+        infiniteScrollTriggerRecommend,
+
+        // Community Methods
+        fetchPosts,
+        submitPost,
+        handleFileUpload,
+        openPostDetail,
+        closePostDetail,
+        newComment,
+        showShareToast,
+        submitComment,
+        deleteComment,
+        togglePostLike,
+        sharePost,
+        formatDate,
+
+        // Methods
+        toggleAuthMode,
+        handleAuthAction,
+        handleLogout,
+        deleteAccount,
+        socialLogin,
+        toggleLink,
+        toggleWishlist,
+        isWishlisted,
+        formatPrice,
+        formatReviewCount,
+        handleImageError,
+        goToHome,
+        goToProfile,
+        openRawgGame,
+        scrollToTop,
+        loadMoreSaleGames,
+        navigateToGameDetail,
+        navigateToSteamStore,
+        navigateToGameByTitle,
+        gameListContainer,
+        scrollGameList,
+        bestPricesContainer,
+        infiniteBestPrices,
+        scrollBestPrices,
+        popularGamesContainer,
+        infinitePopularGames,
+        scrollPopularGames,
+        fetchSteamLibrary,
+        fetchRecommendations,
+        loadMoreRecommendations,
+
+        // AI Chatbot State & Methods
+        aiChatMessages,
+        aiUserInput,
+        isAiLoading,
+        aiError,
+        chatContainer,
+        aiQuickSuggestions,
+        sendAiMessage,
+        formatAIMessage,
+
+        // Onboarding State & Methods (왓챠 스타일)
+        showOnboarding,
+        isLoadingOnboarding,
+        isCompletingOnboarding, // 추가됨
+        onboardingGames,
+        onboardingRatings,
+        onboardingCurrentStep,
+        onboardingTotalSteps,
+        onboardingStep,
+        // 온보딩 페이지네이션
+        onboardingCurrentPage,
+        onboardingTotalPages,
+        onboardingTotalGames,
+        rateGame,
+        nextOnboardingPage,
+        prevOnboardingPage,
+        goToOnboardingPage,
+        getPageNumber,
+        skipOnboarding, // 나중에 하기
+        finishOnboarding, // 평가 완료하기 (추가됨)
+        restartOnboarding,
+
+        // Profile Page State & Methods
+        showWishlistModal,
+        showReviewsModal,
+        showSteamLibraryModal,
+        avatarInput,
+        triggerAvatarUpload,
+        handleAvatarUpload,
+
+        // Profile Display (computed & state for dynamic profiles)
+        isMe,
+        displayUser,
+        displayWishlist,
+        displayRatings,
+        displaySteamLibrary,
+        displaySteamTotalGames,
+        displaySteamTotalHours,
+        targetUsername,
+        isLoadingProfile,
+        fetchUserProfile
+    };
 
         }
     }).mount('#app');
