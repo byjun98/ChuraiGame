@@ -1,118 +1,194 @@
 """
-테스트용 어드민 계정 3개 생성 및 온보딩 데이터 입력
+테스트용 유저 20명 생성 및 대규모 온보딩 데이터(약 500개/인) 입력
 
-각 유저의 컨셉:
-1. 하드코어 게이머 (hardcore_gamer) - 고난이도, 도전적인 게임 선호
-   - Dark Souls류, 로그라이크, 전략 게임에 높은 점수
-   - 캐주얼/편한 게임에 낮은 점수
-
-2. 캐주얼 게이머 (casual_gamer) - 편안하고 힐링되는 게임 선호
-   - 시뮬레이션, 힐링 게임에 높은 점수
-   - 하드코어/폭력적 게임에 낮은 점수
-
-3. 액션 게이머 (action_gamer) - AAA 액션/어드벤처 게임 선호
-   - 스토리 중심 액션 게임에 높은 점수
-   - 전략/시뮬레이션에 중간-낮은 점수
+각 유저별로 뚜렷한 페르소나(취향)를 부여하여 추천 시스템 성능 테스트에 적합하도록 구성함.
+DB에 존재하는 게임 데이터를 활용.
 
 사용법:
     python manage.py create_test_users
     python manage.py create_test_users --delete  # 기존 테스트 유저 삭제 후 재생성
 """
 
-import json
-import os
+import random
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from django.utils import timezone
 from users.models import User, GameRating, OnboardingStatus
 from games.models import Game
+from django.db.models import Q
 
-
-# 각 유저의 평가 패턴 정의
-# 게임 타이틀의 키워드를 기반으로 점수 결정
-USER_PROFILES = {
-    'hardcore_gamer': {
-        'username': 'test_hardcore',
-        'email': 'hardcore@test.com',
-        'nickname': '하드코어 마스터',
-        'password': 'testpass123!',
-        # 키워드별 선호도 (5: 쌍따봉, 3.5: 따봉, 0: 스킵, -1: 역따봉)
-        'keywords_love': [  # 5점 (쌍따봉)
-            'souls', 'dark', 'elden', 'sekiro', 'nioh', 'bloodborne',
-            'roguelike', 'dead cells', 'hades', 'hollow knight',
-            'blasphemous', 'celeste', 'cuphead', 'shovel knight',
-            'xcom', 'civilization', 'crusader', 'paradox',
-            'darkest dungeon', 'necrodancer', 'binding of isaac',
-        ],
-        'keywords_like': [  # 3.5점 (따봉)
-            'metro', 'bioshock', 'control', 'prey', 'wolfenstein',
-            'doom', 'quake', 'dishonored', 'hitman', 'deus ex',
-            'witcher', 'mass effect', 'dragon age', 'baldur',
-            'strategy', 'tactics', 'war', 'men of', 'total war',
-            'frostpunk', 'rimworld', 'factorio', 'satisfactory',
-        ],
-        'keywords_dislike': [  # -1점 (역따봉)
-            'farm', 'stardew', 'animal crossing', 'cozy',
-            'relaxing', 'peaceful', 'cute', 'kawaii',
-            'mobile', 'casual', 'match-3', 'hidden object',
-            'sims', 'life sim',
-        ],
+# 다양한 게이머 페르소나 정의 (20명)
+USER_ARCHETYPES = [
+    # 1. 장르별 매니아
+    {
+        'id': 'fps_pro',
+        'nickname': '헤드슈터',
+        'desc': 'FPS/슈팅 게임 매니아',
+        'love': ['fps', 'shooter', 'action', 'call of duty', 'battlefield', 'counter-strike', 'doom', 'overwatch', 'apex'],
+        'like': ['multiplayer', 'competitive', 'survival'],
+        'dislike': ['puzzle', 'visual novel', 'turn-based', 'strategy', 'dating sim']
     },
-    'casual_gamer': {
-        'username': 'test_casual',
-        'email': 'casual@test.com',
-        'nickname': '힐링 게이머',
-        'password': 'testpass123!',
-        'keywords_love': [  # 5점 (쌍따봉)
-            'stardew', 'farm', 'cozy', 'relaxing', 'garden',
-            'story', 'narrative', 'walking', 'adventure',
-            'puzzle', 'building', 'sim', 'tycoon',
-            'animal', 'cute', 'indie', 'pixel',
-            'yoku', 'ori', 'planet', 'zoo',
-        ],
-        'keywords_like': [  # 3.5점 (따봉)
-            'exploration', 'open world', 'rpg', 'quest',
-            'platformer', 'metroid', 'sandbox', 'creative',
-            'city', 'builder', 'management', 'business',
-            'moonlighter', 'children', 'morta', 'fell seal',
-        ],
-        'keywords_dislike': [  # -1점 (역따봉)
-            'souls', 'dark', 'hardcore', 'brutal', 'punish',
-            'horror', 'gore', 'blood', 'violent', 'war',
-            'shooter', 'fps', 'military', 'combat',
-            'competitive', 'pvp', 'battle royale',
-        ],
+    {
+        'id': 'rpg_fanatic',
+        'nickname': '만렙용사',
+        'desc': '방대한 스토리의 RPG 선호',
+        'love': ['rpg', 'open world', 'witcher', 'final fantasy', 'dragon quest', 'skyrim', 'fallout', 'mass effect'],
+        'like': ['adventure', 'story', 'fantasy', 'action rpg', 'jrpg'],
+        'dislike': ['sports', 'racing', 'match-3', 'casual']
     },
-    'action_gamer': {
-        'username': 'test_action',
-        'email': 'action@test.com',
-        'nickname': 'AAA 액션러',
-        'password': 'testpass123!',
-        'keywords_love': [  # 5점 (쌍따봉)
-            'action', 'adventure', 'gta', 'red dead', 'rockstar',
-            'assassin', 'far cry', 'tomb raider', 'uncharted',
-            'god of war', 'spider', 'batman', 'marvel', 'dc',
-            'bioshock', 'control', 'alan wake', 'metro',
-            'witcher', 'cyberpunk', 'horizon', 'ghost',
-        ],
-        'keywords_like': [  # 3.5점 (따봉)
-            'rpg', 'story', 'cinematic', 'narrative',
-            'open world', 'exploration', 'quest',
-            'third person', 'combat', 'stealth',
-            'shooter', 'fps', 'call of', 'battlefield',
-        ],
-        'keywords_dislike': [  # -1점 (역따봉)
-            'strategy', 'turn-based', 'tactical', 'slow',
-            '4x', 'grand strategy', 'simulation',
-            'mobile', 'casual', 'match', 'puzzle',
-            'text', 'visual novel',
-        ],
+    {
+        'id': 'strategy_general',
+        'nickname': '제갈공명',
+        'desc': '전략/시뮬레이션 게임 선호',
+        'love': ['strategy', 'rts', 'turn-based', 'civilization', 'total war', 'xcom', 'paradox', 'stellaris', 'age of empires'],
+        'like': ['simulation', 'management', 'city builder', 'tactical', 'history'],
+        'dislike': ['platformer', 'fighting', 'fps', 'action']
     },
-}
-
+    {
+        'id': 'horror_freak',
+        'nickname': '강심장',
+        'desc': '공포/스릴러 게임 매니아',
+        'love': ['horror', 'survival horror', 'resident evil', 'silent hill', 'dead space', 'zombie', 'amnesia', 'outlast'],
+        'like': ['thriller', 'dark', 'mystery', 'psychological', 'gore'],
+        'dislike': ['family friendly', 'cute', 'sports', 'racing', 'comedy']
+    },
+    {
+        'id': 'cozy_gamer',
+        'nickname': '농장주인',
+        'desc': '힐링/농장/시뮬레이션 선호',
+        'love': ['farming', 'sim', 'stardew', 'animal crossing', 'harvest moon', 'cozy', 'relaxing', 'life sim'],
+        'like': ['casual', 'cute', 'building', 'crafting', 'nature'],
+        'dislike': ['horror', 'violence', 'shooter', 'hardcore', 'souls-like', 'gore']
+    },
+    
+    # 2. 난이도/스타일별
+    {
+        'id': 'souls_masochist',
+        'nickname': '유다희',
+        'desc': '소울라이크/고난이도 게임 선호',
+        'love': ['souls-like', 'dark souls', 'elden ring', 'bloodborne', 'sekiro', 'difficult', 'hardcore'],
+        'like': ['action rpg', 'metroidvania', 'dark fantasy', 'boss rush'],
+        'dislike': ['casual', 'easy', 'walking simulator', 'visual novel']
+    },
+    {
+        'id': 'rogue_runner',
+        'nickname': '무한루프',
+        'desc': '로그라이크/로그라이트 선호',
+        'love': ['roguelike', 'roguelite', 'permadeath', 'binding of isaac', 'hades', 'slay the spire', 'dead cells'],
+        'like': ['dungeon crawler', 'indie', 'replay value', 'strategy'],
+        'dislike': ['linear', 'narrative', 'sports', 'mmo']
+    },
+    {
+        'id': 'retro_hipster',
+        'nickname': '도트장인',
+        'desc': '고전/픽셀아트/인디 게임 선호',
+        'love': ['pixel graphics', 'retro', 'arcade', 'classic', '2d', 'platformer', 'metroidvania'],
+        'like': ['indie', 'chiptune', 'side scroller', 'beat em up'],
+        'dislike': ['aaa', 'fps', 'realistic', 'modern', 'battle royale']
+    },
+    {
+        'id': 'story_bookworm',
+        'nickname': '문학소년',
+        'desc': '스토리/내러티브 중심 게임 선호',
+        'love': ['story rich', 'narrative', 'visual novel', 'walking simulator', 'choose your own adventure', 'life is strange', 'telltale'],
+        'like': ['point and click', 'adventure', 'atmospheric', 'mystery', 'singleplayer'],
+        'dislike': ['multiplayer', 'competitive', 'sport', 'fighting', 'gameplay only']
+    },
+    {
+        'id': 'junior_gamer',
+        'nickname': '잼민이',
+        'desc': '어린이/가족용 게임 선호',
+        'love': ['family friendly', 'lego', 'minecraft', 'roblox', 'cartoon', 'platformer', 'mario', 'sonic'],
+        'like': ['funny', 'colorful', 'adventure', 'co-op'],
+        'dislike': ['horror', 'gore', 'sexual content', 'complex strategy', 'hardcore']
+    },
+    
+    # 3. 기타 장르
+    {
+        'id': 'sports_fan',
+        'nickname': '국대선수',
+        'desc': '스포츠/레이싱 게임 선호',
+        'love': ['sports', 'soccer', 'fifa', 'nba', 'madden', 'racing', 'forza', 'f1', 'baseball'],
+        'like': ['simulation', 'competitive', 'multiplayer', 'management'],
+        'dislike': ['fantasy', 'magic', 'rpg', 'horror', 'anime']
+    },
+    {
+        'id': 'fighting_champ',
+        'nickname': '철권고수',
+        'desc': '격투/액션 게임 선호',
+        'love': ['fighting', '2d fighter', '3d fighter', 'tekken', 'street fighter', 'mortal kombat', 'guilty gear'],
+        'like': ['action', 'competitive', 'arcade', 'beat em up'],
+        'dislike': ['strategy', 'slow', 'turn-based', 'puzzle']
+    },
+    {
+        'id': 'puzzle_brain',
+        'nickname': '두뇌풀가동',
+        'desc': '퍼즐/두뇌 게임 선호',
+        'love': ['puzzle', 'logic', 'portal', 'witness', 'tetris', 'mystery', 'brain teaser'],
+        'like': ['casual', 'indie', 'relaxing', 'strategy', 'card game'],
+        'dislike': ['action', 'shooter', 'reaction time', 'violent']
+    },
+    {
+        'id': 'survival_expert',
+        'nickname': '베어그릴스',
+        'desc': '생존/크래프팅 게임 선호',
+        'love': ['survival', 'crafting', 'open world', 'sandbox', 'rust', 'ark', 'forest', 'don\'t starve'],
+        'like': ['building', 'exploration', 'adventure', 'multiplayer'],
+        'dislike': ['linear', 'sport', 'puzzle', 'visual novel']
+    },
+    {
+        'id': 'fantasy_lord',
+        'nickname': '판타지군주',
+        'desc': '하이 판타지/중세 배경 선호',
+        'love': ['fantasy', 'magic', 'medieval', 'dragons', 'dungeons', 'sword', 'elves'],
+        'like': ['rpg', 'adventure', 'strategy', 'mmo'],
+        'dislike': ['sci-fi', 'futuristic', 'modern', 'guns', 'sports']
+    },
+    {
+        'id': 'scifi_cyborg',
+        'nickname': '미래전사',
+        'desc': 'SF/미래/우주 배경 선호',
+        'love': ['sci-fi', 'space', 'cyberpunk', 'futuristic', 'aliens', 'mechs', 'robots'],
+        'like': ['shooter', 'strategy', 'rpg', 'exploration'],
+        'dislike': ['medieval', 'historical', 'fantasy', 'farming']
+    },
+    
+    # 4. 복합적 성향
+    {
+        'id': 'indie_snob',
+        'nickname': '인디발굴단',
+        'desc': '독창적인 인디 게임 선호',
+        'love': ['indie', 'experimental', 'artistic', 'unique', 'stylized', 'short', 'masterpiece'],
+        'like': ['platformer', 'puzzle', 'story'],
+        'dislike': ['aaa', 'microtransactions', 'generic', 'pay to win']
+    },
+    {
+        'id': 'female_casual',
+        'nickname': '여성게이머',
+        'desc': '여성 유저 선호 경향 (통계 기반)',
+        'love': ['sims', 'stardew', 'story', 'puzzle', 'casual', 'co-op', 'overcooked', 'animal crossing'],
+        'like': ['rpg', 'adventure', 'fantasy', 'decoration'],
+        'dislike': ['war', 'military', 'hardcore', 'fps', 'sports']
+    },
+    {
+        'id': 'action_adventure',
+        'nickname': '탐험가',
+        'desc': '액션 어드벤처 밸런스형',
+        'love': ['action-adventure', 'zelda', 'uncharted', 'tomb raider', 'god of war', 'horizon', 'assassin'],
+        'like': ['open world', 'story', 'puzzle', 'platformer'],
+        'dislike': ['simulation', 'strategy', 'card game']
+    },
+    {
+        'id': 'chaos_gamer',
+        'nickname': '잡식게이머',
+        'desc': '장르 불문 갓겜 선호',
+        'love': ['masterpiece', 'great soundtrack', 'classic', 'overwhelmingly positive'],
+        'like': ['indie', 'aaa', 'rpg', 'action', 'strategy', 'fps'],
+        'dislike': ['bad', 'mixed', 'negative']
+    }
+]
 
 class Command(BaseCommand):
-    help = '테스트용 어드민 계정 3개 생성 및 온보딩 데이터 입력'
+    help = '20명의 상세 페르소나 테스트 유저 생성 (각 500개 평가)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -122,173 +198,154 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # 1. 온보딩 게임 목록 로드
-        json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
+        # 1. DB에서 모든 게임 로드
+        self.stdout.write("DB에서 게임 목록을 불러오는 중...")
+        all_games = list(Game.objects.all().prefetch_related('tags'))
         
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception as e:
-            self.stderr.write(f"JSON 파일 로드 실패: {e}")
+        if not all_games:
+            self.stdout.write(self.style.ERROR("Error: DB에 게임 데이터가 없습니다. 먼저 게임 데이터를 적재해주세요."))
             return
-        
-        # 인기 게임 상위 100개 추출 (온보딩과 동일한 로직)
-        quality_games = [
-            g for g in data 
-            if g.get('steam_rating', 0) >= 80 
-            and g.get('review_count', 0) >= 1000
-        ]
-        sorted_games = sorted(quality_games, key=lambda x: x.get('review_count', 0), reverse=True)
-        onboarding_games = sorted_games[:100]
-        
-        self.stdout.write(f"온보딩 게임 {len(onboarding_games)}개 로드됨")
-        
+
+        self.stdout.write(f"총 {len(all_games)}개의 게임이 로드되었습니다.")
+
         # 2. 기존 테스트 유저 삭제 (옵션)
         if options['delete']:
-            usernames = [p['username'] for p in USER_PROFILES.values()]
+            usernames = [f"test_{p['id']}" for p in USER_ARCHETYPES]
             deleted_count, _ = User.objects.filter(username__in=usernames).delete()
-            self.stdout.write(self.style.WARNING(f"기존 테스트 유저 {deleted_count}개 삭제됨"))
-        
-        # 3. 각 유저 생성 및 평가 데이터 입력
-        for profile_key, profile in USER_PROFILES.items():
-            user, created = self._create_user(profile)
-            if not created and not options['delete']:
-                self.stdout.write(self.style.WARNING(
-                    f"유저 '{profile['username']}' 이미 존재함. --delete 옵션 사용"
-                ))
-                continue
-            
-            # 평가 데이터 생성
-            ratings_created = self._create_ratings(user, onboarding_games, profile)
-            
-            # 온보딩 상태 완료로 설정
-            self._complete_onboarding(user, ratings_created)
-            
-            self.stdout.write(self.style.SUCCESS(
-                f"✓ {profile['nickname']} ({profile['username']}) 생성 완료: {ratings_created}개 평가"
-            ))
-        
-        # 4. 요약 출력
-        self.stdout.write("\n" + "="*60)
-        self.stdout.write("테스트 유저 생성 완료!")
-        self.stdout.write("="*60)
-        for profile_key, profile in USER_PROFILES.items():
-            self.stdout.write(f"  - {profile['nickname']}: {profile['username']} / {profile['password']}")
-        self.stdout.write("="*60)
-        
-        # 5. 유사도 계산 안내
-        self.stdout.write("\n이제 유사도 계산을 실행하세요:")
-        self.stdout.write("  python manage.py calculate_game_similarity")
+            self.stdout.write(self.style.WARNING(f"기존 테스트 유저 {deleted_count}명 삭제됨"))
 
-    def _create_user(self, profile):
-        """유저 생성"""
-        user, created = User.objects.get_or_create(
-            username=profile['username'],
-            defaults={
-                'email': profile['email'],
-                'nickname': profile['nickname'],
-                'is_staff': True,  # 어드민 권한
-                'is_superuser': False,
-            }
-        )
-        if created:
-            user.set_password(profile['password'])
-            user.save()
-        return user, created
-
-    def _create_ratings(self, user, games, profile):
-        """게임 평가 데이터 생성"""
-        ratings_count = 0
-        keywords_love = [k.lower() for k in profile['keywords_love']]
-        keywords_like = [k.lower() for k in profile['keywords_like']]
-        keywords_dislike = [k.lower() for k in profile['keywords_dislike']]
+        # 3. 유저 생성 및 데이터 입력
+        total_created = 0
         
-        for game_data in games:
-            title = game_data['title'].lower()
-            steam_app_id = int(game_data['steam_app_id'])
+        for i, archetype in enumerate(USER_ARCHETYPES, 1):
+            username = f"test_{archetype['id']}"
+            email = f"{archetype['id']}@example.com"
             
-            # 키워드 매칭으로 점수 결정
-            score = self._determine_score(
-                title, keywords_love, keywords_like, keywords_dislike
-            )
-            
-            # 게임 생성 또는 조회
-            game = self._get_or_create_game(game_data)
-            
-            # 평가 저장
-            GameRating.objects.update_or_create(
-                user=user,
-                game=game,
+            # 유저 생성
+            user, created = User.objects.get_or_create(
+                username=username,
                 defaults={
-                    'score': score,
-                    'is_onboarding': True
+                    'email': email,
+                    'nickname': archetype['nickname'],
+                    'is_staff': False, # 일반 유저로 생성
+                    'is_superuser': False,
                 }
             )
-            ratings_count += 1
-        
-        return ratings_count
+            
+            if created:
+                user.set_password('testpass123!')
+                user.save()
+            elif not options['delete']:
+                self.stdout.write(f"[{i}/20] {user.nickname} 이미 존재함 (스킵)")
+                continue
 
-    def _determine_score(self, title, keywords_love, keywords_like, keywords_dislike):
-        """
-        키워드 기반으로 점수 결정
-        우선순위: 쌍따봉(5) > 역따봉(-1) > 따봉(3.5) > 스킵(0)
-        """
-        # 쌍따봉 체크 (최우선)
-        for keyword in keywords_love:
-            if keyword in title:
-                return 5
-        
-        # 역따봉 체크 (싫어하는 것은 확실히 표시)
-        for keyword in keywords_dislike:
-            if keyword in title:
-                return -1
-        
-        # 따봉 체크
-        for keyword in keywords_like:
-            if keyword in title:
-                return 3.5
-        
-        # 매칭 없으면 랜덤하게 분배 (현실적인 데이터)
-        import random
-        rand = random.random()
-        if rand < 0.3:
-            return 3.5  # 30% 따봉
-        elif rand < 0.4:
-            return 5    # 10% 쌍따봉
-        elif rand < 0.5:
-            return -1   # 10% 역따봉
-        else:
-            return 0    # 50% 스킵
+            # 평가 데이터 생성
+            # 전체 게임 중 랜덤하게 500~600개를 선택하여 평가 (섞어서 다양성 확보)
+            games_to_rate = random.sample(all_games, min(len(all_games), 600))
+            
+            created_count = self._create_ratings_for_user(user, games_to_rate, archetype)
+            
+            # 온보딩 완료 처리
+            self._complete_onboarding(user, created_count)
+            
+            self.stdout.write(self.style.SUCCESS(
+                f"[{i}/20] {user.nickname}({username}): {created_count}개 평가 생성 완료 ({archetype['desc']})"
+            ))
+            total_created += 1
 
-    def _get_or_create_game(self, game_data):
-        """게임 생성 또는 조회"""
-        steam_app_id = int(game_data['steam_app_id'])
+        self.stdout.write(self.style.SUCCESS(f"\n총 {total_created}명의 테스트 유저 온보딩 데이터 생성 완료!"))
+        self.stdout.write("비밀번호는 모두 'testpass123!' 입니다.")
+
+    def _create_ratings_for_user(self, user, games, archetype):
+        """유저 성향에 맞춰 게임 점수 매기기"""
+        ratings_to_create = []
         
-        # rawg_id로 먼저 조회 (steam_app_id를 rawg_id로 사용)
-        try:
-            return Game.objects.get(rawg_id=steam_app_id)
-        except Game.DoesNotExist:
-            pass
+        # 성향 키워드 전처리
+        loves = [k.lower() for k in archetype['love']]
+        likes = [k.lower() for k in archetype['like']]
+        dislikes = [k.lower() for k in archetype['dislike']]
         
-        # steam_appid로 조회
-        try:
-            return Game.objects.get(steam_appid=steam_app_id)
-        except Game.DoesNotExist:
-            pass
+        for game in games:
+            # 점수 산정 로직
+            score = 0
+            
+            # 게임 정보 추출 (제목 + (태그/장르가 있다면))
+            title = game.title.lower()
+            # 태그가 있는지 확인 (tags 관계형 필드 사용)
+            tags = [t.slug.lower() for t in game.tags.all()] if hasattr(game, 'tags') else []
+            # 레거시 장르 필드
+            if game.genre:
+                tags.append(game.genre.lower())
+            
+            # 검색 대상 텍스트
+            search_text = title + " " + " ".join(tags)
+            
+            # 1. 싫어하는 장르 체크 (최우선)
+            is_dislike = False
+            for k in dislikes:
+                if k in search_text:
+                    if random.random() < 0.8: # 80% 확률로 싫어함
+                        score = -1
+                        is_dislike = True
+                        break
+            
+            if is_dislike:
+                # 역따봉 저장
+                ratings_to_create.append(GameRating(
+                    user=user, game=game, score=score, is_onboarding=True
+                ))
+                continue
+                
+            # 2. 좋아하는 장르 체크
+            is_love = False
+            for k in loves:
+                if k in search_text:
+                    is_love = True
+                    break
+            
+            is_like = False
+            if not is_love:
+                for k in likes:
+                    if k in search_text:
+                        is_like = True
+                        break
+            
+            # 점수 부여 (확률적)
+            rand = random.random()
+            
+            if is_love:
+                # Love 키워드 매칭 시: 60% 쌍따봉, 30% 따봉, 10% 스킵
+                if rand < 0.6: score = 5
+                elif rand < 0.9: score = 3.5
+                else: score = 0
+            elif is_like:
+                # Like 키워드 매칭 시: 20% 쌍따봉, 60% 따봉, 20% 스킵
+                if rand < 0.2: score = 5
+                elif rand < 0.8: score = 3.5
+                else: score = 0
+            else:
+                # 매칭 키워드 없을 시 (무관심/랜덤): 대부분 스킵
+                # 5% 쌍따봉, 10% 따봉, 5% 역따봉, 80% 스킵
+                if rand < 0.05: score = 5
+                elif rand < 0.15: score = 3.5
+                elif rand < 0.20: score = -1
+                else: score = 0
+            
+            # 0점은 '평가 안함'과 같으므로 DB에 너무 많이 쌓이면 낭비일 수 있음.
+            # 하지만 모델 정의상 score=0도 저장 가능. (SKIP)
+            # 여기서는 편의상 0점도 저장.
+            
+            ratings_to_create.append(GameRating(
+                user=user, game=game, score=score, is_onboarding=True
+            ))
+
+        # Bulk Create
+        GameRating.objects.bulk_create(ratings_to_create, ignore_conflicts=True)
         
-        # 없으면 생성
-        return Game.objects.create(
-            rawg_id=steam_app_id,
-            steam_appid=steam_app_id,
-            title=game_data['title'],
-            image_url=game_data.get('thumbnail', ''),
-            metacritic_score=game_data.get('metacritic_score'),
-            genre='Unknown'
-        )
+        return len(ratings_to_create)
 
     def _complete_onboarding(self, user, total_ratings):
-        """온보딩 완료 처리"""
-        status, _ = OnboardingStatus.objects.update_or_create(
+        OnboardingStatus.objects.update_or_create(
             user=user,
             defaults={
                 'status': 'completed',
@@ -297,4 +354,3 @@ class Command(BaseCommand):
                 'completed_at': timezone.now()
             }
         )
-        return status

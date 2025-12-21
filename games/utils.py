@@ -2,13 +2,64 @@ import os
 import requests
 import logging
 from django.conf import settings
-from .models import Game, GameScreenshot, GameTrailer
+from .models import Game, GameScreenshot, GameTrailer, Tag
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 RAWG_API_KEY = os.getenv('RAWG_API_KEY')
 BASE_URL = "https://api.rawg.io/api"
+
+# 태그 유형 매핑 (RAWG 태그 분류용)
+GENRE_TAGS = {
+    'action', 'shooter', 'fps', 'platformer', 'fighting', 'beat-em-up',
+    'rpg', 'jrpg', 'action-rpg', 'mmorpg', 'roguelike', 'roguelite',
+    'adventure', 'puzzle', 'strategy', 'rts', 'turn-based-strategy', 'tactical',
+    'simulation', 'racing', 'sports', 'card', 'board-game', 'visual-novel',
+    'survival', 'horror', 'survival-horror', 'stealth', 'sandbox',
+    'metroidvania', 'souls-like', 'hack-and-slash', 'dungeon-crawler',
+    'tower-defense', 'city-builder', 'management', 'life-sim', 'dating-sim'
+}
+
+THEME_TAGS = {
+    'sci-fi', 'cyberpunk', 'fantasy', 'dark-fantasy', 'medieval', 'post-apocalyptic',
+    'horror', 'comedy', 'mystery', 'thriller', 'historical', 'military', 'war',
+    'space', 'underwater', 'western', 'steampunk', 'noir', 'anime', 'cartoon',
+    'lovecraftian', 'zombies', 'vampires', 'robots', 'dinosaurs', 'dragons',
+    'mythology', 'pirates', 'ninjas', 'samurai', 'aliens', 'demons'
+}
+
+FEATURE_TAGS = {
+    'singleplayer', 'multiplayer', 'co-op', 'online-co-op', 'local-co-op',
+    'pvp', 'online-pvp', 'local-multiplayer', 'split-screen', 'mmo',
+    'open-world', 'linear', 'non-linear', 'procedural-generation',
+    'controller-support', 'vr', 'moddable', 'level-editor',
+    'cross-platform', 'free-to-play', 'early-access', 'indie', 'aaa',
+    'story-rich', 'exploration', 'crafting', 'building', 'base-building',
+    'character-customization', 'choices-matter', 'multiple-endings',
+    'first-person', 'third-person', 'top-down', 'isometric', 'side-scroller',
+    '2d', '3d', 'pixel-graphics', 'retro', 'realistic'
+}
+
+MOOD_TAGS = {
+    'relaxing', 'casual', 'difficult', 'hardcore', 'challenging',
+    'atmospheric', 'funny', 'cute', 'dark', 'emotional', 'violent',
+    'gore', 'mature', 'family-friendly', 'beautiful', 'colorful'
+}
+
+def get_tag_type(slug):
+    """태그 slug로 태그 유형 결정"""
+    slug_lower = slug.lower()
+    if slug_lower in GENRE_TAGS:
+        return 'genre'
+    elif slug_lower in THEME_TAGS:
+        return 'theme'
+    elif slug_lower in FEATURE_TAGS:
+        return 'feature'
+    elif slug_lower in MOOD_TAGS:
+        return 'mood'
+    else:
+        return 'feature'  # 기본값
 
 def get_rawg_game_id(game_title, steam_appid=None):
     """
@@ -239,6 +290,43 @@ def update_game_with_rawg(game, force_refresh=False):
         
         game.save()
         logger.info(f"Updated game details for '{game.title}'")
+        
+        # Update tags (genres + tags from RAWG)
+        tags_added = 0
+        
+        # Add genre tags
+        for genre_data in details.get('genres', []):
+            tag, created = Tag.objects.get_or_create(
+                slug=genre_data['slug'],
+                defaults={
+                    'name': genre_data['name'],
+                    'tag_type': 'genre',
+                    'weight': 1.0
+                }
+            )
+            if tag not in game.tags.all():
+                game.tags.add(tag)
+                tags_added += 1
+        
+        # Add detailed tags (only English)
+        for tag_data in details.get('tags', []):
+            if tag_data.get('language', 'eng') != 'eng':
+                continue
+            tag_type = get_tag_type(tag_data['slug'])
+            tag, created = Tag.objects.get_or_create(
+                slug=tag_data['slug'],
+                defaults={
+                    'name': tag_data['name'],
+                    'tag_type': tag_type,
+                    'weight': 1.0
+                }
+            )
+            if tag not in game.tags.all():
+                game.tags.add(tag)
+                tags_added += 1
+        
+        if tags_added > 0:
+            logger.info(f"Added {tags_added} tags for '{game.title}'")
     else:
         logger.warning(f"Could not fetch details for RAWG game {rawg_id}")
         return False

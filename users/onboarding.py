@@ -40,11 +40,11 @@ def load_onboarding_games_from_json():
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        # 1. Steam 평점 80% 이상, 리뷰 1000개 이상인 게임만 필터링
+        # 1. Steam 평점 75% 이상, 리뷰 500개 이상인 게임만 필터링 (더 많은 게임 포함)
         quality_games = [
             g for g in data 
-            if g.get('steam_rating', 0) >= 80 
-            and g.get('review_count', 0) >= 1000
+            if g.get('steam_rating', 0) >= 75 
+            and g.get('review_count', 0) >= 500
         ]
         
         # 2. 리뷰 수(review_count) 기준으로 내림차순 정렬 (인기 게임 추출)
@@ -54,15 +54,19 @@ def load_onboarding_games_from_json():
             reverse=True
         )
         
-        # 3. 상위 100개 게임만 추출
-        top_games = sorted_games[:100]
+        # 3. 상위 500개 게임 추출 (이미 평가한 게임 제외해도 충분하도록)
+        top_games = sorted_games[:500]
         
         # 4. 온보딩 형식에 맞게 데이터 가공 (Steam CDN 이미지 사용!)
         formatted_games = []
         for game in top_games:
+            # 실제 RAWG ID 사용 (없으면 steam_app_id를 폴백으로)
+            rawg_id = game.get('rawg_id') or int(game['steam_app_id'])
+            
             formatted_games.append({
                 'title': game['title'],
-                'rawg_id': int(game['steam_app_id']),  # steam_app_id를 rawg_id 대신 사용
+                'rawg_id': rawg_id,  # 실제 RAWG ID 사용
+                'rawg_slug': game.get('rawg_slug', ''),  # RAWG 슬러그 (URL용)
                 'steam_app_id': game.get('steam_app_id'),
                 'image': game['thumbnail'],  # Steam CDN 이미지 (빠름!)
                 'steam_rating': game.get('steam_rating', 0),
@@ -111,9 +115,10 @@ def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
     genre = step_info['genre']
     games = onboarding_games.get(genre, [])
     
-    # 이미 평가한 게임 제외
+    # 이미 평가한 게임 제외 (set으로 변환하여 O(1) 검색)
     if exclude_rated:
-        games = [g for g in games if g['rawg_id'] not in exclude_rated]
+        exclude_set = set(exclude_rated)
+        games = [g for g in games if g['rawg_id'] not in exclude_set]
     
     # 페이지네이션 계산
     total_games = len(games)
@@ -303,9 +308,12 @@ def get_recommendations_for_user(user, limit=50):
         rated_ids = rated_ids or []
         result = []
         for i, game in enumerate(json_games):
-            # 이미 평가한 게임 제외
+            # 실제 RAWG ID 사용 (없으면 steam_app_id를 폴백으로)
+            rawg_id = game.get('rawg_id') or int(game.get('steam_app_id', 0) or 0)
             steam_id = int(game.get('steam_app_id', 0) or 0)
-            if steam_id in rated_ids:
+            
+            # 이미 평가한 게임 제외 (rawg_id로 확인)
+            if rawg_id in rated_ids:
                 continue
             
             steam_rating = game.get('steam_rating', 0)
@@ -317,7 +325,8 @@ def get_recommendations_for_user(user, limit=50):
             
             result.append({
                 'id': None,  # DB ID 없음
-                'rawg_id': steam_id,  # Steam App ID를 rawg_id로 사용
+                'rawg_id': rawg_id,  # 실제 RAWG ID 사용
+                'rawg_slug': game.get('rawg_slug', ''),  # RAWG 슬러그 (URL용)
                 'steam_app_id': game.get('steam_app_id'),
                 'title': game['title'],
                 'image_url': game.get('thumbnail', ''),  # Steam CDN (빠름!)

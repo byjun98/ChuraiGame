@@ -65,107 +65,118 @@
                         <p class="text-gray-500 text-xs mt-0.5">플레이해본 게임에 평가를 남겨주세요 (안 해봤으면 스킵!)</p>
                     </div>
 
-                    <!-- Loading State -->
-                    <div v-if="isLoadingOnboarding" class="flex items-center justify-center py-12">
-                        <i class="ph-bold ph-spinner animate-spin text-4xl text-purple-500 mr-3"></i>
-                        <span class="text-gray-500 text-lg">게임 목록을 불러오는 중...</span>
-                    </div>
+                    <!-- Slide Container with Transition -->
+                    <div class="relative overflow-hidden min-h-[280px]">
+                        <!-- Loading State (positioned absolutely to not affect layout) -->
+                        <Transition name="fade">
+                            <div v-if="isLoadingOnboarding"
+                                class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 z-10">
+                                <i class="ph-bold ph-spinner animate-spin text-4xl text-purple-500 mr-3"></i>
+                                <span class="text-gray-500 text-lg">게임 목록을 불러오는 중...</span>
+                            </div>
+                        </Transition>
 
-                    <!-- Games Grid (4열 x 2행 = 8개 게임 표시, 스크롤 없음) -->
-                    <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div v-for="game in onboardingGames" :key="game.rawg_id"
-                            class="relative group rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 transition-all duration-300"
-                            :class="{ 'ring-4 ring-purple-500': onboardingRatings[game.rawg_id] }">
+                        <!-- Games Grid with Slide Animation -->
+                        <Transition :name="slideDirection" mode="out-in">
+                            <div :key="onboardingCurrentPage" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <div v-for="game in onboardingGames" :key="game.rawg_id"
+                                    class="relative group rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 transition-all duration-300"
+                                    :class="{ 'ring-4 ring-purple-500': onboardingRatings[game.rawg_id] }">
 
-                            <!-- Game Image -->
-                            <div class="aspect-video relative">
-                                <img :src="game.image" @error="handleImageError" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                    <!-- Game Image -->
+                                    <div class="aspect-video relative">
+                                        <img :src="game.image" @error="handleImageError" loading="lazy"
+                                            class="w-full h-full object-cover">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent">
+                                        </div>
 
-                                <!-- Rating Badge (if rated) -->
-                                <div v-if="onboardingRatings[game.rawg_id]"
-                                    class="absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-bold" :class="{
+                                        <!-- Rating Badge (if rated) -->
+                                        <div v-if="onboardingRatings[game.rawg_id]"
+                                            class="absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-bold"
+                                            :class="{
                                     'bg-red-500 text-white': onboardingRatings[game.rawg_id] === -1,
                                     'bg-blue-500 text-white': onboardingRatings[game.rawg_id] === 3.5,
                                     'bg-yellow-500 text-white': onboardingRatings[game.rawg_id] === 5
                                 }">
-                                    <span v-if="onboardingRatings[game.rawg_id] === -1">👎</span>
-                                    <span v-else-if="onboardingRatings[game.rawg_id] === 3.5">👍</span>
-                                    <span v-else-if="onboardingRatings[game.rawg_id] === 5">👍👍</span>
-                                </div>
-                            </div>
+                                            <span v-if="onboardingRatings[game.rawg_id] === -1">👎</span>
+                                            <span v-else-if="onboardingRatings[game.rawg_id] === 3.5">👍</span>
+                                            <span v-else-if="onboardingRatings[game.rawg_id] === 5">👍👍</span>
+                                        </div>
+                                    </div>
 
-                            <!-- Game Info -->
-                            <div class="p-1.5">
-                                <h3 class="font-semibold text-gray-800 dark:text-white text-xs line-clamp-1">{{
-                                    game.title
-                                    }}</h3>
+                                    <!-- Game Info -->
+                                    <div class="p-1.5">
+                                        <h3 class="font-semibold text-gray-800 dark:text-white text-xs line-clamp-1">{{
+                                            game.title
+                                            }}</h3>
 
-                                <!-- Rating Buttons (더 작게) -->
-                                <div class="flex items-center justify-center gap-1 mt-1.5">
-                                    <!-- 역따봉 (싫어요) -->
-                                    <button @click="rateGame(game, -1)"
-                                        class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
-                                        :class="onboardingRatings[game.rawg_id] === -1 
+                                        <!-- Rating Buttons (더 작게) -->
+                                        <div class="flex items-center justify-center gap-1 mt-1.5">
+                                            <!-- 역따봉 (싫어요) -->
+                                            <button @click="rateGame(game, -1)"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+                                                :class="onboardingRatings[game.rawg_id] === -1 
                                         ? 'bg-red-500 text-white scale-110' 
                                         : 'bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-red-100 hover:text-red-500'"
-                                        title="별로예요">
-                                        <i class="ph-fill ph-thumbs-down text-xs"></i>
-                                    </button>
+                                                title="별로예요">
+                                                <i class="ph-fill ph-thumbs-down text-xs"></i>
+                                            </button>
 
-                                    <!-- 스킵 -->
-                                    <button @click="rateGame(game, 0)"
-                                        class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-400 hover:bg-gray-300 transition-all duration-200"
-                                        :class="{ 'opacity-50': onboardingRatings[game.rawg_id] }" title="안 해봤어요">
-                                        <i class="ph-bold ph-minus text-xs"></i>
-                                    </button>
+                                            <!-- 스킵 -->
+                                            <button @click="rateGame(game, 0)"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-400 hover:bg-gray-300 transition-all duration-200"
+                                                :class="{ 'opacity-50': onboardingRatings[game.rawg_id] }"
+                                                title="안 해봤어요">
+                                                <i class="ph-bold ph-minus text-xs"></i>
+                                            </button>
 
-                                    <!-- 따봉 (좋아요) -->
-                                    <button @click="rateGame(game, 3.5)"
-                                        class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
-                                        :class="onboardingRatings[game.rawg_id] === 3.5 
+                                            <!-- 따봉 (좋아요) -->
+                                            <button @click="rateGame(game, 3.5)"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+                                                :class="onboardingRatings[game.rawg_id] === 3.5 
                                         ? 'bg-blue-500 text-white scale-110' 
                                         : 'bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-blue-100 hover:text-blue-500'"
-                                        title="재밌어요">
-                                        <i class="ph-fill ph-thumbs-up text-xs"></i>
-                                    </button>
+                                                title="재밌어요">
+                                                <i class="ph-fill ph-thumbs-up text-xs"></i>
+                                            </button>
 
-                                    <!-- 쌍따봉 (인생게임) -->
-                                    <button @click="rateGame(game, 5)"
-                                        class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
-                                        :class="onboardingRatings[game.rawg_id] === 5 
+                                            <!-- 쌍따봉 (인생게임) -->
+                                            <button @click="rateGame(game, 5)"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+                                                :class="onboardingRatings[game.rawg_id] === 5 
                                         ? 'bg-yellow-500 text-white scale-110' 
                                         : 'bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-yellow-100 hover:text-yellow-500'"
-                                        title="인생게임!">
-                                        <span class="text-[9px] font-bold">👍👍</span>
-                                    </button>
+                                                title="인생게임!">
+                                                <span class="text-[9px] font-bold">👍👍</span>
+                                            </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </Transition>
 
-                    <!-- Rating Legend -->
-                    <div class="flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-500">
-                        <div class="flex items-center gap-1">
-                            <span
-                                class="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]">👎</span>
-                            <span>별로예요</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center">
-                                <i class="ph-bold ph-minus text-gray-500 text-[10px]"></i>
-                            </span>
-                            <span>안 해봤어요</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span
-                                class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px]">👍</span>
-                            <span>재밌어요</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span
-                                class="w-5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px]">👍👍</span>
-                            <span>인생게임!</span>
+                        <!-- Rating Legend (고정 - 슬라이드 안 함) -->
+                        <div class="flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-500">
+                            <div class="flex items-center gap-1">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]">👎</span>
+                                <span>별로예요</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="ph-bold ph-minus text-gray-500 text-[10px]"></i>
+                                </span>
+                                <span>안 해봤어요</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px]">👍</span>
+                                <span>재밌어요</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-[10px]">👍👍</span>
+                                <span>인생게임!</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -257,7 +268,8 @@
                 <div class="relative w-24 h-24 mb-6">
                     <!-- 펄스 효과 -->
                     <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-20"></div>
-                    <div class="absolute inset-2 bg-purple-500 rounded-full animate-ping opacity-20 delay-150"></div>
+                    <div class="absolute inset-2 bg-purple-500 rounded-full animate-ping opacity-20 delay-150">
+                    </div>
                     <!-- 아이콘 -->
                     <div class="absolute inset-0 flex items-center justify-center">
                         <i class="ph-fill ph-brain text-5xl text-purple-600 animate-bounce"></i>

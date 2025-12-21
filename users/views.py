@@ -88,21 +88,20 @@ def main_view(request):
     best_prices = []
     
     try:
-        # Try new format first
+        # Load game sale data - prioritize fast.json which has rawg_id
+        fast_json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
         new_json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_data.json')
-        legacy_json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
         
+        # 1. Load games from fast.json (has rawg_id)
+        if os.path.exists(fast_json_path):
+            with open(fast_json_path, 'r', encoding='utf-8') as f:
+                games_data = json.load(f)
+        
+        # 2. Load best_prices from new format if available
         if os.path.exists(new_json_path):
             with open(new_json_path, 'r', encoding='utf-8') as f:
                 sale_data = json.load(f)
-                games_data = sale_data.get('current_sales', [])
-                # Try historical_lows first, fall back to best_prices
-                best_prices = sale_data.get('historical_lows', sale_data.get('best_prices', []))[:30]  # Top 30 best prices
-        elif os.path.exists(legacy_json_path):
-            with open(legacy_json_path, 'r', encoding='utf-8') as f:
-                games_data = json.load(f)
-        else:
-            print(f"파일을 찾을 수 없습니다: {new_json_path}")
+                best_prices = sale_data.get('historical_lows', sale_data.get('best_prices', []))[:30]
 
         games_json = json.dumps(games_data, cls=DjangoJSONEncoder)
         best_prices_json = json.dumps(best_prices, cls=DjangoJSONEncoder)

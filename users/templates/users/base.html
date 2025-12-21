@@ -101,6 +101,36 @@
             animation: spin 1s linear infinite;
         }
 
+        /* Toss-style Slide Animations (좌우 슬라이드) */
+        .slide-left-enter-active,
+        .slide-left-leave-active,
+        .slide-right-enter-active,
+        .slide-right-leave-active {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 왼쪽으로 슬라이드 (다음 페이지) */
+        .slide-left-enter-from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        .slide-left-leave-to {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        /* 오른쪽으로 슬라이드 (이전 페이지) */
+        .slide-right-enter-from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        .slide-right-leave-to {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
         /* Input Focus Styles */
         .input-group:focus-within label {
             color: #3182F6;

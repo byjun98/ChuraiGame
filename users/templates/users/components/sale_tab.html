@@ -123,7 +123,7 @@
             <div ref="bestPricesContainer"
                 class="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
                 <div v-for="(game, index) in infiniteBestPrices" :key="'best-' + game.game_id + '-' + index"
-                    @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url)"
+                    @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url, game.rawg_id)"
                     class="flex-shrink-0 w-64 bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
                     <!-- Best Price Badge -->
                     <div
@@ -228,7 +228,7 @@
         <div v-if="displayedSaleGames && displayedSaleGames.length > 0"
             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div v-for="game in displayedSaleGames" :key="game.game_id"
-                @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url)"
+                @click="navigateToGameByTitle($event, game.title, game.steam_app_id, game.cheapshark_url, game.rawg_id)"
                 class="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group relative cursor-pointer">
                 <!-- Wishlist Button -->
                 <button @click.stop.prevent="toggleWishlist(game)"

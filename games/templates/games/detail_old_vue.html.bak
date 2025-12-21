@@ -1,0 +1,827 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'games/components/header.html' %}
+
+{% verbatim %}
+<div id="gameDetailApp" class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Loading State -->
+    <div v-if="isLoading" class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Skeleton Header -->
+        <div class="relative h-96 bg-gray-800 animate-pulse">
+            <div class="absolute bottom-0 left-0 w-full p-8 sm:p-12">
+                <div class="flex gap-3 mb-4">
+                    <div class="h-7 w-20 bg-gray-600 rounded-full"></div>
+                    <div class="h-7 w-16 bg-gray-600 rounded-full"></div>
+                </div>
+                <div class="h-12 w-2/3 bg-gray-600 rounded-xl mb-4"></div>
+                <div class="h-5 w-1/3 bg-gray-700 rounded"></div>
+            </div>
+        </div>
+        <div class="p-8 sm:p-12 space-y-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="aspect-video bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="aspect-video bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="aspect-video bg-gray-200 rounded-xl animate-pulse"></div>
+                <div class="aspect-video bg-gray-200 rounded-xl animate-pulse"></div>
+            </div>
+            <div class="h-40 bg-gray-100 rounded-xl animate-pulse"></div>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error"
+        class="bg-white rounded-[2.5rem] shadow-sm border border-red-100 overflow-hidden p-12 text-center">
+        <i class="ph-duotone ph-warning-circle text-6xl text-red-400 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">게임을 불러올 수 없습니다</h2>
+        <p class="text-gray-500 mb-6">{{ error }}</p>
+        <a href="/" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+            메인으로 돌아가기
+        </a>
+    </div>
+
+    <!-- Game Content -->
+    <div v-else-if="game" class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Game Header -->
+        <div class="relative h-96 bg-gray-900">
+            <img v-if="game.background_image" :src="game.background_image" :alt="game.name"
+                class="w-full h-full object-cover opacity-50">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 w-full p-8 sm:p-12">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-3 mb-4">
+                            <span v-if="primaryGenre"
+                                class="inline-block px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-bold rounded-full shadow-lg shadow-blue-900/50">
+                                {{ primaryGenre }}
+                            </span>
+                            <span v-if="game.metacritic"
+                                class="inline-block px-4 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-bold rounded-full shadow-lg">
+                                <i class="ph-fill ph-trophy mr-1"></i> {{ game.metacritic }}
+                            </span>
+                            <span v-if="isRawgOnly"
+                                class="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-bold rounded-full shadow-lg">
+                                <i class="ph-fill ph-globe mr-1"></i> RAWG 데이터
+                            </span>
+                        </div>
+                        <h1 class="text-4xl sm:text-5xl font-black text-white mb-3 tracking-tight drop-shadow-2xl">
+                            {{ game.name }}
+                        </h1>
+                        <div class="flex items-center gap-4 text-gray-300 text-sm font-medium flex-wrap">
+                            <span v-if="game.rating" class="flex items-center gap-1">
+                                <i class="ph-fill ph-star text-yellow-400"></i>
+                                {{ game.rating.toFixed(1) }}/5 (RAWG)
+                            </span>
+                            <span v-if="game.released" class="flex items-center gap-1">
+                                <i class="ph-fill ph-calendar"></i> {{ game.released }}
+                            </span>
+                            <span v-if="game.playtime" class="flex items-center gap-1">
+                                <i class="ph-fill ph-clock"></i> 평균 {{ game.playtime }}시간
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Rating Buttons (Netflix Style) -->
+                    <div class="flex flex-col gap-3">
+                        <!-- 평가 버튼들 -->
+                        <div class="flex gap-2">
+                            <button @click="rateGame(-1)"
+                                :class="userRating === -1 ? 'bg-red-500 text-white scale-110' : 'bg-white/20 text-white hover:bg-red-500'"
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-lg"
+                                title="별로예요">
+                                <i class="ph-fill ph-thumbs-down text-xl"></i>
+                            </button>
+                            <button @click="rateGame(3.5)"
+                                :class="userRating === 3.5 ? 'bg-blue-500 text-white scale-110' : 'bg-white/20 text-white hover:bg-blue-500'"
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-lg"
+                                title="재밌어요">
+                                <i class="ph-fill ph-thumbs-up text-xl"></i>
+                            </button>
+                            <button @click="rateGame(5)"
+                                :class="userRating === 5 ? 'bg-yellow-500 text-white scale-110' : 'bg-white/20 text-white hover:bg-yellow-500'"
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-lg"
+                                title="인생게임!">
+                                <span class="flex"><i class="ph-fill ph-thumbs-up text-lg"></i><i
+                                        class="ph-fill ph-thumbs-up text-lg"></i></span>
+                            </button>
+                        </div>
+                        <div v-if="userRating" class="text-center text-white text-sm font-medium">
+                            <span v-if="userRating === -1">😐 별로예요</span>
+                            <span v-else-if="userRating === 3.5">👍 재밌어요</span>
+                            <span v-else-if="userRating === 5">🔥 인생게임!</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 flex-wrap mt-4">
+                    <a v-if="steamStoreUrl" :href="steamStoreUrl" target="_blank"
+                        class="px-6 py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6a8c] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <i class="ph-fill ph-steam-logo text-xl"></i>
+                        Steam 상점
+                    </a>
+                    <a v-if="game.slug" :href="`https://rawg.io/games/${game.slug}`" target="_blank"
+                        class="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <i class="ph-fill ph-globe text-xl"></i>
+                        RAWG에서 보기
+                    </a>
+                    <!-- Steam Store Direct Link (fallback if steamStoreUrl not available) -->
+                    <a v-if="!steamStoreUrl && steamAppId" :href="`https://store.steampowered.com/app/${steamAppId}/`"
+                        target="_blank"
+                        class="px-6 py-3 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6a8c] text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <i class="ph-fill ph-steam-logo text-xl"></i>
+                        Steam 상점
+                    </a>
+                    <!-- CheapShark Direct Deal Button (if redirect URL is available - goes directly to cheapest store) -->
+                    <a v-if="cheapsharkRedirectUrl" :href="cheapsharkRedirectUrl" target="_blank"
+                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <i class="ph-bold ph-lightning text-xl"></i>
+                        <span class="flex flex-col items-start leading-tight">
+                            <span class="text-xs opacity-80">최저가</span>
+                            <span>바로 구매</span>
+                        </span>
+                    </a>
+                    <!-- CheapShark Price Comparison (fallback - shows all store prices) -->
+                    <a v-else-if="steamAppId" :href="`https://www.cheapshark.com/browse/games?steamAppID=${steamAppId}`"
+                        target="_blank"
+                        class="px-6 py-3 bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-700 hover:to-orange-600 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <i class="ph-bold ph-storefront text-xl"></i>
+                        <span class="flex flex-col items-start leading-tight">
+                            <span class="text-xs opacity-80">CheapShark</span>
+                            <span>최저가 비교</span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Content -->
+        <div class="p-8 sm:p-12 space-y-12">
+
+            <!-- Screenshots Gallery -->
+            <div v-if="screenshots.length > 0">
+                <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i class="ph-fill ph-images text-blue-600"></i>
+                    스크린샷
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div v-for="(screenshot, index) in screenshots" :key="index"
+                        class="group relative aspect-video rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:ring-4 hover:ring-blue-500 transition-all"
+                        @click="openImageModal(screenshot.image)">
+                        <img :src="screenshot.image" alt="스크린샷"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Screenshots -->
+            <div v-else-if="isLoadingDetails" class="space-y-4">
+                <h3 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="ph-fill ph-images text-blue-600"></i>
+                    스크린샷
+                    <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin ml-2">
+                    </div>
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div v-for="n in 4" :key="n" class="aspect-video bg-gray-200 rounded-xl animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                <!-- Left: Description -->
+                <div class="lg:col-span-2 space-y-10">
+
+                    <!-- Game Description -->
+                    <div v-if="game.description_raw || game.description">
+                        <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-book-open text-blue-600"></i>
+                            게임 소개
+                        </h3>
+                        <div
+                            class="prose prose-sm max-w-none text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-6 border border-gray-100">
+                            <div v-html="formatDescription(game.description_raw || game.description)"></div>
+
+                            <!-- Translation Toggle Button -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <button @click="toggleTranslation" :disabled="isTranslating"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                                    :class="showTranslation 
+                                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                        : 'bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700 border border-gray-200'">
+                                    <i v-if="isTranslating" class="ph-bold ph-spinner animate-spin"></i>
+                                    <i v-else-if="showTranslation" class="ph-fill ph-globe"></i>
+                                    <i v-else class="ph-bold ph-translate"></i>
+                                    <span v-if="isTranslating">번역 중...</span>
+                                    <span v-else-if="showTranslation">원문 보기</span>
+                                    <span v-else>한국어로 번역</span>
+                                </button>
+                            </div>
+
+                            <!-- Translated Content -->
+                            <div v-if="showTranslation && translatedDescription"
+                                class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                <div class="flex items-center gap-2 mb-3 text-blue-600 text-sm font-medium">
+                                    <i class="ph-fill ph-globe"></i>
+                                    <span>AI 한국어 번역</span>
+                                </div>
+                                <div class="text-gray-700 leading-relaxed"
+                                    v-html="formatDescription(translatedDescription)"></div>
+                            </div>
+
+                            <!-- Translation Error -->
+                            <div v-if="translationError"
+                                class="mt-4 p-3 bg-red-50 rounded-lg border border-red-100 text-red-600 text-sm">
+                                <i class="ph-bold ph-warning mr-2"></i>
+                                {{ translationError }}
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="isLoadingDetails">
+                        <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-book-open text-blue-600"></i>
+                            게임 소개
+                            <div
+                                class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin ml-2">
+                            </div>
+                        </h3>
+                        <div class="h-40 bg-gray-100 rounded-xl animate-pulse"></div>
+                    </div>
+
+                    <!-- RAWG 안내 -->
+                    <div v-if="isRawgOnly"
+                        class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-100">
+                        <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                            <i class="ph-fill ph-info text-purple-600"></i>
+                            RAWG 데이터베이스 게임
+                        </h3>
+                        <p class="text-gray-600 text-sm leading-relaxed">
+                            이 게임은 RAWG API에서 가져온 정보입니다.
+                        </p>
+                    </div>
+
+                    <!-- My Review Form -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-pencil-simple text-blue-600"></i>
+                            {{ myReview ? '리뷰 수정하기' : '리뷰 작성하기' }}
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-2">별점</label>
+                                <div class="flex gap-2">
+                                    <label v-for="i in 5" :key="i" class="cursor-pointer group">
+                                        <input type="radio" :value="i" v-model="reviewScore" class="hidden peer">
+                                        <i class="ph-fill ph-star text-3xl transition-colors"
+                                            :class="i <= reviewScore ? 'text-yellow-400' : 'text-gray-300 group-hover:text-yellow-300'"></i>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-2">코멘트</label>
+                                <textarea v-model="reviewContent" rows="3" placeholder="이 게임에 대한 솔직한 평가를 남겨주세요."
+                                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none text-sm"></textarea>
+                            </div>
+                            <div class="flex justify-end">
+                                <button @click="submitReview" :disabled="!reviewScore || isSubmittingReview"
+                                    class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span v-if="isSubmittingReview" class="flex items-center gap-2">
+                                        <i class="ph-bold ph-spinner animate-spin"></i> 등록 중...
+                                    </span>
+                                    <span v-else>등록하기</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review List -->
+                    <div>
+                        <h3 class="text-xl font-bold mb-6">유저 리뷰 <span class="text-blue-600">{{ reviews.length }}</span>
+                        </h3>
+                        <div v-if="isLoadingReviews" class="space-y-4">
+                            <div v-for="n in 3" :key="n" class="flex gap-4 pb-6 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                                    <div class="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="space-y-6">
+                            <div v-for="review in reviews" :key="review.id"
+                                class="flex gap-4 pb-6 border-b border-gray-100 last:border-0">
+                                <div class="shrink-0">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+                                        <i class="ph-fill ph-user text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-bold text-gray-900">{{ review.user }}</span>
+                                        <span class="text-xs text-gray-400">{{ review.created_at }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1 mb-2">
+                                        <i v-for="i in 5" :key="i" class="ph-fill ph-star text-sm"
+                                            :class="i <= review.score ? 'text-yellow-400' : 'text-gray-200'"></i>
+                                    </div>
+                                    <p class="text-gray-600 text-sm leading-relaxed">{{ review.content }}</p>
+                                </div>
+                            </div>
+                            <div v-if="reviews.length === 0" class="text-center py-12 text-gray-400">
+                                <i class="ph-duotone ph-chat-teardrop-text text-4xl mb-3"></i>
+                                <p>아직 작성된 리뷰가 없습니다.<br>첫 번째 리뷰어가 되어보세요!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Info Sidebar -->
+                <div class="space-y-6">
+                    <div
+                        class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 sticky top-6">
+                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-info text-blue-600"></i>
+                            게임 정보
+                        </h3>
+                        <dl class="space-y-3 text-sm">
+                            <div v-if="allGenres" class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">장르</dt>
+                                <dd class="font-bold text-gray-900 text-right">{{ allGenres }}</dd>
+                            </div>
+                            <div v-if="game.metacritic" class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">메타크리틱</dt>
+                                <dd class="font-bold text-green-600 text-right">{{ game.metacritic }}/100</dd>
+                            </div>
+                            <div v-if="game.rating" class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">RAWG 평점</dt>
+                                <dd class="font-bold text-yellow-600 text-right">{{ game.rating.toFixed(1) }}/5</dd>
+                            </div>
+                            <div v-if="game.released" class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">출시일</dt>
+                                <dd class="font-medium text-gray-600 text-right">{{ game.released }}</dd>
+                            </div>
+                            <div v-if="game.developers && game.developers.length > 0"
+                                class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">개발사</dt>
+                                <dd class="font-medium text-gray-600 text-right">
+                                    {{ game.developers.map(d => d.name).join(', ') }}
+                                </dd>
+                            </div>
+                            <div v-if="game.publishers && game.publishers.length > 0"
+                                class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">퍼블리셔</dt>
+                                <dd class="font-medium text-gray-600 text-right">
+                                    {{ game.publishers.map(p => p.name).join(', ') }}
+                                </dd>
+                            </div>
+                            <div class="flex justify-between items-start">
+                                <dt class="text-gray-500 font-medium">RAWG ID</dt>
+                                <dd class="font-medium text-gray-600 text-right">
+                                    <a :href="`https://rawg.io/games/${game.id}`" target="_blank"
+                                        class="hover:text-blue-600 transition-colors">
+                                        {{ game.id }} <i class="ph-bold ph-arrow-square-out text-xs"></i>
+                                    </a>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <!-- Platforms -->
+                        <div v-if="game.platforms && game.platforms.length > 0"
+                            class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="text-xs font-bold text-gray-500 mb-3">플랫폼</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="p in game.platforms" :key="p.platform.id"
+                                    class="px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded-lg">
+                                    {{ p.platform.name }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div v-if="screenshots.length > 0" class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="grid grid-cols-2 gap-4 text-center">
+                                <div>
+                                    <div class="text-2xl font-black text-blue-600">{{ screenshots.length }}</div>
+                                    <div class="text-xs text-gray-500 font-medium">스크린샷</div>
+                                </div>
+                                <div v-if="game.added">
+                                    <div class="text-2xl font-black text-purple-600">{{ formatNumber(game.added) }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 font-medium">라이브러리</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4"
+    onclick="closeImageModal()">
+    <div class="relative max-w-6xl max-h-[90vh]">
+        <button onclick="closeImageModal()"
+            class="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors">
+            <i class="ph-bold ph-x text-3xl"></i>
+        </button>
+        <img id="modalImage" src="" alt="Screenshot" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl">
+    </div>
+</div>
+{% endverbatim %}
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const game = ref(null);
+            const screenshots = ref([]);
+            const steamStoreUrl = ref(null);
+            const isLoading = ref(true);
+            const isLoadingDetails = ref(false);
+            const isRawgOnly = ref(true);
+            const error = ref(null);
+
+            // Extract game ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const gameId = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+
+            // Extract numeric ID
+            const numericId = gameId.replace(/\D/g, '');
+
+            // Check if this is a Steam game (app123 format) or get from query params
+            const urlParams = new URLSearchParams(window.location.search);
+            const steamAppIdFromUrl = urlParams.get('steam_appid');
+            const steamAppId = ref(steamAppIdFromUrl || (gameId.startsWith('app') ? numericId : null));
+
+            // CheapShark redirect URL (directly goes to the cheapest store)
+            const cheapsharkRedirectUrl = ref(urlParams.get('cheapshark_url') || null);
+
+            // Translation state
+            const showTranslation = ref(false);
+            const translatedDescription = ref('');
+            const isTranslating = ref(false);
+            const translationError = ref('');
+
+            // User rating state
+            const userRating = ref(null);
+
+            // Review state
+            const reviews = ref([]);
+            const myReview = ref(null);
+            const reviewScore = ref(0);
+            const reviewContent = ref('');
+            const isLoadingReviews = ref(false);
+            const isSubmittingReview = ref(false);
+
+            // Computed properties for genres
+            const primaryGenre = computed(() => {
+                if (game.value && game.value.genres && game.value.genres.length > 0) {
+                    return game.value.genres[0].name || game.value.genres[0];
+                }
+                return null;
+            });
+
+            const allGenres = computed(() => {
+                if (game.value && game.value.genres && game.value.genres.length > 0) {
+                    return game.value.genres.map(g => g.name || g).join(', ');
+                }
+                return null;
+            });
+
+            const formatDescription = (text) => {
+                if (!text) return '';
+                // Convert newlines to paragraphs
+                return text.split('\n\n').map(p => `<p class="mb-4">${p}</p>`).join('');
+            };
+
+            const formatNumber = (num) => {
+                if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                return num.toString();
+            };
+
+            const openImageModal = (imageUrl) => {
+                const modal = document.getElementById('imageModal');
+                const modalImage = document.getElementById('modalImage');
+                modalImage.src = imageUrl;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            };
+
+            const toggleTranslation = async () => {
+                // If already have translation, just toggle visibility
+                if (translatedDescription.value) {
+                    showTranslation.value = !showTranslation.value;
+                    return;
+                }
+
+                // Need to fetch translation
+                if (!game.value || (!game.value.description_raw && !game.value.description)) {
+                    return;
+                }
+
+                isTranslating.value = true;
+                translationError.value = '';
+
+                try {
+                    const textToTranslate = game.value.description_raw || game.value.description;
+
+                    const response = await fetch('/games/api/translate/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
+                        body: JSON.stringify({
+                            rawg_id: game.value.id,
+                            text: textToTranslate,
+                            game_title: game.value.name
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.translated) {
+                        translatedDescription.value = data.translated;
+                        showTranslation.value = true;
+                    } else {
+                        translationError.value = data.error || '번역에 실패했습니다.';
+                    }
+                } catch (e) {
+                    console.error('Translation error:', e);
+                    translationError.value = '번역 요청 중 오류가 발생했습니다.';
+                } finally {
+                    isTranslating.value = false;
+                }
+            };
+
+            // Rate game function (saves to DB for recommendations)
+            const rateGame = async (score) => {
+                if (!game.value) return;
+
+                // Toggle off if same score clicked
+                if (userRating.value === score) {
+                    userRating.value = null;
+                    return;
+                }
+
+                userRating.value = score;
+
+                try {
+                    const response = await fetch('/users/api/onboarding/rate/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
+                        body: JSON.stringify({
+                            game_id: game.value.id,
+                            game_title: game.value.name,
+                            game_image: game.value.background_image || '',
+                            score: score
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('Rating saved:', score);
+                    } else {
+                        console.error('Failed to save rating');
+                    }
+                } catch (e) {
+                    console.error('Error saving rating:', e);
+                }
+            };
+
+            // Get CSRF token
+            const getCsrfToken = () => {
+                const name = 'csrftoken';
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [key, value] = cookie.trim().split('=');
+                    if (key === name) return value;
+                }
+                return '';
+            };
+
+            // Fetch existing user rating
+            const fetchUserRating = async (rawgId) => {
+                try {
+                    const response = await fetch(`/users/api/game-rating/${rawgId}/`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.score !== undefined && data.score !== null) {
+                            userRating.value = data.score;
+                        }
+                    }
+                } catch (e) {
+                    // Silently fail if not logged in or no rating
+                }
+            };
+
+            // Fetch reviews for this game
+            const fetchReviews = async (rawgId) => {
+                isLoadingReviews.value = true;
+                try {
+                    const response = await fetch(`/games/api/reviews/${rawgId}/`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        reviews.value = data.reviews || [];
+                        if (data.my_review) {
+                            myReview.value = data.my_review;
+                            reviewScore.value = data.my_review.score;
+                            reviewContent.value = data.my_review.content || '';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch reviews:', e);
+                } finally {
+                    isLoadingReviews.value = false;
+                }
+            };
+
+            // Submit a new review
+            const submitReview = async () => {
+                if (!game.value || !reviewScore.value) return;
+
+                isSubmittingReview.value = true;
+                try {
+                    const response = await fetch(`/games/api/reviews/${game.value.id}/submit/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
+                        body: JSON.stringify({
+                            score: reviewScore.value,
+                            content: reviewContent.value,
+                            game_title: game.value.name,
+                            game_image: game.value.background_image || ''
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Review submitted:', data);
+                        // Refresh reviews
+                        await fetchReviews(game.value.id);
+                        myReview.value = { score: reviewScore.value, content: reviewContent.value };
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Failed to submit review:', errorData.error);
+                        alert(errorData.error || '리뷰 등록에 실패했습니다.');
+                    }
+                } catch (e) {
+                    console.error('Error submitting review:', e);
+                    alert('리뷰 등록 중 오류가 발생했습니다.');
+                } finally {
+                    isSubmittingReview.value = false;
+                }
+            };
+
+            const fetchGameData = async () => {
+
+                try {
+                    isLoading.value = true;
+
+                    // Check if we're searching by title (from sale tab)
+                    const searchTitle = urlParams.get('title');
+                    let rawgId = numericId;
+
+                    if (searchTitle) {
+                        // Search RAWG by game title with exact match
+                        const searchUrl = `https://api.rawg.io/api/games?key={{ rawg_api_key }}&search=${encodeURIComponent(searchTitle)}&search_exact=true&page_size=1`;
+                        const searchResponse = await fetch(searchUrl);
+
+                        if (searchResponse.ok) {
+                            const searchData = await searchResponse.json();
+                            if (searchData.results && searchData.results.length > 0) {
+                                rawgId = searchData.results[0].id;
+                            } else {
+                                // Fallback: try without exact match
+                                const fuzzyUrl = `https://api.rawg.io/api/games?key={{ rawg_api_key }}&search=${encodeURIComponent(searchTitle)}&page_size=1`;
+                                const fuzzyResponse = await fetch(fuzzyUrl);
+                                if (fuzzyResponse.ok) {
+                                    const fuzzyData = await fuzzyResponse.json();
+                                    if (fuzzyData.results && fuzzyData.results.length > 0) {
+                                        rawgId = fuzzyData.results[0].id;
+                                    } else {
+                                        throw new Error(`'${searchTitle}' 게임을 찾을 수 없습니다.`);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Fetch basic game info using RAWG ID
+                    const response = await fetch(`https://api.rawg.io/api/games/${rawgId}?key={{ rawg_api_key }}`);
+                    if (!response.ok) throw new Error('게임을 찾을 수 없습니다.');
+
+                    const data = await response.json();
+                    game.value = data;
+                    isLoading.value = false;
+
+                    // Fetch screenshots and stores in background (lazy loading)
+                    isLoadingDetails.value = true;
+
+                    // Fetch screenshots
+                    const screenshotsResponse = await fetch(`https://api.rawg.io/api/games/${rawgId}/screenshots?key={{ rawg_api_key }}&page_size=8`);
+                    if (screenshotsResponse.ok) {
+                        const ssData = await screenshotsResponse.json();
+                        screenshots.value = ssData.results || [];
+                    }
+
+                    // Fetch stores to get Steam link
+                    try {
+                        const storesResponse = await fetch(`https://api.rawg.io/api/games/${rawgId}/stores?key={{ rawg_api_key }}`);
+                        if (storesResponse.ok) {
+                            const storesData = await storesResponse.json();
+                            // Find Steam store (store_id 1 = Steam)
+                            const steamStore = storesData.results?.find(s => s.store_id === 1);
+                            if (steamStore && steamStore.url) {
+                                steamStoreUrl.value = steamStore.url;
+                                // Extract Steam AppID from URL if not already set
+                                if (!steamAppId.value) {
+                                    const appIdMatch = steamStore.url.match(/\/app\/(\d+)/);
+                                    if (appIdMatch && appIdMatch[1]) {
+                                        steamAppId.value = appIdMatch[1];
+                                    }
+                                }
+                            }
+                        }
+                    } catch (storeError) {
+                        console.log('Could not fetch store info:', storeError);
+                    }
+
+                    isLoadingDetails.value = false;
+
+                    // Fetch user's existing rating for this game
+                    fetchUserRating(rawgId);
+
+                    // Fetch reviews for this game
+                    fetchReviews(rawgId);
+
+                } catch (e) {
+                    console.error('Failed to fetch game:', e);
+                    error.value = e.message;
+                    isLoading.value = false;
+                }
+            };
+
+            onMounted(() => {
+                fetchGameData();
+            });
+
+            return {
+                game,
+                screenshots,
+                steamStoreUrl,
+                steamAppId,
+                cheapsharkRedirectUrl,
+                isLoading,
+                isLoadingDetails,
+                isRawgOnly,
+                error,
+                primaryGenre,
+                allGenres,
+                formatDescription,
+                formatNumber,
+                openImageModal,
+                // Translation
+                showTranslation,
+                translatedDescription,
+                isTranslating,
+                translationError,
+                toggleTranslation,
+                // Rating
+                userRating,
+                rateGame,
+                // Reviews
+                reviews,
+                myReview,
+                reviewScore,
+                reviewContent,
+                isLoadingReviews,
+                isSubmittingReview,
+                submitReview
+            };
+        }
+    }).mount('#gameDetailApp');
+
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+</script>
+{% endblock %}

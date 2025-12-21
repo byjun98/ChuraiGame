@@ -36,15 +36,14 @@ def is_steam_id(game_id_str):
 @login_required
 def game_search_by_title(request):
     """
-    Render game detail page for searching by title.
-    Used by sale tab where Steam AppID != RAWG ID.
+    제목으로 게임 검색 후 상세 페이지로 리다이렉트
     
-    The client-side JavaScript will read the 'title' query param
-    and search RAWG API directly for better performance.
+    세일 탭에서 Steam AppID와 RAWG ID가 다른 게임 처리용
+    RAWG API에서 제목으로 검색 후 게임을 DB에 저장하고 상세페이지로 이동
     
     Query params:
-        title (required): Game title to search
-        steam_appid (optional): Steam AppID for price comparison links
+        title (required): 검색할 게임 제목
+        steam_appid (optional): Steam AppID (가격 비교 링크용)
     """
     title = request.GET.get('title', '').strip()
     steam_appid = request.GET.get('steam_appid', '')
@@ -52,122 +51,99 @@ def game_search_by_title(request):
     if not title:
         return redirect('users:main')
     
-    rawg_api_key = RAWG_API_KEY or os.getenv('RAWG_API_KEY', '')
+    # RAWG에서 제목으로 검색
+    games = search_games(title, page_size=1)
     
-    # Simply render detail.html - client-side JavaScript will handle the RAWG search
-    context = {
-        'game': None,
-        'is_rawg_only': True,
-        'rawg_api_key': rawg_api_key,
-        'search_title': title,
-        'steam_appid': steam_appid,
-    }
-    return render(request, 'games/detail.html', context)
+    if games:
+        rawg_id = games[0].get('id')
+        # 상세페이지로 리다이렉트 (game_detail에서 자동 생성됨)
+        return redirect('games:detail', game_id=str(rawg_id))
+    
+    # 검색 결과 없음 - 메인으로 돌아감
+    from django.contrib import messages
+    messages.warning(request, f'"{title}" 게임을 찾을 수 없습니다.')
+    return redirect('users:main')
 
 @login_required
 def game_detail(request, game_id):
     """
-    Game detail view - optimized for lazy loading.
-    - DB games (Steam): Server-side rendering with full data
-    - RAWG games: Client-side rendering with JavaScript
+    통합된 게임 상세 페이지 뷰
+    
+    1. DB에서 게임 조회 (Steam ID 또는 RAWG ID)
+    2. DB에 없으면 RAWG API에서 가져와 자동 생성
+    3. 모든 게임을 동일한 템플릿(detail.html)으로 렌더링
     """
     # Get RAWG API key from environment
     rawg_api_key = RAWG_API_KEY or os.getenv('RAWG_API_KEY', '')
-    
-    # 1. Steam 형식의 ID인 경우 (app123, bundle456 등) - DB에서 가져오기
-    if is_steam_id(game_id):
-        app_id = extract_app_id(game_id)
-        try:
-            game = Game.objects.get(steam_appid=app_id)
-        except Game.DoesNotExist:
-            # DB에 없으면 RAWG 전용으로 처리
-            context = {
-                'game': None,
-                'is_rawg_only': True,
-                'rawg_api_key': rawg_api_key,
-            }
-            return render(request, 'games/detail.html', context)
-        
-        # DB 게임 - 서버사이드 렌더링 (기존 detail_db.html 사용)
-        if request.method == 'POST':
-            score = request.POST.get('score')
-            content = request.POST.get('content')
-            if score:
-                Rating.objects.update_or_create(
-                    user=request.user,
-                    game=game,
-                    defaults={'score': float(score), 'content': content}
-                )
-                return redirect('games:detail', game_id=game_id)
-        
-        reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
-        my_review = reviews.filter(user=request.user).first()
-        
-        context = {
-            'game': game,
-            'reviews': reviews,
-            'my_review': my_review,
-            'screenshots': game.screenshots.all(),
-            'trailers': game.trailers.all(),
-            'is_rawg_only': False,
-            'rawg_api_key': rawg_api_key,
-        }
-        return render(request, 'games/detail_db.html', context)
-    
-    # 2. 순수 숫자 ID인 경우 - RAWG ID로 간주하고 클라이언트에서 로딩
     numeric_id = extract_app_id(game_id)
+    game = None
     
-    # 먼저 DB에서 검색
-    try:
-        game = Game.objects.get(steam_appid=numeric_id)
-        # DB 게임 찾음 - 서버사이드 렌더링
-        if request.method == 'POST':
-            score = request.POST.get('score')
-            content = request.POST.get('content')
-            if score:
-                Rating.objects.update_or_create(
-                    user=request.user,
+    # 1. Steam 형식 ID (app123, bundle456 등)
+    if is_steam_id(game_id):
+        game = Game.objects.filter(steam_appid=numeric_id).first()
+    
+    # 2. 순수 숫자 ID - Steam AppID로 먼저 검색
+    if not game:
+        game = Game.objects.filter(steam_appid=numeric_id).first()
+    
+    # 3. 여전히 없으면 RAWG ID로 검색
+    if not game:
+        game = Game.objects.filter(rawg_id=numeric_id).first()
+    
+    # 4. DB에 없으면 RAWG API에서 가져와 자동 생성
+    if not game:
+        rawg_data = fetch_rawg_game_details(numeric_id)
+        
+        if rawg_data:
+            # 게임 생성
+            game = Game.objects.create(
+                rawg_id=rawg_data.get('id'),
+                title=rawg_data.get('name', f'Game {numeric_id}'),
+                description=rawg_data.get('description_raw', ''),
+                image_url=rawg_data.get('background_image', ''),
+                background_image=rawg_data.get('background_image', ''),
+                metacritic_score=rawg_data.get('metacritic'),
+                genre=', '.join([g['name'] for g in rawg_data.get('genres', [])[:3]]) or '게임',
+            )
+            
+            # 스크린샷 저장
+            screenshots = fetch_rawg_screenshots(numeric_id)
+            from .models import GameScreenshot
+            for ss in screenshots[:8]:
+                GameScreenshot.objects.get_or_create(
                     game=game,
-                    defaults={'score': float(score), 'content': content}
+                    image_url=ss.get('image', '')
                 )
-                return redirect('games:detail', game_id=game_id)
-        
-        reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
-        my_review = reviews.filter(user=request.user).first()
-        
-        context = {
-            'game': game,
-            'reviews': reviews,
-            'my_review': my_review,
-            'screenshots': game.screenshots.all(),
-            'trailers': game.trailers.all(),
-            'is_rawg_only': False,
-            'rawg_api_key': rawg_api_key,
-        }
-        return render(request, 'games/detail_db.html', context)
-    except Game.DoesNotExist:
-        pass
+            
+            print(f"✅ Auto-created game from RAWG: {game.title} (ID: {numeric_id})")
+        else:
+            # RAWG에서도 찾을 수 없음
+            from django.contrib import messages
+            messages.error(request, f'게임을 찾을 수 없습니다 (ID: {game_id})')
+            return redirect('users:main')
     
-    try:
-        game = Game.objects.get(rawg_id=numeric_id)
-        # DB 게임 찾음 - 서버사이드 렌더링
-        context = {
-            'game': game,
-            'reviews': Rating.objects.filter(game=game).select_related('user').order_by('-updated_at'),
-            'my_review': Rating.objects.filter(game=game, user=request.user).first(),
-            'screenshots': game.screenshots.all(),
-            'trailers': game.trailers.all(),
-            'is_rawg_only': False,
-            'rawg_api_key': rawg_api_key,
-        }
-        return render(request, 'games/detail_db.html', context)
-    except Game.DoesNotExist:
-        pass
+    # 리뷰 POST 처리
+    if request.method == 'POST':
+        score = request.POST.get('score')
+        content = request.POST.get('content')
+        if score:
+            Rating.objects.update_or_create(
+                user=request.user,
+                game=game,
+                defaults={'score': float(score), 'content': content}
+            )
+            return redirect('games:detail', game_id=game_id)
     
-    # DB에 없으면 RAWG 전용 - 클라이언트사이드 렌더링 (빠른 로딩)
+    # 리뷰 데이터
+    reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
+    my_review = reviews.filter(user=request.user).first()
+    
     context = {
-        'game': None,
-        'is_rawg_only': True,
+        'game': game,
+        'reviews': reviews,
+        'my_review': my_review,
+        'screenshots': game.screenshots.all(),
+        'trailers': game.trailers.all(),
         'rawg_api_key': rawg_api_key,
     }
     return render(request, 'games/detail.html', context)
