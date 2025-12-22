@@ -26,8 +26,12 @@
 
     {% include 'users/components/mobile_nav.html' %}
 
+    <!-- Steam Experience Question Modal (토스 스타일) -->
+    {% include 'users/components/steam_question_modal.html' %}
+
     <!-- Onboarding Modal (왓챠 스타일) -->
     {% include 'users/components/onboarding_modal.html' %}
+
 
 </div>
 {% endblock %}
@@ -137,6 +141,14 @@
     const onboardingTotalGames = ref(0);
     const slideDirection = ref('slide-right'); // 슬라이드 방향: 'slide-right' 또는 'slide-left'
 
+    // Steam 경험 질문 모달 State (토스 스타일)
+    const showSteamQuestionModal = ref(false);
+    const steamQuestionAnimating = ref(false);
+    const showSteamTransitionModal = ref(false);
+    const steamTransitionAnimating = ref(false);
+    const onboardingKoreanMode = ref(false);  // true면 한국 게임 온보딩
+
+
     // Profile Page State
     const showWishlistModal = ref(false);
     const showReviewsModal = ref(false);
@@ -151,6 +163,10 @@
     const otherSteamLibrary = ref([]);
     const otherSteamStats = ref({ total: 0, hours: 0 });
     const isLoadingProfile = ref(false);
+
+    // 게임 상세 정보 캐시 (ID -> Game Info)
+    const gameInfoCache = ref({});
+
 
     // Genre Analysis State (Home Page)
     const genreAnalysisData = ref(null);
@@ -200,7 +216,37 @@
     const displayRatings = computed(() => isMe.value ? onboardingRatings.value : otherRatings.value);
     const displaySteamLibrary = computed(() => isMe.value ? steamLibrary.value : otherSteamLibrary.value);
     const displaySteamTotalGames = computed(() => isMe.value ? steamTotalGames.value : otherSteamStats.value.total);
-    const displaySteamTotalHours = computed(() => isMe.value ? steamTotalHours.value : otherSteamStats.value.hours); // Note: steamTotalHours in 'me' might be number, API returns number.
+    const displaySteamTotalHours = computed(() => isMe.value ? steamTotalHours.value : otherSteamStats.value.hours);
+
+    // 찜한 게임 상세 정보 (게임 Info와 결합)
+    const displayWishlistDetails = computed(() => {
+        return displayWishlist.value.map(gameId => {
+            const cached = gameInfoCache.value[gameId];
+            return {
+                rawg_id: gameId,
+                title: cached?.title || `게임 #${gameId}`,
+                image_url: cached?.image_url || null,
+                genre: cached?.genre || ''
+            };
+        });
+    });
+
+    // 평가한 게임 상세 정보 (score와 게임 Info 결합)
+    const displayRatingDetails = computed(() => {
+        const ratings = displayRatings.value;
+        return Object.entries(ratings)
+            .filter(([_, score]) => score !== 0)
+            .map(([gameId, score]) => {
+                const cached = gameInfoCache.value[gameId];
+                return {
+                    rawg_id: gameId,
+                    score: score,
+                    title: cached?.title || `게임 #${gameId}`,
+                    image_url: cached?.image_url || null,
+                    genre: cached?.genre || ''
+                };
+            });
+    });
 
 
     onMounted(async () => {
@@ -286,15 +332,15 @@
         // Setup infinite scroll
         setupInfiniteScroll();
 
-        // Check if user needs onboarding (Steam 미연동 사용자)
-        checkOnboardingStatus();
+        // Check if user needs onboarding (Steam 미연동 사용자) - await으로 ratings 데이터 로드 대기
+        await checkOnboardingStatus();
 
         // Fetch Genre Analysis for Home Page
         fetchGenreAnalysis();
 
         // Fetch Steam-Style Recommendations
         fetchSteamRecommendations();
-        
+
         // Setup Steam infinite scroll
         setupSteamInfiniteScroll();
     });
@@ -737,6 +783,19 @@
                     hours: data.steamTotalHours
                 };
                 otherSteamLibrary.value = data.steamLibrary;
+
+                // Populate Game Info Cache (for public profile display)
+                if (data.rated_games_info) {
+                    Object.entries(data.rated_games_info).forEach(([id, info]) => {
+                        gameInfoCache.value[id] = info;
+                    });
+                }
+                if (data.wishlisted_games_info) {
+                    Object.entries(data.wishlisted_games_info).forEach(([id, info]) => {
+                        gameInfoCache.value[id] = info;
+                    });
+                }
+
             } else {
                 console.error("User not found");
                 // Redirect to main or show error
@@ -1068,7 +1127,7 @@
         if (!game) return;
 
         console.log('[DEBUG openRawgGame] game object:', game);
-        
+
         // RAWG API에서는 'id', DB에서는 'rawg_id' 사용
         const gameId = game.rawg_id || game.id;
         const gameTitle = game.title || game.name;
@@ -1232,7 +1291,7 @@
 
     // --- Steam-Style Recommendations Methods ---
     const steamScrollTrigger = ref(null);
-    
+
     const fetchSteamRecommendations = async () => {
         if (isLoadingSteamRecommendations.value) return;
 
@@ -1255,28 +1314,28 @@
                 // start = (2-1)*1 = 1.
                 // items 1..2.
                 // DUPLICATE ITEMS!
-                
+
                 // Correction: The pagination logic on server is standard.
                 // If I change initial load to per_page=3, I must adjust the next page / offset logic OR just use same per_page.
                 // Or I should manually manage offsets.
-                
+
                 // Server logic:
                 // start = (page - 1) * per_page
-                
+
                 // Client logic:
                 // steamRecommendationPage increments.
-                
+
                 // If I mix per_page, I break the pagination alignment.
                 // Fix: keep per_page consistent OR adjust page number.
-                
+
                 // If I fetch page 1 with per_page=3. Items 0, 1, 2.
                 // Next, I want item 3.
                 // If I request page=X with per_page=1.
                 // I need start=3.
                 // (page-1)*1 = 3 => page-1=3 => page=4.
-                
+
                 // So if initial load is 3 items, the next "page" for per_page=1 is 4.
-                steamRecommendationPage.value = 3; 
+                steamRecommendationPage.value = 3;
             }
         } catch (e) {
             console.error('Error fetching steam recommendations:', e);
@@ -1304,7 +1363,7 @@
             isLoadingSteamRecommendations.value = false;
         }
     };
-    
+
     // Hide/Remove a recommendation from the list
     const hideRecommendation = (index) => {
         steamRecommendations.value.splice(index, 1);
@@ -1313,7 +1372,7 @@
             loadMoreSteamRecommendations();
         }
     };
-    
+
     // Setup infinite scroll for Steam recommendations
     const setupSteamInfiniteScroll = () => {
         const observer = new IntersectionObserver((entries) => {
@@ -1321,7 +1380,7 @@
                 loadMoreSteamRecommendations();
             }
         }, { threshold: 0.1, rootMargin: '100px' });
-        
+
         // Watch for changes (e.g. tab switch)
         Vue.watch(steamScrollTrigger, (el) => {
             if (el) observer.observe(el);
@@ -1428,11 +1487,26 @@
                 console.log(`Loaded ${Object.keys(loadedRatings).length} existing ratings from DB`);
             }
 
+            // 게임 상세 정보 캐시 저장 (프로필 모달용)
+            if (data.rated_games_info) {
+                for (const [rawgId, info] of Object.entries(data.rated_games_info)) {
+                    gameInfoCache.value[rawgId] = info;
+                }
+            }
+            if (data.wishlisted_games_info) {
+                for (const [rawgId, info] of Object.entries(data.wishlisted_games_info)) {
+                    gameInfoCache.value[rawgId] = info;
+                }
+            }
+
             if (data.needs_onboarding) {
-                // 온보딩이 필요하면 모달 표시
-                showOnboarding.value = true;
+                // 온보딩이 필요하면 먼저 Steam 경험 질문 모달 표시 (토스 스타일)
+                showSteamQuestionModal.value = true;
                 onboardingCurrentStep.value = data.current_step || 0;
-                await loadOnboardingGames(onboardingCurrentStep.value);
+                // 애니메이션 트리거 (약간 딜레이 후)
+                setTimeout(() => {
+                    steamQuestionAnimating.value = true;
+                }, 50);
             }
         } catch (e) {
             console.error('Onboarding status check failed:', e);
@@ -1440,11 +1514,56 @@
     };
 
 
+    // Steam 질문 → "네, 많이 해봤어요" 클릭 핸들러
+    const handleSteamQuestionYes = async () => {
+        onboardingKoreanMode.value = false;  // Steam 게임 모드
+
+        // 질문 모달 닫기
+        steamQuestionAnimating.value = false;
+        await new Promise(r => setTimeout(r, 300));
+        showSteamQuestionModal.value = false;
+
+        // 트랜지션 모달 표시
+        showSteamTransitionModal.value = true;
+        setTimeout(() => {
+            steamTransitionAnimating.value = true;
+        }, 50);
+
+        // 1.5초 후 온보딩 시작
+        setTimeout(async () => {
+            steamTransitionAnimating.value = false;
+            await new Promise(r => setTimeout(r, 300));
+            showSteamTransitionModal.value = false;
+
+            // 온보딩 모달 표시
+            showOnboarding.value = true;
+            await loadOnboardingGames(onboardingCurrentStep.value);
+        }, 1500);
+    };
+
+    // Steam 질문 → "아니요" 클릭 핸들러
+    const handleSteamQuestionNo = async () => {
+        onboardingKoreanMode.value = true;  // 한국 게임 모드
+
+        // 질문 모달 닫기
+        steamQuestionAnimating.value = false;
+        await new Promise(r => setTimeout(r, 300));
+        showSteamQuestionModal.value = false;
+
+        // 바로 온보딩 시작 (한국 게임 모드)
+        showOnboarding.value = true;
+        await loadOnboardingGames(onboardingCurrentStep.value);
+    };
+
+
+
     // 온보딩 게임 목록 로드 (페이지네이션 지원)
     const loadOnboardingGames = async (step, page = 1) => {
         isLoadingOnboarding.value = true;
         try {
-            const response = await fetch(`/users/api/onboarding/games/?step=${step}&page=${page}`);
+            // korean_mode 파라미터 추가
+            const koreanParam = onboardingKoreanMode.value ? '&korean_mode=true' : '';
+            const response = await fetch(`/users/api/onboarding/games/?step=${step}&page=${page}${koreanParam}`);
             const data = await response.json();
 
             onboardingGames.value = data.games || [];
@@ -1468,6 +1587,7 @@
             isLoadingOnboarding.value = false;
         }
     };
+
 
     // 게임 평가
     const rateGame = async (game, score) => {
@@ -1608,13 +1728,18 @@
         showOnboarding.value = false;
     };
 
-    // 온보딩 다시 시작 (마이페이지에서 호출) - 기존 평가는 유지
+    // 온보딩 다시 시작 (마이페이지에서 호출) - Steam 질문 모달부터 시작
     const restartOnboarding = async () => {
         onboardingCurrentStep.value = 0;
         // onboardingRatings는 초기화하지 않음 - 기존 DB 평가 유지
-        showOnboarding.value = true;
-        await loadOnboardingGames(0);
+
+        // Steam 질문 모달부터 다시 시작
+        showSteamQuestionModal.value = true;
+        setTimeout(() => {
+            steamQuestionAnimating.value = true;
+        }, 50);
     };
+
 
     // 프로필 사진 업로드 트리거
     const triggerAvatarUpload = () => {
@@ -1798,6 +1923,15 @@
         finishOnboarding, // 평가 완료하기 (추가됨)
         restartOnboarding,
 
+        // Steam 경험 질문 모달 (토스 스타일)
+        showSteamQuestionModal,
+        steamQuestionAnimating,
+        showSteamTransitionModal,
+        steamTransitionAnimating,
+        onboardingKoreanMode,
+        handleSteamQuestionYes,
+        handleSteamQuestionNo,
+
         // Profile Page State & Methods
         showWishlistModal,
         showReviewsModal,
@@ -1811,9 +1945,12 @@
         displayUser,
         displayWishlist,
         displayRatings,
+        displayWishlistDetails,
+        displayRatingDetails,
         displaySteamLibrary,
         displaySteamTotalGames,
         displaySteamTotalHours,
+
         targetUsername,
         isLoadingProfile,
         fetchUserProfile,

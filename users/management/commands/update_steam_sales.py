@@ -206,6 +206,31 @@ class Command(BaseCommand):
         # 데이터 분류
         categorized = self._categorize_data(collected_data)
         
+        # DB에서 rawg_id 매핑 추가
+        from games.models import Game
+        self.stdout.write(f"\n🔗 DB에서 rawg_id 매핑 중...")
+        steam_to_rawg = {}
+        games_with_both = Game.objects.filter(
+            steam_appid__isnull=False,
+            rawg_id__isnull=False
+        ).values_list('steam_appid', 'rawg_id')
+        
+        for steam_appid, rawg_id in games_with_both:
+            steam_to_rawg[str(steam_appid)] = rawg_id
+        
+        self.stdout.write(f"   ✅ DB에서 {len(steam_to_rawg)}개의 매핑 발견")
+        
+        # collected_data에 rawg_id 추가
+        matched_count = 0
+        for game in collected_data:
+            steam_app_id = game.get('steam_app_id', '')
+            rawg_id = steam_to_rawg.get(str(steam_app_id))
+            if rawg_id:
+                game['rawg_id'] = rawg_id
+                matched_count += 1
+        
+        self.stdout.write(f"   ✅ {matched_count}/{len(collected_data)}개 게임에 rawg_id 매핑 완료")
+        
         # 결과 저장
         result = {
             'updated_at': datetime.now().isoformat(),

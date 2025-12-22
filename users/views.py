@@ -9,6 +9,7 @@ from django.utils import timezone
 import json
 import os
 from django.conf import settings
+from django.db import models
 
 from .forms import SignupForm, CustomLoginForm
 from .models import User
@@ -88,20 +89,29 @@ def main_view(request):
     best_prices = []
     
     try:
-        # Load game sale data - prioritize fast.json which has rawg_id
+        # Load game sale data from fast.json (has rawg_id for all games)
         fast_json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
-        new_json_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_data.json')
         
-        # 1. Load games from fast.json (has rawg_id)
+        # Load games from fast.json (has rawg_id)
         if os.path.exists(fast_json_path):
             with open(fast_json_path, 'r', encoding='utf-8') as f:
                 games_data = json.load(f)
         
-        # 2. Load best_prices from new format if available
-        if os.path.exists(new_json_path):
-            with open(new_json_path, 'r', encoding='utf-8') as f:
-                sale_data = json.load(f)
-                best_prices = sale_data.get('historical_lows', sale_data.get('best_prices', []))[:30]
+        # Generate best_prices from games that are at historical low price
+        # (current_price <= cheapest_price_ever)
+        if games_data:
+            historical_lows = [
+                g for g in games_data 
+                if g.get('is_historical_low', False)
+            ]
+            # Sort by discount rate (highest first) and take top 30
+            best_prices = sorted(
+                historical_lows,
+                key=lambda x: x.get('discount_rate', 0),
+                reverse=True
+            )[:30]
+        else:
+            best_prices = []
 
         games_json = json.dumps(games_data, cls=DjangoJSONEncoder)
         best_prices_json = json.dumps(best_prices, cls=DjangoJSONEncoder)
@@ -891,10 +901,21 @@ def onboarding_status_api(request):
     
     # 사용자의 모든 평가 데이터 가져오기
     ratings_data = {}
+    rated_games_info = {}
+    
     ratings = GameRating.objects.filter(user=user).select_related('game')
+    
     for rating in ratings:
-        if rating.game.rawg_id:
-            ratings_data[str(rating.game.rawg_id)] = rating.score
+        # RAWG ID가 없으면 로컬 ID 사용 (한국 게임 등)
+        game_id = str(rating.game.rawg_id) if rating.game.rawg_id else str(rating.game.id)
+        ratings_data[game_id] = rating.score
+        
+        # 게임 정보 저장
+        rated_games_info[game_id] = {
+            'title': rating.game.title,
+            'image_url': rating.game.image_url or '',
+            'genre': rating.game.genre or '',
+        }
     
     rating_count = len(ratings_data)
     
@@ -926,8 +947,23 @@ def onboarding_status_api(request):
         'current_step': current_step,
         'total_ratings': rating_count,
         'ratings': ratings_data,
+        'rated_games_info': rated_games_info,
         'is_steam_linked': user.is_steam_linked,
     }
+    
+    # 찜한 게임 상세 정보 추가 (user.wishlist 사용)
+    wishlisted_games_info = {}
+    for game in user.wishlist.all():
+        # RAWG ID가 없으면 로컬 ID 사용
+        game_id = str(game.rawg_id) if game.rawg_id else str(game.id)
+        
+        wishlisted_games_info[game_id] = {
+            'title': game.title,
+            'image_url': game.image_url or '',
+            'genre': game.genre or '',
+        }
+            
+    response_data['wishlisted_games_info'] = wishlisted_games_info
     
     # Steam 연동된 경우 추가 정보 제공
     if user.is_steam_linked:
@@ -941,6 +977,7 @@ def onboarding_status_api(request):
     return JsonResponse(response_data)
 
 
+
 @login_required
 def onboarding_games_api(request):
     """
@@ -949,21 +986,29 @@ def onboarding_games_api(request):
     Query params:
         - step: 현재 단계 (0-4)
         - page: 현재 페이지 (1부터 시작, 기본값 1)
+        - korean_mode: 'true'면 한국 유명 게임 목록 (Steam 미경험자용)
     """
     from .models import GameRating
     from .onboarding import get_onboarding_games
     
     step = int(request.GET.get('step', 0))
     page = int(request.GET.get('page', 1))
+    korean_mode = request.GET.get('korean_mode', 'false').lower() == 'true'
     
     # 이미 평가한 게임 ID 목록
     rated_games = list(GameRating.objects.filter(
         user=request.user
     ).values_list('game__rawg_id', flat=True))
     
-    result = get_onboarding_games(step=step, exclude_rated=rated_games, page=page)
+    result = get_onboarding_games(
+        step=step, 
+        exclude_rated=rated_games, 
+        page=page,
+        korean_mode=korean_mode
+    )
     
     return JsonResponse(result)
+
 
 
 @login_required
@@ -1231,8 +1276,8 @@ def get_user_profile_api(request, username):
     data = {
         'username': target_user.username,
         'nickname': target_user.nickname,
-        'email': target_user.email, # Start with full email, maybe mask in frontend if needed? Or just show it as it is 'public' profile in this context? Let's keep it safe.
-        'avatar': None, # Add avatar logic if exists
+        'email': target_user.email,
+        'avatar': target_user.avatar.url if target_user.avatar else None, 
         'is_steam_linked': target_user.is_steam_linked,
         'steam_id': target_user.steam_id if target_user.is_steam_linked else None,
         'is_me': request.user == target_user
@@ -1240,37 +1285,47 @@ def get_user_profile_api(request, username):
     
     # Wishlist (RAWG ID를 우선으로 사용, 없으면 steam_appid)
     wishlist_ids = []
+    wishlisted_games_info = {}
+    
     for game in target_user.wishlist.all():
-        if game.rawg_id:
-            wishlist_ids.append(game.rawg_id)
-        elif game.steam_appid:
-            wishlist_ids.append(game.steam_appid)
+        game_id = game.rawg_id if game.rawg_id else game.id
+        wishlist_ids.append(game_id)
+        
+        # 상세 정보도 함께 제공 (프로필 모달 타이틀 표시용)
+        wishlisted_games_info[str(game_id)] = {
+            'title': game.title,
+            'image_url': game.image_url or '',
+            'genre': game.genre or '',
+        }
+        
     data['wishlist'] = wishlist_ids
+    data['wishlisted_games_info'] = wishlisted_games_info
     
     # Ratings (Onboarding) - return the ratings map {game_id: score}
-    ratings_qs = GameRating.objects.filter(user=target_user)
-    ratings_map = {str(r.game.rawg_id): r.score for r in ratings_qs} 
-    # Note: GameRating uses a Game foreign key. If game_id is RAWG ID, we need to ensure that.
-    # Looking at onboarding.py/models.py might be needed to confirm if game_id is rawg_id or db id.
-    # Assuming game.rawg_id for now based on earlier context.
-    # Let's verify Game model later. For now, let's map it safely.
+    ratings_qs = GameRating.objects.filter(user=target_user).select_related('game')
+    ratings_map = {}
+    rated_games_info = {}
     
-    # Actually, the frontend uses `onboardingRatings` as { gameId: score }.
-    # Let's send it in that format.
+    for r in ratings_qs:
+        game_id = str(r.game.rawg_id) if r.game.rawg_id else str(r.game.id)
+        ratings_map[game_id] = r.score
+        
+        # 상세 정보 저장
+        rated_games_info[game_id] = {
+            'title': r.game.title,
+            'image_url': r.game.image_url or '',
+            'genre': r.game.genre or '',
+        }
+        
     data['onboardingRatings'] = ratings_map
+    data['rated_games_info'] = rated_games_info
     
     # Steam Library stats
     steam_cache = SteamLibraryCache.objects.filter(user=target_user).first()
     if steam_cache:
         data['steamTotalGames'] = steam_cache.total_games
         data['steamTotalHours'] = steam_cache.total_playtime_hours
-        data['steamLibrary'] = steam_cache.library_data # Might be large, maybe just send top 5 + stats? 
-        # The frontend uses the full library for the modal. 
-        # But for just visiting a profile, maybe we shouldn't dump everything immediately??
-        # The "Full View" requires a separate fetch or we send it all.
-        # User's logic: `fetchSteamLibrary` is called on button click?
-        # In profile_tab.html: `@click="showSteamLibraryModal = true; fetchSteamLibrary()"`
-        # So we can just send stats first.
+        data['steamLibrary'] = steam_cache.library_data
     else:
         data['steamTotalGames'] = 0
         data['steamTotalHours'] = 0
@@ -1841,6 +1896,7 @@ def steam_style_recommendations_api(request):
         liked_genre = genres[0]
         
         # 같은 장르 게임 찾기 (한 개씩)
+        # 메타크리틱 50점 이상 또는 점수 없는 게임만 (평이 너무 낮은 게임 제외)
         similar_games = Game.objects.filter(
             genre__icontains=liked_genre
         ).exclude(
@@ -1851,7 +1907,13 @@ def steam_style_recommendations_api(request):
             id=liked_game['id']
         ).exclude(
             id__in=used_game_ids
-        ).order_by('-metacritic_score', '-rawg_id')[:5]
+        ).exclude(
+            metacritic_score__lt=50,  # 메타크리틱 50점 미만 제외
+            metacritic_score__isnull=False  # 점수 없는 건 허용
+        ).order_by(
+            models.F('metacritic_score').desc(nulls_last=True),  # 메타크리틱 높은 순
+            '-rawg_id'
+        )[:5]
         
         for game in similar_games:
             if game.id in used_game_ids:
@@ -1895,7 +1957,13 @@ def steam_style_recommendations_api(request):
             id__in=wishlisted_ids
         ).exclude(
             id__in=used_game_ids
-        ).order_by('-metacritic_score', '-rawg_id')[:3]
+        ).exclude(
+            metacritic_score__lt=50,
+            metacritic_score__isnull=False
+        ).order_by(
+            models.F('metacritic_score').desc(nulls_last=True),
+            '-rawg_id'
+        )[:3]
         
         for game in similar_games:
             if game.id in used_game_ids:
@@ -1947,7 +2015,13 @@ def steam_style_recommendations_api(request):
                 id__in=used_game_ids
             ).exclude(
                 id__in=rated_game_ids
-            ).order_by('-metacritic_score', '?')[:10]
+            ).exclude(
+                metacritic_score__lt=50,
+                metacritic_score__isnull=False
+            ).order_by(
+                models.F('metacritic_score').desc(nulls_last=True),
+                '-rawg_id'
+            )[:10]
             
             for game in fallback_games:
                 if game.id in used_game_ids:

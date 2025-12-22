@@ -671,7 +671,134 @@ USER_ARCHETYPES = [
         'like': ['rpg', 'simulation', 'anime', 'family friendly'],
         'dislike': ['fps', 'horror', 'gore', 'military', 'realistic']
     },
+    
+    # ============================================
+    # 닌텐도 게이머 페르소나 (18-24번)
+    # ============================================
+    
+    # 18. 마리오 팬보이
+    {
+        'id': 'nintendo_mario_fan',
+        'nickname': '마리오충',
+        'desc': '마리오 시리즈 올인 / 플랫포머 덕후',
+        'love': [
+            'super mario', 'mario kart', 'mario party', 'mario odyssey',
+            'super mario galaxy', 'mario bros', 'new super mario',
+            'paper mario', 'mario strikers', 'mario golf',
+            'platformer', 'nintendo', 'family friendly', 'colorful',
+            'co-op', 'local multiplayer', 'arcade', 'party game'
+        ],
+        'like': ['donkey kong', 'kirby', 'yoshi', 'adventure', 'action'],
+        'dislike': ['horror', 'gore', 'realistic', 'military', 'dark']
+    },
+    
+    # 19. 젤다의 전설 팬
+    {
+        'id': 'nintendo_zelda_fan',
+        'nickname': '하이랄의용사',
+        'desc': '젤다 시리즈 마스터 / 오픈월드 모험 선호',
+        'love': [
+            'zelda', 'legend of zelda', 'breath of the wild', 'tears of the kingdom',
+            'ocarina of time', 'majora', 'twilight princess', 'wind waker',
+            'link', 'hyrule', 'action adventure', 'open world', 'exploration',
+            'puzzle', 'nintendo', 'masterpiece', 'atmospheric'
+        ],
+        'like': ['rpg', 'metroidvania', 'adventure', 'fantasy', 'dungeon'],
+        'dislike': ['fps', 'military', 'sports', 'realistic', 'multiplayer only']
+    },
+    
+    # 20. 포켓몬 트레이너
+    {
+        'id': 'nintendo_pokemon_trainer',
+        'nickname': '챔피언의길',
+        'desc': '포켓몬 시리즈 모든작품 / 몬스터 수집 매니아',
+        'love': [
+            'pokemon', 'pocket monster', 'scarlet', 'violet', 'sword', 'shield',
+            'arceus', 'brilliant diamond', 'shining pearl', 'lets go',
+            'pokemon unite', 'monster tamer', 'turn-based', 'rpg',
+            'creature collector', 'nintendo', 'cute', 'adventure'
+        ],
+        'like': ['jrpg', 'anime', 'exploration', 'multiplayer', 'trading'],
+        'dislike': ['fps', 'horror', 'gore', 'military', 'realistic']
+    },
+    
+    # 21. 동물의 숲 주민
+    {
+        'id': 'nintendo_acnh_villager',
+        'nickname': '너굴섬장',
+        'desc': '동물의 숲 힐링 / 꾸미기와 생활 시뮬 선호',
+        'love': [
+            'animal crossing', 'new horizons', 'wild world', 'new leaf',
+            'life simulation', 'decorating', 'crafting', 'building',
+            'relaxing', 'cute', 'seasonal events', 'collecting',
+            'nintendo', 'sandbox', 'casual', 'peaceful'
+        ],
+        'like': ['stardew valley', 'sims', 'simulation', 'cozy', 'farming'],
+        'dislike': ['action', 'horror', 'fps', 'competitive', 'difficult']
+    },
+    
+    # 22. 닌텐도 하드코어 (메트로이드/FE 등)
+    {
+        'id': 'nintendo_hardcore',
+        'nickname': '사무스아란',
+        'desc': '메트로이드/FE/제노블 등 하드코어 닌텐도 명작',
+        'love': [
+            'metroid', 'metroid dread', 'fire emblem', 'three houses', 'engage',
+            'xenoblade chronicles', 'bayonetta', 'astral chain',
+            'tactical rpg', 'metroidvania', 'jrpg', 'action',
+            'nintendo', 'story rich', 'exploration', 'challenging'
+        ],
+        'like': ['dark souls', 'hollow knight', 'strategy', 'rpg', 'sci-fi'],
+        'dislike': ['casual', 'mobile', 'easy', 'pay to win']
+    },
+    
+    # 23. 닌텐도 파티게이머
+    {
+        'id': 'nintendo_party_gamer',
+        'nickname': '스위치파티',
+        'desc': '친구와 함께 닌텐도 파티게임 / 캐주얼 멀티',
+        'love': [
+            'super smash bros', 'smash ultimate', 'mario party', 'mario kart',
+            'splatoon', 'arms', 'switch sports', 'wii sports',
+            '1-2 switch', 'overcooked', 'clubhouse games',
+            'party game', 'local multiplayer', 'co-op', 'fun',
+            'nintendo', 'casual', 'family friendly', 'competitive'
+        ],
+        'like': ['fighting', 'racing', 'sports', 'minigames', 'arcade'],
+        'dislike': ['singleplayer', 'slow', 'text heavy', 'horror']
+    },
+    
+    # 24. 커비/요시 귀요미 팬
+    {
+        'id': 'nintendo_cute_fan',
+        'nickname': '별의커비',
+        'desc': '커비/요시/피크민 등 귀여운 닌텐도 게임 선호',
+        'love': [
+            'kirby', 'forgotten land', 'star allies', 'yoshi', 'crafted world',
+            'pikmin', 'luigi mansion', 'captain toad',
+            'cute', 'platformer', 'puzzle', 'adventure',
+            'nintendo', 'family friendly', 'colorful', 'relaxing'
+        ],
+        'like': ['animal crossing', 'pokemon', 'indie', 'cozy', 'casual'],
+        'dislike': ['fps', 'horror', 'gore', 'military', 'dark']
+    },
+    
+    # 25. 리듬/피트니스 게이머
+    {
+        'id': 'nintendo_rhythm_fitness',
+        'nickname': '링피트마스터',
+        'desc': '링피트/저스트댄스/리듬게임 선호',
+        'love': [
+            'ring fit adventure', 'just dance', 'rhythm heaven',
+            'wii fit', 'fitness boxing', 'taiko no tatsujin',
+            'fitness', 'rhythm', 'music', 'dance',
+            'nintendo', 'casual', 'exercise', 'fun'
+        ],
+        'like': ['party game', 'sports', 'arcade', 'family friendly'],
+        'dislike': ['sitting', 'violent', 'horror', 'difficult', 'dark']
+    },
 ]
+
 
 class Command(BaseCommand):
     help = '67명의 상세 페르소나 테스트 유저 생성 (각 500개 평가)'

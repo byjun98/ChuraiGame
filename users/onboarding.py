@@ -23,6 +23,67 @@ logger = logging.getLogger(__name__)
 
 # JSON에서 온보딩 게임 로드 (캐시)
 _onboarding_games_cache = None
+_korean_games_cache = None
+
+def load_korean_games_from_db():
+    """
+    DB에서 한국 유명 게임 목록 로드 (온보딩 '아니요' 선택 시 사용)
+    korean 태그가 있거나 한국어 제목이 포함된 게임
+    """
+    global _korean_games_cache
+    
+    if _korean_games_cache is not None:
+        return _korean_games_cache
+    
+    from games.models import Game
+    
+    try:
+        # korean 태그가 있거나 특정 제목 패턴이 있는 게임 필터링
+        korean_games_query = Game.objects.filter(
+            tags__slug='korean'
+        ).distinct()
+        
+        # 게임이 충분하지 않으면 한글 제목 포함 게임도 추가
+        if korean_games_query.count() < 20:
+            # 메이플, 던파, 리니지 등 한글 포함 제목 추가
+            korean_titles_pattern = [
+                '메이플', '던전앤파이터', '리니지', '마비노기', '서든', '카스', 
+                '카트라이더', '테일즈런너', '크레이지', '바람의나라', '뮤 온라인',
+                '블레이드앤소울', '검은사막', '로스트아크', '엘소드', '그랜드체이스',
+                'MapleStory', 'Lost Ark', 'Black Desert', 'PUBG', 'Overwatch',
+                'Valorant', 'League of Legends', 'StarCraft', 'Diablo', 'FIFA'
+            ]
+            from django.db.models import Q
+            title_filter = Q()
+            for pattern in korean_titles_pattern:
+                title_filter |= Q(title__icontains=pattern)
+            korean_games_query = Game.objects.filter(title_filter).distinct()
+        
+        formatted_games = []
+        for game in korean_games_query:
+            # 이미지 URL 결정
+            image = game.image_url or game.background_image or ''
+            if not image and game.steam_appid:
+                # Steam CDN 폴백
+                image = f'https://cdn.cloudflare.steamstatic.com/steam/apps/{game.steam_appid}/header.jpg'
+            
+            formatted_games.append({
+                'title': game.title,
+                'rawg_id': game.rawg_id or game.id,  # rawg_id 없으면 DB id 사용
+                'steam_app_id': game.steam_appid,
+                'image': image,
+                'genre': game.genre,
+                'description': game.description[:100] if game.description else '',
+            })
+        
+        _korean_games_cache = formatted_games
+        logger.info(f"Loaded {len(formatted_games)} Korean games from DB for onboarding")
+        return _korean_games_cache
+        
+    except Exception as e:
+        logger.error(f"Error loading Korean games from DB: {e}")
+        return []
+
 
 def load_onboarding_games_from_json():
     """
@@ -92,7 +153,7 @@ ONBOARDING_STEPS = [
 ]
 
 
-def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
+def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8, korean_mode=False):
     """
     온보딩 단계별 게임 목록 반환 (페이지네이션 지원)
     
@@ -101,24 +162,34 @@ def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
         exclude_rated: 이미 평가한 게임 ID 리스트
         page: 현재 페이지 (1부터 시작)
         per_page: 페이지당 게임 수 (기본값: 8 - 2행x4열)
+        korean_mode: True면 한국 유명 게임 목록 사용 (Steam 미경험자용)
     
     Returns:
         dict: {games: [...], step_info: {...}, pagination: {...}}
     """
-    # JSON에서 게임 로드
-    onboarding_games = load_onboarding_games_from_json()
-    
-    if step >= len(ONBOARDING_STEPS):
-        return {'games': [], 'step_info': None, 'is_complete': True}
-    
-    step_info = ONBOARDING_STEPS[step]
-    genre = step_info['genre']
-    games = onboarding_games.get(genre, [])
+    # 한국 게임 모드면 DB에서 로드
+    if korean_mode:
+        games = load_korean_games_from_db()
+        step_info = {
+            'name': '한국 인기 게임',
+            'genre': 'korean',
+            'description': '국내에서 유행했던 게임들이에요. 플레이해본 적 있는 게임을 평가해주세요!'
+        }
+    else:
+        # JSON에서 게임 로드 (기존 Steam 게임)
+        onboarding_games = load_onboarding_games_from_json()
+        
+        if step >= len(ONBOARDING_STEPS):
+            return {'games': [], 'step_info': None, 'is_complete': True}
+        
+        step_info = ONBOARDING_STEPS[step]
+        genre = step_info['genre']
+        games = onboarding_games.get(genre, [])
     
     # 이미 평가한 게임 제외 (set으로 변환하여 O(1) 검색)
     if exclude_rated:
         exclude_set = set(exclude_rated)
-        games = [g for g in games if g['rawg_id'] not in exclude_set]
+        games = [g for g in games if g.get('rawg_id') not in exclude_set]
     
     # 페이지네이션 계산
     total_games = len(games)
@@ -138,6 +209,7 @@ def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
         'current_step': step,
         'total_steps': len(ONBOARDING_STEPS),
         'is_complete': False,
+        'korean_mode': korean_mode,
         'pagination': {
             'current_page': page,
             'total_pages': total_pages,
@@ -147,6 +219,7 @@ def get_onboarding_games(step=0, exclude_rated=None, page=1, per_page=8):
             'has_next': page < total_pages
         }
     }
+
 
 
 def calculate_game_similarity_batch(min_ratings=1, top_k=50, min_similarity=0.1):

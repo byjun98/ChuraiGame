@@ -271,7 +271,7 @@
                         {% csrf_token %}
                         <div>
                             <label class="block text-xs font-bold text-gray-700 mb-2">별점</label>
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 star-rating-container" id="starRatingContainer">
                                 {% for i in "12345" %}
                                 <label class="cursor-pointer group">
                                     <input type="radio" name="score" value="{{ forloop.counter }}" class="hidden peer"
@@ -279,13 +279,14 @@
                                         forloop.counter|floatformat:"0"==my_rating.score|floatformat:"0" %}checked{%
                                         endif %} required>
                                     <i
-                                        class="ph-fill ph-star text-3xl text-gray-300 peer-checked:text-yellow-400 group-hover:text-yellow-300 transition-colors"></i>
+                                        class="ph-fill ph-star text-3xl text-gray-300 transition-colors review-star-icon"></i>
                                 </label>
                                 {% endfor %}
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-2">한줄평 <span class="text-gray-400 font-normal">(선택)</span></label>
+                            <label class="block text-xs font-bold text-gray-700 mb-2">한줄평 <span
+                                    class="text-gray-400 font-normal">(선택)</span></label>
                             <textarea name="comment" rows="2" placeholder="이 게임에 대한 한마디를 남겨주세요."
                                 class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none text-sm">{{ my_rating.comment|default:'' }}</textarea>
                         </div>
@@ -312,13 +313,15 @@
                                 <div class="shrink-0">
                                     <div class="w-10 h-10 rounded-full flex items-center justify-center
                                         {% if review.is_recommended %}bg-green-500{% else %}bg-red-500{% endif %}">
-                                        <i class="ph-fill {% if review.is_recommended %}ph-thumbs-up{% else %}ph-thumbs-down{% endif %} text-white text-lg"></i>
+                                        <i
+                                            class="ph-fill {% if review.is_recommended %}ph-thumbs-up{% else %}ph-thumbs-down{% endif %} text-white text-lg"></i>
                                     </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-xs px-2 py-0.5 rounded-full
+                                            <span
+                                                class="text-xs px-2 py-0.5 rounded-full
                                                 {% if review.is_recommended %}bg-green-500/20 text-green-400{% else %}bg-red-500/20 text-red-400{% endif %}">
                                                 {% if review.is_recommended %}추천{% else %}비추천{% endif %}
                                             </span>
@@ -332,7 +335,8 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <p class="text-slate-200 text-sm leading-relaxed line-clamp-4">{{ review.content }}</p>
+                                    <p class="text-slate-200 text-sm leading-relaxed line-clamp-4">{{ review.content }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -356,31 +360,35 @@
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center justify-between mb-1">
-                                    <span class="font-bold text-gray-900">{{ rating.user.nickname|default:rating.user.username }}</span>
+                                    <span class="font-bold text-gray-900">
+                                        {{ rating.user.nickname|default:rating.user.username }}</span>
                                     <span class="text-xs text-gray-400">{{ rating.updated_at|date:"Y.m.d" }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 mb-1">
                                     {% if rating.score == -1 %}
-                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-medium">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-medium">
                                         <i class="ph-fill ph-thumbs-down"></i> 별로예요
                                     </span>
                                     {% elif rating.score == 3.5 %}
-                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs font-medium">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs font-medium">
                                         <i class="ph-fill ph-thumbs-up"></i> 재밌어요
                                     </span>
                                     {% elif rating.score == 5 %}
-                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
                                         <i class="ph-fill ph-thumbs-up"></i><i class="ph-fill ph-thumbs-up"></i> 인생게임!
                                     </span>
                                     {% else %}
                                     <div class="flex items-center gap-1">
                                         {% for i in "12345" %}
-                                        {% if forloop.counter <= rating.score %}
-                                        <i class="ph-fill ph-star text-yellow-400 text-sm"></i>
-                                        {% else %}
-                                        <i class="ph-fill ph-star text-gray-200 text-sm"></i>
-                                        {% endif %}
-                                        {% endfor %}
+                                        {% if forloop.counter <= rating.score %} <i
+                                            class="ph-fill ph-star text-yellow-400 text-sm"></i>
+                                            {% else %}
+                                            <i class="ph-fill ph-star text-gray-200 text-sm"></i>
+                                            {% endif %}
+                                            {% endfor %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -454,7 +462,8 @@
                         class="{% if not screenshots %}hidden{% endif %} mt-6 pt-6 border-t border-gray-200">
                         <div class="grid grid-cols-2 gap-4 text-center">
                             <div>
-                                <div class="text-2xl font-black text-blue-600" id="screenshotCount">{{ screenshots|length }}</div>
+                                <div class="text-2xl font-black text-blue-600" id="screenshotCount">
+                                    {{ screenshots|length }}</div>
                                 <div class="text-xs text-gray-500 font-medium">스크린샷</div>
                             </div>
                             {% if trailers.count > 0 %}
@@ -863,5 +872,42 @@
 
     // 페이지 로드 시 기존 평가 불러오기
     document.addEventListener('DOMContentLoaded', fetchUserRating);
+
+    // ========== 별점 리뷰 시각 효과 ==========
+    const starContainer = document.getElementById('starRatingContainer');
+    const starInputs = document.querySelectorAll('input[name="score"]');
+    const starIcons = document.querySelectorAll('.review-star-icon');
+
+    function fillStars(value) {
+        starIcons.forEach((icon, index) => {
+            if (index < value) {
+                icon.classList.remove('text-gray-300');
+                icon.classList.add('text-yellow-400');
+            } else {
+                icon.classList.remove('text-yellow-400');
+                icon.classList.add('text-gray-300');
+            }
+        });
+    }
+
+    if (starContainer) {
+        // Hover effects
+        starInputs.forEach(input => {
+            const label = input.closest('label');
+            label.addEventListener('mouseenter', () => {
+                fillStars(input.value);
+            });
+        });
+
+        // Reset on leave
+        starContainer.addEventListener('mouseleave', () => {
+            const checked = document.querySelector('input[name="score"]:checked');
+            fillStars(checked ? checked.value : 0);
+        });
+
+        // Initialize state
+        const checked = document.querySelector('input[name="score"]:checked');
+        fillStars(checked ? checked.value : 0);
+    }
 </script>
 {% endblock %}

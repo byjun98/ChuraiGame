@@ -110,6 +110,10 @@ def game_detail(request, game_id):
     # 3. 여전히 없으면 RAWG ID로 검색
     if not game:
         game = Game.objects.filter(rawg_id=numeric_id).first()
+    
+    # 4. If still missing, check local DB ID (for Korean games etc)
+    if not game:
+        game = Game.objects.filter(id=numeric_id).first()
         print(f"[DEBUG] RAWG ID search result: {game}")
     
     # 4. DB에 없으면 RAWG API에서 가져와 자동 생성

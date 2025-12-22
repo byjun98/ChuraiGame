@@ -210,20 +210,21 @@
                         </div>
                     </div>
                     {% if user.is_steam_linked %}
-                    <form v-if="user.is_steam_linked" action="{% url 'users:steam_unlink' %}" method="POST"
-                        class="inline">
+                    <form action="{% url 'users:steam_unlink' %}" method="POST" class="inline">
                         {% csrf_token %}
                         <button type="submit"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
                             해제
                         </button>
                     </form>
-                    <a v-else href="{% url 'users:steam_login' %}?next=/"
+                    {% else %}
+                    <a href="{% url 'users:steam_login' %}?next=/"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
                         연동
                     </a>
                     {% endif %}
                 </div>
+
                 <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-[#03C75A] text-white flex items-center justify-center">
@@ -279,7 +280,7 @@
                     <div v-for="gameId in displayWishlist" :key="gameId"
                         class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
                         <div
-                            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold">
+                            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                             {{ gameId }}
                         </div>
                         <div class="flex-1">
@@ -288,7 +289,7 @@
                         </div>
                         <button v-if="isMe" @click.stop="toggleWishlist({ game_id: gameId })"
                             class="text-pink-500 hover:text-pink-700">
-                            <i class="ph-fill ph-heart-break"></i>
+                            <i class="ph-fill ph-heart"></i>
                         </button>
                     </div>
                 </div>
@@ -327,14 +328,17 @@
                 <div v-else class="space-y-3">
                     <div v-for="(score, gameId) in displayRatings" :key="gameId" v-if="score !== 0"
                         class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold" :class="{
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white" :class="{
                             'bg-red-500': score === -1,
                             'bg-blue-500': score === 3.5,
-                            'bg-yellow-500': score === 5
+                            'bg-green-500': score === 5
                         }">
-                            <span v-if="score === -1">👎</span>
-                            <span v-else-if="score === 3.5">👍</span>
-                            <span v-else-if="score === 5">👍👍</span>
+                            <i v-if="score === -1" class="ph-fill ph-thumbs-down text-xl"></i>
+                            <i v-else-if="score === 3.5" class="ph-fill ph-thumbs-up text-xl"></i>
+                            <div v-else-if="score === 5" class="flex">
+                                <i class="ph-fill ph-thumbs-up text-lg"></i>
+                                <i class="ph-fill ph-thumbs-up text-lg -ml-1"></i>
+                            </div>
                         </div>
                         <div class="flex-1">
                             <p class="font-medium text-gray-800 dark:text-white">게임 ID: {{ gameId }}</p>
@@ -351,6 +355,7 @@
     </div>
 </Teleport>
 {% endverbatim %}
+
 
 <!-- Steam Library Full Modal -->
 {% verbatim %}

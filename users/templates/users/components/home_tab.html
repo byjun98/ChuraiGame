@@ -4,8 +4,9 @@
     <!-- Hero Section - Toss Style (White Background) -->
     <div class="bg-white p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden border border-gray-100">
         <div class="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50 -mr-16 -mt-16"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 bg-purple-50 rounded-full blur-3xl opacity-50 -ml-12 -mb-12"></div>
-        
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-purple-50 rounded-full blur-3xl opacity-50 -ml-12 -mb-12">
+        </div>
+
         <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <!-- Left: Text -->
             <div>
@@ -32,18 +33,20 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Right: Genre Pie Chart with Toss Animation -->
             <div class="flex justify-center" v-if="genreAnalysisData && genreAnalysisData.has_data">
                 <div class="relative w-56 h-56 genre-chart-container">
                     <!-- Animated Pie Chart -->
-                    <div class="w-full h-full rounded-full shadow-lg border-4 border-white genre-chart-animate" 
+                    <div class="w-full h-full rounded-full shadow-lg border-4 border-white genre-chart-animate"
                         :style="{ background: genreChartGradient }">
                     </div>
                     <!-- Center Circle -->
-                    <div class="absolute inset-6 bg-white rounded-full flex items-center justify-center shadow-inner genre-center-animate">
+                    <div
+                        class="absolute inset-6 bg-white rounded-full flex items-center justify-center shadow-inner genre-center-animate">
                         <div class="text-center">
-                            <div class="text-3xl font-black text-gray-900 genre-number-animate">{{ genreAnalysisData.total_rated }}</div>
+                            <div class="text-3xl font-black text-gray-900 genre-number-animate">{{
+                                genreAnalysisData.total_rated }}</div>
                             <div class="text-sm text-gray-500">게임 평가</div>
                         </div>
                     </div>
@@ -58,13 +61,15 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Genre Legend with Stagger Animation -->
-        <div class="relative z-10 mt-8 flex flex-wrap gap-3 justify-center" v-if="genreAnalysisData && genreAnalysisData.has_data">
+        <div class="relative z-10 mt-8 flex flex-wrap gap-3 justify-center"
+            v-if="genreAnalysisData && genreAnalysisData.has_data">
             <div v-for="(genre, index) in genreAnalysisData.genres" :key="genre.name"
                 class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100 genre-legend-animate"
                 :style="{ animationDelay: (index * 0.1) + 's' }">
-                <div class="w-3 h-3 rounded-full transition-transform hover:scale-125" :style="{ backgroundColor: genre.color }"></div>
+                <div class="w-3 h-3 rounded-full transition-transform hover:scale-125"
+                    :style="{ backgroundColor: genre.color }"></div>
                 <span class="text-gray-700 text-sm font-medium">{{ genre.name }}</span>
                 <span class="text-gray-400 text-xs">({{ genre.percentage }}%)</span>
             </div>
@@ -77,87 +82,96 @@
         .genre-chart-container {
             perspective: 1000px;
         }
-        
+
         /* Pie Chart Animation */
         .genre-chart-animate {
             animation: chartReveal 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             transform-origin: center;
         }
-        
+
         @keyframes chartReveal {
             0% {
                 transform: scale(0) rotate(-180deg);
                 opacity: 0;
             }
+
             50% {
                 opacity: 1;
             }
+
             100% {
                 transform: scale(1) rotate(0deg);
                 opacity: 1;
             }
         }
-        
+
         /* Center Circle Animation */
         .genre-center-animate {
             animation: centerPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
         }
-        
+
         @keyframes centerPop {
             0% {
                 transform: scale(0);
                 opacity: 0;
             }
+
             100% {
                 transform: scale(1);
                 opacity: 1;
             }
         }
-        
+
         /* Number Count Up Animation */
         .genre-number-animate {
             animation: numberPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
         }
-        
+
         @keyframes numberPop {
             0% {
                 transform: scale(0.5);
                 opacity: 0;
             }
+
             50% {
                 transform: scale(1.2);
             }
+
             100% {
                 transform: scale(1);
                 opacity: 1;
             }
         }
-        
+
         /* Glow Effect */
         .genre-glow {
             animation: glowPulse 2s ease-in-out infinite;
             pointer-events: none;
         }
-        
+
         @keyframes glowPulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
             }
+
             50% {
                 box-shadow: 0 0 40px rgba(79, 70, 229, 0.4);
             }
         }
-        
+
         /* Legend Items Stagger Animation */
         .genre-legend-animate {
             animation: legendFadeIn 0.4s ease-out both;
         }
-        
+
         @keyframes legendFadeIn {
             0% {
                 transform: translateY(10px);
                 opacity: 0;
             }
+
             100% {
                 transform: translateY(0);
                 opacity: 1;
@@ -252,18 +266,18 @@
         <h3 class="text-xl font-bold flex items-center gap-2">
             <i class="ph-fill ph-game-controller text-purple-500"></i> 맞춤 추천
         </h3>
-        
+
         <!-- Loading Initial -->
-        <div v-if="isLoadingSteamRecommendations && steamRecommendations.length === 0" 
+        <div v-if="isLoadingSteamRecommendations && steamRecommendations.length === 0"
             class="flex justify-center py-12">
             <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-        
+
         <!-- Steam-Style Cards (White Theme with Enhanced Layout) -->
         <div v-for="(rec, index) in steamRecommendations" :key="index"
             class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 steam-card-animate mb-6"
             :style="{ animationDelay: (index * 0.1) + 's' }">
-            
+
             <!-- Header: Reason -->
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
                 <h4 class="text-gray-900 text-lg font-bold truncate">{{ rec.game?.title }}</h4>
@@ -280,39 +294,41 @@
                     <span class="text-gray-400 text-xs ml-1" v-if="rec.reason_type !== 'genre'">게임을 플레이해서 추천</span>
                 </p>
             </div>
-            
+
             <!-- Content: Flex Layout for Desktop -->
             <div class="flex flex-col lg:flex-row lg:h-[360px]">
                 <!-- Left: Main Thumbnail (Big) -->
-                <a :href="`/games/${rec.game?.rawg_id || rec.game?.id}/`" 
+                <a :href="`/games/${rec.game?.rawg_id || rec.game?.id}/`"
                     class="w-full lg:w-[65%] h-[240px] lg:h-full relative block overflow-hidden group cursor-pointer">
-                    <img :src="rec.game?.image_url" 
+                    <img :src="rec.game?.image_url"
                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         @error="handleImageError">
-                    
+
                     <!-- Hover Overlay -->
-                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
-                        <i class="ph-fill ph-play-circle text-white text-6xl drop-shadow-xl transform scale-90 group-hover:scale-100 transition-transform"></i>
+                    <div
+                        class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+                        <i
+                            class="ph-fill ph-play-circle text-white text-6xl drop-shadow-xl transform scale-90 group-hover:scale-100 transition-transform"></i>
                     </div>
-                    
+
                     <!-- Score Badge -->
-                    <div v-if="rec.game?.metacritic_score" 
+                    <div v-if="rec.game?.metacritic_score"
                         class="absolute bottom-4 right-4 bg-green-500 text-white text-sm font-bold px-2 py-1 rounded shadow-md border border-green-600 z-20">
                         Metascore {{ rec.game.metacritic_score }}
                     </div>
                 </a>
-                
+
                 <!-- Right: Screenshots Grid (2x2) -->
                 <div class="w-full lg:w-[35%] h-[240px] lg:h-full grid grid-cols-2 grid-rows-2 gap-1 bg-gray-100 p-1">
-                     <div v-for="(screenshot, idx) in (rec.game?.screenshots || []).slice(0, 4)" :key="idx"
+                    <div v-for="(screenshot, idx) in (rec.game?.screenshots || []).slice(0, 4)" :key="idx"
                         class="relative overflow-hidden cursor-pointer group bg-gray-200"
                         @click="openRawgGame(rec.game)">
-                        <img :src="screenshot" 
+                        <img :src="screenshot"
                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100"
                             @error="handleImageError">
                     </div>
                     <!-- Placeholders if less than 4 screenshots -->
-                     <template v-if="!rec.game?.screenshots || rec.game?.screenshots.length < 4">
+                    <template v-if="!rec.game?.screenshots || rec.game?.screenshots.length < 4">
                         <div v-for="i in (4 - (rec.game?.screenshots?.length || 0))" :key="'placeholder-' + i"
                             class="bg-gray-200 flex items-center justify-center">
                             <i class="ph-duotone ph-image text-gray-400 text-2xl"></i>
@@ -320,11 +336,11 @@
                     </template>
                 </div>
             </div>
-            
+
             <!-- Footer: Actions & Info -->
             <div class="p-4 bg-white border-t border-gray-100">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    
+
                     <!-- Action Buttons -->
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <a :href="`/games/${rec.game?.rawg_id || rec.game?.id}/`"
@@ -340,54 +356,46 @@
                         </button>
                     </div>
 
-                    <!-- Right Side: Price & Exception -->
-                     <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                    <!-- Right Side: Price -->
+                    <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                         <!-- Price -->
                         <div v-if="rec.game?.current_price !== undefined" class="flex items-center gap-2 text-sm">
-                             <span v-if="rec.game?.discount_rate" class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
+                            <span v-if="rec.game?.discount_rate"
+                                class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
                                 -{{ Math.round((rec.game.discount_rate || 0) * 100) }}%
                             </span>
                             <span class="text-gray-900 font-bold text-lg">
                                 {{ rec.game.current_price > 0 ? '₩' + formatPrice(rec.game.current_price) : '무료' }}
                             </span>
                         </div>
-                        
-                         <button @click="hideRecommendation(index)"
-                            class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors" title="이 게임 제외">
-                            <i class="ph ph-x text-lg"></i>
-                        </button>
                     </div>
                 </div>
-                
+
                 <!-- Tags Row -->
                 <div class="flex items-center gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
                     <span v-for="genre in (rec.game?.genre || '').split(',').slice(0, 5)" :key="genre"
                         class="px-2.5 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full border border-gray-100 whitespace-nowrap">
                         {{ genre.trim() }}
                     </span>
-                     <div class="ml-auto flex items-center">
-                        <a href="#" @click.prevent="" class="text-xs text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1 group whitespace-nowrap">
-                            비슷한 게임 더 보기 <i class="ph-bold ph-caret-right group-hover:translate-x-1 transition-transform"></i>
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Infinite Scroll Trigger -->
         <div ref="steamScrollTrigger" class="h-10 w-full flex justify-center p-4">
-             <div v-if="isLoadingSteamRecommendations" class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div v-if="isLoadingSteamRecommendations"
+                class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-        
+
         <!-- No More Recommendations -->
-        <div v-if="!hasMoreSteamRecommendations && steamRecommendations.length > 0" 
+        <div v-if="!hasMoreSteamRecommendations && steamRecommendations.length > 0"
             class="text-center py-6 text-gray-400">
             <i class="ph-duotone ph-flag-checkered text-3xl mb-2"></i>
             <p>모든 추천을 확인했습니다!</p>
         </div>
-        
+
         <!-- Empty State -->
-        <div v-if="!isLoadingSteamRecommendations && steamRecommendations.length === 0" 
+        <div v-if="!isLoadingSteamRecommendations && steamRecommendations.length === 0"
             class="bg-gray-50 rounded-2xl p-8 text-center border border-gray-100">
             <i class="ph-duotone ph-game-controller text-5xl text-gray-300 mb-4"></i>
             <h3 class="text-gray-600 font-bold mb-2">맞춤 추천을 준비 중이에요</h3>
@@ -398,36 +406,38 @@
             </button>
         </div>
     </div>
-    
+
     <!-- Steam Card Animation Styles -->
     <style>
         .steam-card-animate {
             animation: steamCardSlideIn 0.5s ease-out both;
         }
-        
+
         @keyframes steamCardSlideIn {
             0% {
                 transform: translateY(30px);
                 opacity: 0;
             }
+
             100% {
                 transform: translateY(0);
                 opacity: 1;
             }
         }
     </style>
-    
+
     <!-- Additional Animation Styles -->
     <style>
         .recommendation-card-animate {
             animation: cardSlideUp 0.5s ease-out both;
         }
-        
+
         @keyframes cardSlideUp {
             0% {
                 transform: translateY(20px);
                 opacity: 0;
             }
+
             100% {
                 transform: translateY(0);
                 opacity: 1;

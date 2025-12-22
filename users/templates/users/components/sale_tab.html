@@ -234,7 +234,7 @@
                 <button @click.stop.prevent="toggleWishlist(game)"
                     class="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur flex items-center justify-center transition-colors hover:bg-black/50">
                     <i class="ph-fill ph-heart text-lg transition-transform active:scale-75"
-                        :class="isWishlisted(game.game_id) ? 'text-red-500' : 'text-white/70'"></i>
+                        :class="isWishlisted(game.rawg_id || game.game_id) ? 'text-red-500' : 'text-white/70'"></i>
                 </button>
 
                 <div class="relative aspect-[16/9] bg-gray-200">
