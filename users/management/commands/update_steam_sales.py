@@ -36,19 +36,19 @@ class Command(BaseCommand):
         parser.add_argument(
             '--count',
             type=int,
-            default=500,
+            default=1500,
             help='Number of sale items to fetch (default: 500)'
         )
         parser.add_argument(
             '--min-rating',
             type=int,
-            default=75,
+            default=55,
             help='Minimum Steam rating percentage (default: 75)'
         )
         parser.add_argument(
             '--min-reviews',
             type=int,
-            default=500,
+            default=300,
             help='Minimum review count to filter scam games (default: 500)'
         )
         parser.add_argument(
@@ -184,8 +184,8 @@ class Command(BaseCommand):
         
         # 역대 최저가 정보 조회
         if fetch_history and len(collected_data) > 0:
-            self.stdout.write(f"\n📊 역대 최저가 정보 조회 중... (상위 100개)")
-            for i, game in enumerate(collected_data[:100]):
+            self.stdout.write(f"\n📊 역대 최저가 정보 조회 중... (상위 500개)")
+            for i, game in enumerate(collected_data[:500]):
                 cheapshark_id = game.get('cheapshark_id')
                 if cheapshark_id:
                     historical = self.fetch_historical_low(cheapshark_id)
@@ -200,7 +200,7 @@ class Command(BaseCommand):
                             game['is_historical_low'] = False
                 
                 if (i + 1) % 20 == 0:
-                    self.stdout.write(f"   ✅ {i + 1}/100 완료")
+                    self.stdout.write(f"   ✅ {i + 1}/500 완료")
                 time.sleep(0.2)
         
         # 데이터 분류

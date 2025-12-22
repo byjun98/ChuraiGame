@@ -23,8 +23,7 @@
     "cheapest_price_ever": 21.99,
     "cheapest_price_ever_krw": 28586,
     "cheapest_date": 1765464638,
-    "is_historical_low": false,
-    "rawg_id": 973654
+    "is_historical_low": false
   },
   {
     "game_id": "app3407390",
@@ -128,8 +127,7 @@
     "cheapest_price_ever": 3.99,
     "cheapest_price_ever_krw": 5187,
     "cheapest_date": 1719494856,
-    "is_historical_low": true,
-    "rawg_id": 3328
+    "is_historical_low": true
   },
   {
     "game_id": "app220",
@@ -233,8 +231,7 @@
     "cheapest_price_ever": 2.49,
     "cheapest_price_ever_krw": 3237,
     "cheapest_date": 1766082417,
-    "is_historical_low": true,
-    "rawg_id": 28121
+    "is_historical_low": true
   },
   {
     "game_id": "app571310",
@@ -520,8 +517,7 @@
     "cheapest_price_ever": 0.99,
     "cheapest_price_ever_krw": 1287,
     "cheapest_date": 1734014816,
-    "is_historical_low": true,
-    "rawg_id": 10370
+    "is_historical_low": true
   },
   {
     "game_id": "app57300",
@@ -599,8 +595,7 @@
     "cheapest_price_ever": 0.59,
     "cheapest_price_ever_krw": 767,
     "cheapest_date": 1750408233,
-    "is_historical_low": false,
-    "rawg_id": 1165
+    "is_historical_low": false
   },
   {
     "game_id": "app8190",
@@ -678,8 +673,7 @@
     "cheapest_price_ever": 0.89,
     "cheapest_price_ever_krw": 1157,
     "cheapest_date": 1745009866,
-    "is_historical_low": false,
-    "rawg_id": 894428
+    "is_historical_low": false
   },
   {
     "game_id": "app418240",
@@ -705,8 +699,7 @@
     "cheapest_price_ever": 1.99,
     "cheapest_price_ever_krw": 2587,
     "cheapest_date": 1643738168,
-    "is_historical_low": false,
-    "rawg_id": 10767
+    "is_historical_low": false
   },
   {
     "game_id": "app1222690",
@@ -758,8 +751,7 @@
     "cheapest_price_ever": 0.99,
     "cheapest_price_ever_krw": 1287,
     "cheapest_date": 1730149018,
-    "is_historical_low": true,
-    "rawg_id": 10898
+    "is_historical_low": true
   },
   {
     "game_id": "app1328670",
@@ -863,8 +855,7 @@
     "cheapest_price_ever": 0.99,
     "cheapest_price_ever_krw": 1287,
     "cheapest_date": 1756073449,
-    "is_historical_low": false,
-    "rawg_id": 19487
+    "is_historical_low": false
   },
   {
     "game_id": "app20920",
@@ -890,8 +881,7 @@
     "cheapest_price_ever": 2.49,
     "cheapest_price_ever_krw": 3237,
     "cheapest_date": 1524419835,
-    "is_historical_low": false,
-    "rawg_id": 16944
+    "is_historical_low": false
   },
   {
     "game_id": "app274350",
@@ -1073,8 +1063,7 @@
     "cheapest_price_ever": 0.49,
     "cheapest_price_ever_krw": 637,
     "cheapest_date": 1639081583,
-    "is_historical_low": false,
-    "rawg_id": 19593
+    "is_historical_low": false
   },
   {
     "game_id": "app1213210",
@@ -1184,8 +1173,7 @@
     "store_link": "https://store.steampowered.com/app/20900/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=XvdAVEU9b7gYQqsNjJB6TCQtxN8qpubzIpJWMLvEVsQ%3D",
     "is_on_sale": true,
-    "sale_count": 19304,
-    "rawg_id": 17822
+    "sale_count": 19304
   },
   {
     "game_id": "app23490",
@@ -1339,8 +1327,7 @@
     "store_link": "https://store.steampowered.com/app/617480/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=gguSIDvjtEBR2As2%2FU3Glxf0%2Fjy54H%2F1eY6OEMUsSy8%3D",
     "is_on_sale": true,
-    "sale_count": 1338,
-    "rawg_id": 23734
+    "sale_count": 1338
   },
   {
     "game_id": "app454410",
@@ -1384,8 +1371,7 @@
     "store_link": "https://store.steampowered.com/app/232430/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=jsXgjvjvUjeha9AWZBMiBESvFfmRWqb66lBc%2Fp9IyBs%3D",
     "is_on_sale": true,
-    "sale_count": 10725,
-    "rawg_id": 18003
+    "sale_count": 10725
   },
   {
     "game_id": "app431250",
@@ -1539,8 +1525,7 @@
     "store_link": "https://store.steampowered.com/app/990630/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=zuntj1DasObDdfuFNldS4TeW0RAR%2BpeRN94RorhGLdg%3D",
     "is_on_sale": true,
-    "sale_count": 4868,
-    "rawg_id": 274670
+    "sale_count": 4868
   },
   {
     "game_id": "app1347780",
@@ -1650,8 +1635,7 @@
     "store_link": "https://store.steampowered.com/app/261470/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=CoyryML0LMR039mrHIRiquMVW%2FpRm6zbecdtqhyL1L0%3D",
     "is_on_sale": true,
-    "sale_count": 1409,
-    "rawg_id": 16820
+    "sale_count": 1409
   },
   {
     "game_id": "app507490",
@@ -2509,8 +2493,7 @@
     "store_link": "https://store.steampowered.com/app/201270/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=jFVI38mQYZ7dXFtgt5xEbnfGoxi61820AvVF%2BhQZkO4%3D",
     "is_on_sale": true,
-    "sale_count": 20899,
-    "rawg_id": 10560
+    "sale_count": 20899
   },
   {
     "game_id": "app220740",
@@ -2576,8 +2559,7 @@
     "store_link": "https://store.steampowered.com/app/1158890/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=uOymDBh1f8pd0flDU8R2t%2FbHAxQXPPw8g0A2diW2T1E%3D",
     "is_on_sale": true,
-    "sale_count": 1412,
-    "rawg_id": 663785
+    "sale_count": 1412
   },
   {
     "game_id": "app397540",
@@ -2753,8 +2735,7 @@
     "store_link": "https://store.steampowered.com/app/629690/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=nCGUS0N5H70ORM9w2%2BEEGZXTK%2Ftu5uzyUIo2104FmaE%3D",
     "is_on_sale": true,
-    "sale_count": 957,
-    "rawg_id": 46471
+    "sale_count": 957
   },
   {
     "game_id": "app240",
@@ -3018,8 +2999,7 @@
     "store_link": "https://store.steampowered.com/app/807120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=SmXMJ7X56qNckO4YU4wJ%2FTYblQtK7tqTrlmxwv%2FNJq8%3D",
     "is_on_sale": true,
-    "sale_count": 2884,
-    "rawg_id": 61964
+    "sale_count": 2884
   },
   {
     "game_id": "app798490",
@@ -3085,8 +3065,7 @@
     "store_link": "https://store.steampowered.com/app/1087760/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=mdMzee7%2FUQjqsCNkD%2B0H4qZygSuaJJpCnp2qy5pt32w%3D",
     "is_on_sale": true,
-    "sale_count": 1505,
-    "rawg_id": 471028
+    "sale_count": 1505
   },
   {
     "game_id": "app1693980",
@@ -3218,8 +3197,7 @@
     "store_link": "https://store.steampowered.com/app/573120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=43fuA0VMLk1WHVAmQAhfwpX1dbe5e%2FHuLwVh2SYSHV0%3D",
     "is_on_sale": true,
-    "sale_count": 1104,
-    "rawg_id": 45409
+    "sale_count": 1104
   },
   {
     "game_id": "app676630",
@@ -3373,8 +3351,7 @@
     "store_link": "https://store.steampowered.com/app/1487210/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2FGKcfss2nXXCvXi0tYcKhvXZWjCaaj6Ns%2B1WWsMBQDM%3D",
     "is_on_sale": true,
-    "sale_count": 1082,
-    "rawg_id": 961785
+    "sale_count": 1082
   },
   {
     "game_id": "app534370",
@@ -3396,8 +3373,7 @@
     "store_link": "https://store.steampowered.com/app/534370/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=GGvkIw3QiVy7xIUmnJT9RZn%2Bf8UPdZisnk7lb0pIyCs%3D",
     "is_on_sale": true,
-    "sale_count": 1039,
-    "rawg_id": 44251
+    "sale_count": 1039
   },
   {
     "game_id": "app319450",
@@ -3749,8 +3725,7 @@
     "store_link": "https://store.steampowered.com/app/718650/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=nSy7ljT6ipkz7lOqzXX8BEXRFzyOggHkmEmGvZkz%2BVM%3D",
     "is_on_sale": true,
-    "sale_count": 1396,
-    "rawg_id": 47270
+    "sale_count": 1396
   },
   {
     "game_id": "app542050",
@@ -3838,8 +3813,7 @@
     "store_link": "https://store.steampowered.com/app/115800/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=h7jKI1jBdFpskbaDQbVYa1jLlCzAjUary37jBfaVOVw%3D",
     "is_on_sale": true,
-    "sale_count": 2352,
-    "rawg_id": 10088
+    "sale_count": 2352
   },
   {
     "game_id": "app38700",
@@ -3883,8 +3857,7 @@
     "store_link": "https://store.steampowered.com/app/1536620/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ct8sfRUSZiNKw0kcTdg8Is%2F4Kf7U5JeupUL33TmfjaA%3D",
     "is_on_sale": true,
-    "sale_count": 621,
-    "rawg_id": 985350
+    "sale_count": 621
   },
   {
     "game_id": "app1293170",
@@ -3928,8 +3901,7 @@
     "store_link": "https://store.steampowered.com/app/1608700/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Y%2F%2BlVvBcayK0CCO9cxFywjLM%2BQet943kgCSE3wlO1ms%3D",
     "is_on_sale": true,
-    "sale_count": 955,
-    "rawg_id": 303579
+    "sale_count": 955
   },
   {
     "game_id": "app39200",
@@ -3995,8 +3967,7 @@
     "store_link": "https://store.steampowered.com/app/920210/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=IJ8KhuZnAr5WmEHpVoK0tODQEVRejwDft6JO4KW7jro%3D",
     "is_on_sale": true,
-    "sale_count": 25815,
-    "rawg_id": 326239
+    "sale_count": 25815
   },
   {
     "game_id": "app219990",
@@ -4172,8 +4143,7 @@
     "store_link": "https://store.steampowered.com/app/1315610/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yIIMan5vYp6aU40zzo03%2BMFELwO9EKV2nv2ROrfZHKo%3D",
     "is_on_sale": true,
-    "sale_count": 1296,
-    "rawg_id": 455517
+    "sale_count": 1296
   },
   {
     "game_id": "app40800",
@@ -4283,8 +4253,7 @@
     "store_link": "https://store.steampowered.com/app/314830/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=s%2FDtJEgWEsD7QtbRKj2Qpw0ueH1rrwUvTmmvf9VHl2Y%3D",
     "is_on_sale": true,
-    "sale_count": 867,
-    "rawg_id": 16711
+    "sale_count": 867
   },
   {
     "game_id": "app410110",
@@ -4394,8 +4363,7 @@
     "store_link": "https://store.steampowered.com/app/290300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=rjFfmB%2B4pD8QDMeyZ6wjevCM6MZK0PL6OPc3y7JmIkU%3D",
     "is_on_sale": true,
-    "sale_count": 5164,
-    "rawg_id": 2925
+    "sale_count": 5164
   },
   {
     "game_id": "app960910",
@@ -4461,8 +4429,7 @@
     "store_link": "https://store.steampowered.com/app/870780/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=feQSLZIzxKb6QDHbvEx8M35I%2BUwY5gZLIxaBgqHaC6s%3D",
     "is_on_sale": true,
-    "sale_count": 22587,
-    "rawg_id": 479695
+    "sale_count": 22587
   },
   {
     "game_id": "app1137300",
@@ -4506,8 +4473,7 @@
     "store_link": "https://store.steampowered.com/app/535930/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=HsyqqdVQFZgDe0bGRcDWUhNJnxsI1suKLHF%2BB4SQd8c%3D",
     "is_on_sale": true,
-    "sale_count": 12383,
-    "rawg_id": 51687
+    "sale_count": 12383
   },
   {
     "game_id": "app1649080",
@@ -4529,8 +4495,7 @@
     "store_link": "https://store.steampowered.com/app/1649080/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=IlYgXmiECqjShU%2FcRzwDdIPlnJ5A7p%2FWBqZHz81D7Zc%3D",
     "is_on_sale": true,
-    "sale_count": 2539,
-    "rawg_id": 614967
+    "sale_count": 2539
   },
   {
     "game_id": "app301650",
@@ -4662,8 +4627,7 @@
     "store_link": "https://store.steampowered.com/app/202750/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PeGlOLy5kxC15v54944MUkE%2FDHIDjpTE4B41QJLy9V0%3D",
     "is_on_sale": true,
-    "sale_count": 3279,
-    "rawg_id": 18336
+    "sale_count": 3279
   },
   {
     "game_id": "app501590",
@@ -4905,8 +4869,7 @@
     "store_link": "https://store.steampowered.com/app/327220/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=zgFQUGdIa5iYwlAKHRBIa63IGK1gq8Yb%2FwNa14gNIZM%3D",
     "is_on_sale": true,
-    "sale_count": 1706,
-    "rawg_id": 16311
+    "sale_count": 1706
   },
   {
     "game_id": "app447120",
@@ -5060,8 +5023,7 @@
     "store_link": "https://store.steampowered.com/app/1191900/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2FragzcOV%2BRY%2Bx%2FEnnyncjz8etubxYswuMPj5quF6TOE%3D",
     "is_on_sale": true,
-    "sale_count": 1577,
-    "rawg_id": 392306
+    "sale_count": 1577
   },
   {
     "game_id": "app673880",
@@ -5083,8 +5045,7 @@
     "store_link": "https://store.steampowered.com/app/673880/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=EciVg%2BFEtvPzxbIdb1fIsQhnd98IaYt0bGkhu0eF57I%3D",
     "is_on_sale": true,
-    "sale_count": 7711,
-    "rawg_id": 59700
+    "sale_count": 7711
   },
   {
     "game_id": "app9350",
@@ -5172,8 +5133,7 @@
     "store_link": "https://store.steampowered.com/app/318600/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=UDv19nHmO1f3mAipV8U1PPVdCkUfO2JL9P4h4QmRPnw%3D",
     "is_on_sale": true,
-    "sale_count": 1274,
-    "rawg_id": 6879
+    "sale_count": 1274
   },
   {
     "game_id": "app792300",
@@ -5195,8 +5155,7 @@
     "store_link": "https://store.steampowered.com/app/792300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Aodn4Z1X9WNkfNn7KCYKV8oENnwuUXA2DBByRgJA2sw%3D",
     "is_on_sale": true,
-    "sale_count": 2307,
-    "rawg_id": 62897
+    "sale_count": 2307
   },
   {
     "game_id": "app1069530",
@@ -5966,8 +5925,7 @@
     "store_link": "https://store.steampowered.com/app/1080020/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=TGiB4UBA9Z5j9qOCUb4do7isaAvaHmyEShJJppDoXBg%3D",
     "is_on_sale": true,
-    "sale_count": 988,
-    "rawg_id": 316886
+    "sale_count": 988
   },
   {
     "game_id": "app17710",
@@ -5989,8 +5947,7 @@
     "store_link": "https://store.steampowered.com/app/17710/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ja4%2FzvHGunCNupJxFmcIa1yqRx8l7ks8RjPfyEEL7Sk%3D",
     "is_on_sale": true,
-    "sale_count": 1603,
-    "rawg_id": 14391
+    "sale_count": 1603
   },
   {
     "game_id": "app2810",
@@ -6188,8 +6145,7 @@
     "store_link": "https://store.steampowered.com/app/260160/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=bSjXzOdZGVFPRpHNE33HiHvvs0qFt57uafUMNA0oS14%3D",
     "is_on_sale": true,
-    "sale_count": 725,
-    "rawg_id": 15958
+    "sale_count": 725
   },
   {
     "game_id": "app434050",
@@ -6233,8 +6189,7 @@
     "store_link": "https://store.steampowered.com/app/256460/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=pX41SAczt%2FmFTxAlbZ3dNXGO26qDXYM5W3dVSjDRWFs%3D",
     "is_on_sale": true,
-    "sale_count": 782,
-    "rawg_id": 45
+    "sale_count": 782
   },
   {
     "game_id": "app559100",
@@ -6300,8 +6255,7 @@
     "store_link": "https://store.steampowered.com/app/578330/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=EKOhJIlo0CsFX%2FPAR%2FsyNFAxYNMk3ed25WjYfuOonvw%3D",
     "is_on_sale": true,
-    "sale_count": 3295,
-    "rawg_id": 959
+    "sale_count": 3295
   },
   {
     "game_id": "app21000",
@@ -6323,8 +6277,7 @@
     "store_link": "https://store.steampowered.com/app/21000/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=uCO441gpSEGJP6K9x66LeC7yi7ILolaTmvo8lOMCdIc%3D",
     "is_on_sale": true,
-    "sale_count": 5771,
-    "rawg_id": 16543
+    "sale_count": 5771
   },
   {
     "game_id": "app242940",
@@ -6456,8 +6409,7 @@
     "store_link": "https://store.steampowered.com/app/933820/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=7oziLMfwaApTb38QpUtOmwKKcOVbDy7ei2vsNYg5%2Fpc%3D",
     "is_on_sale": true,
-    "sale_count": 3295,
-    "rawg_id": 387247
+    "sale_count": 3295
   },
   {
     "game_id": "app1069690",
@@ -6479,8 +6431,7 @@
     "store_link": "https://store.steampowered.com/app/1069690/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=U6tWzT38I%2Bvt5Fz1A2cyGQbOQvNukLIAJR3xwpSLYPI%3D",
     "is_on_sale": true,
-    "sale_count": 1383,
-    "rawg_id": 631947
+    "sale_count": 1383
   },
   {
     "game_id": "app269650",
@@ -6524,8 +6475,7 @@
     "store_link": "https://store.steampowered.com/app/1335230/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yRKCNX53UbyYDGO4%2BppnIi%2BlQePTsIlFNBIC%2BTVvS7M%3D",
     "is_on_sale": true,
-    "sale_count": 832,
-    "rawg_id": 608662
+    "sale_count": 832
   },
   {
     "game_id": "app315210",
@@ -6723,8 +6673,7 @@
     "store_link": "https://store.steampowered.com/app/339190/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=P0ZkzFUkGsC%2FYSnV8O%2Fhd2YZkaX567HK815T%2Fi1OG0Q%3D",
     "is_on_sale": true,
-    "sale_count": 1096,
-    "rawg_id": 1189
+    "sale_count": 1096
   },
   {
     "game_id": "app237990",
@@ -6966,8 +6915,7 @@
     "store_link": "https://store.steampowered.com/app/363600/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=8Qubu0dkEUuvUGaDYbxXIgPXpf1E7CVy6IIzQTsvlfI%3D",
     "is_on_sale": true,
-    "sale_count": 1173,
-    "rawg_id": 11778
+    "sale_count": 1173
   },
   {
     "game_id": "app298110",
@@ -7077,8 +7025,7 @@
     "store_link": "https://store.steampowered.com/app/973760/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=MXSExE9i1D1PUieET9Zp7CGZGgZ62GDvffKyV9gsWOE%3D",
     "is_on_sale": true,
-    "sale_count": 4477,
-    "rawg_id": 244722
+    "sale_count": 4477
   },
   {
     "game_id": "app598550",
@@ -7276,8 +7223,7 @@
     "store_link": "https://store.steampowered.com/app/468920/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=nd%2BLV5QvFHArYpiRn0q5IIX3FoNTKNxXmtZ9B9AKeNs%3D",
     "is_on_sale": true,
-    "sale_count": 2432,
-    "rawg_id": 11158
+    "sale_count": 2432
   },
   {
     "game_id": "app204530",
@@ -7475,8 +7421,7 @@
     "store_link": "https://store.steampowered.com/app/351910/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=xM5gFgcqehGGzGwtL7h2gSgpFbw6dhmNzPr0aNOPPt8%3D",
     "is_on_sale": true,
-    "sale_count": 675,
-    "rawg_id": 12636
+    "sale_count": 675
   },
   {
     "game_id": "app1938010",
@@ -7652,8 +7597,7 @@
     "store_link": "https://store.steampowered.com/app/395570/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=6%2FmZCHnmSa4olRevWHUG66vYnKYOXUsNJbdN2sQ4q5o%3D",
     "is_on_sale": true,
-    "sale_count": 1048,
-    "rawg_id": 104
+    "sale_count": 1048
   },
   {
     "game_id": "app768450",
@@ -7675,8 +7619,7 @@
     "store_link": "https://store.steampowered.com/app/768450/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=qkxHABscWr3vFK%2Bvu1RzBeK091jGTAVqAoR2DbonqwY%3D",
     "is_on_sale": true,
-    "sale_count": 755,
-    "rawg_id": 99004
+    "sale_count": 755
   },
   {
     "game_id": "app1602080",
@@ -7764,8 +7707,7 @@
     "store_link": "https://store.steampowered.com/app/207140/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9OGEXBHOruKD%2FmyCV5vggPcD6XSzaR1N5nNbd5%2FZrVg%3D",
     "is_on_sale": true,
-    "sale_count": 9558,
-    "rawg_id": 11228
+    "sale_count": 9558
   },
   {
     "game_id": "app316790",
@@ -7875,8 +7817,7 @@
     "store_link": "https://store.steampowered.com/app/249650/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=b3i1%2BPEnZsWXh7%2B3AVvE2mKJK3yCXfiRlrLoQ3TkFyE%3D",
     "is_on_sale": true,
-    "sale_count": 1255,
-    "rawg_id": 12166
+    "sale_count": 1255
   },
   {
     "game_id": "app366910",
@@ -8118,8 +8059,7 @@
     "store_link": "https://store.steampowered.com/app/489630/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=v%2BiCL66O3C4RNXMMs%2Bym74Nt0CV7OEVHVmloCZRVtS8%3D",
     "is_on_sale": true,
-    "sale_count": 4975,
-    "rawg_id": 50273
+    "sale_count": 4975
   },
   {
     "game_id": "app49520",
@@ -8229,8 +8169,7 @@
     "store_link": "https://store.steampowered.com/app/458770/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=6VJUkL6JON3jrOqP8DASlDKyTBRlKLMVeS0F7hH0rfA%3D",
     "is_on_sale": true,
-    "sale_count": 1157,
-    "rawg_id": 6628
+    "sale_count": 1157
   },
   {
     "game_id": "app618970",
@@ -8516,8 +8455,7 @@
     "store_link": "https://store.steampowered.com/app/320300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=oQ8gDX63u%2F%2BKX39WwucZana9aRvKEYM4P%2B4deaQR7yU%3D",
     "is_on_sale": true,
-    "sale_count": 3957,
-    "rawg_id": 11044
+    "sale_count": 3957
   },
   {
     "game_id": "app626610",
@@ -8671,8 +8609,7 @@
     "store_link": "https://store.steampowered.com/app/1430680/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=uCrOLYf2X4HlxI2qT99LwEyMekyHTJcnO0cSlR5%2BmnQ%3D",
     "is_on_sale": true,
-    "sale_count": 996,
-    "rawg_id": 631949
+    "sale_count": 996
   },
   {
     "game_id": "app58570",
@@ -8804,8 +8741,7 @@
     "store_link": "https://store.steampowered.com/app/1016920/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=wqxjev1dY9RPLI6uk%2BGYnLy5Gvjljf5zI4tjD7IMflc%3D",
     "is_on_sale": true,
-    "sale_count": 4528,
-    "rawg_id": 308132
+    "sale_count": 4528
   },
   {
     "game_id": "app41500",
@@ -8959,8 +8895,7 @@
     "store_link": "https://store.steampowered.com/app/371520/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=5rreS%2B%2BUYulviA%2BxmguBcuyLv%2FPvNmIKVvlvdwqKgHk%3D",
     "is_on_sale": true,
-    "sale_count": 1278,
-    "rawg_id": 10897
+    "sale_count": 1278
   },
   {
     "game_id": "app505730",
@@ -9246,8 +9181,7 @@
     "store_link": "https://store.steampowered.com/app/1361400/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=d%2FACPaGsDdg%2Fi2Fq4UNuxExwBw7Lio7LqxahvlXI0HY%3D",
     "is_on_sale": true,
-    "sale_count": 620,
-    "rawg_id": 616673
+    "sale_count": 620
   },
   {
     "game_id": "app1389550",
@@ -9269,8 +9203,7 @@
     "store_link": "https://store.steampowered.com/app/1389550/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=OU5OtlcZVJfZZwoE6OyJqvOw2aA1i1XM9RB93sQW1tk%3D",
     "is_on_sale": true,
-    "sale_count": 899,
-    "rawg_id": 576497
+    "sale_count": 899
   },
   {
     "game_id": "app355800",
@@ -9358,8 +9291,7 @@
     "store_link": "https://store.steampowered.com/app/286690/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=o35o2DS12hd%2BlYrHgmxPiMry13keOtIO83Cziy6I2l8%3D",
     "is_on_sale": true,
-    "sale_count": 25840,
-    "rawg_id": 3603
+    "sale_count": 25840
   },
   {
     "game_id": "app477770",
@@ -9491,8 +9423,7 @@
     "store_link": "https://store.steampowered.com/app/1677350/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=VObcZQfKAjtGX7q60dD91dJtV%2FnC6XKzpPJaZt1q4ok%3D",
     "is_on_sale": true,
-    "sale_count": 1936,
-    "rawg_id": 953954
+    "sale_count": 1936
   },
   {
     "game_id": "app237930",
@@ -9580,8 +9511,7 @@
     "store_link": "https://store.steampowered.com/app/343860/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=TrwYfjT5JRyMgEMHK3oetvbIOuNs7OoLXvXeSElYR94%3D",
     "is_on_sale": true,
-    "sale_count": 2207,
-    "rawg_id": 28156
+    "sale_count": 2207
   },
   {
     "game_id": "app1225570",
@@ -9625,8 +9555,7 @@
     "store_link": "https://store.steampowered.com/app/717560/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9%2B%2FtkVF0hIj%2BF6FGWoqY5xXQ%2Fe6sCNDfq0YTLZo52NM%3D",
     "is_on_sale": true,
-    "sale_count": 579,
-    "rawg_id": 327220
+    "sale_count": 579
   },
   {
     "game_id": "app46500",
@@ -9758,8 +9687,7 @@
     "store_link": "https://store.steampowered.com/app/660160/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Q0CdrPMsKtQG5Hkygj14JiBvKG8aNL56sVPi5FdV18Y%3D",
     "is_on_sale": true,
-    "sale_count": 689,
-    "rawg_id": 46543
+    "sale_count": 689
   },
   {
     "game_id": "app115120",
@@ -9891,8 +9819,7 @@
     "store_link": "https://store.steampowered.com/app/1031120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=CgQ3bEtWuNSfva1MNESmK0voFRJXFy4TRQv1KMlKZA8%3D",
     "is_on_sale": true,
-    "sale_count": 1942,
-    "rawg_id": 292922
+    "sale_count": 1942
   },
   {
     "game_id": "app365660",
@@ -9936,8 +9863,7 @@
     "store_link": "https://store.steampowered.com/app/1282730/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=j4M450WOuw7YwxAA8xmHRiBD22q6iw69PYvBbM8fxQQ%3D",
     "is_on_sale": true,
-    "sale_count": 15699,
-    "rawg_id": 548036
+    "sale_count": 15699
   },
   {
     "game_id": "app537800",
@@ -10003,8 +9929,7 @@
     "store_link": "https://store.steampowered.com/app/842100/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Sx3mLdhFp%2FSmppWVogjo%2B1efPv6CcLIy3EUh2GHsFnM%3D",
     "is_on_sale": true,
-    "sale_count": 1247,
-    "rawg_id": 275636
+    "sale_count": 1247
   },
   {
     "game_id": "app1030840",
@@ -10158,8 +10083,7 @@
     "store_link": "https://store.steampowered.com/app/926580/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=oQ7xzJwSGviXFKgFkX1OIKPZvXizOS%2BTI%2F4hQ%2FEMc%2Bs%3D",
     "is_on_sale": true,
-    "sale_count": 594,
-    "rawg_id": 325082
+    "sale_count": 594
   },
   {
     "game_id": "app1252330",
@@ -10489,8 +10413,7 @@
     "store_link": "https://store.steampowered.com/app/382140/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=AOMt71ipsTMAafEdxaPfgTyxNtLsByXhcQz7h6iTQa8%3D",
     "is_on_sale": true,
-    "sale_count": 617,
-    "rawg_id": 6145
+    "sale_count": 617
   },
   {
     "game_id": "app406850",
@@ -10710,8 +10633,7 @@
     "store_link": "https://store.steampowered.com/app/518790/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=vT86cMO3uak%2Bnr%2BrwsFaJSKg8a2wgoc2gli9QxRE3X8%3D",
     "is_on_sale": true,
-    "sale_count": 58668,
-    "rawg_id": 9538
+    "sale_count": 58668
   },
   {
     "game_id": "app1233590",
@@ -11085,8 +11007,7 @@
     "store_link": "https://store.steampowered.com/app/239140/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=WYRSpFnEq1ERqtEVD17doNjbxnm3a%2FEC8zFe1hamz6g%3D",
     "is_on_sale": true,
-    "sale_count": 93970,
-    "rawg_id": 14348
+    "sale_count": 93970
   },
   {
     "game_id": "app733790",
@@ -11284,8 +11205,7 @@
     "store_link": "https://store.steampowered.com/app/962580/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ong4xNhCWdXf4fHh3l%2Fm22vqfgUyL%2FWyVBys8JmQeSg%3D",
     "is_on_sale": true,
-    "sale_count": 1391,
-    "rawg_id": 258398
+    "sale_count": 1391
   },
   {
     "game_id": "app225540",
@@ -11461,8 +11381,7 @@
     "store_link": "https://store.steampowered.com/app/233150/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=hLATyYsLetBCEDfeegly2f0PEe3N3%2FfSOQomXHkD9%2Bw%3D",
     "is_on_sale": true,
-    "sale_count": 2497,
-    "rawg_id": 3746
+    "sale_count": 2497
   },
   {
     "game_id": "app908050",
@@ -11528,8 +11447,7 @@
     "store_link": "https://store.steampowered.com/app/773370/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=KsFSSu2MepLMnhuWQ1yQ0lHcLzsO7sbNn6uv%2FdXJILM%3D",
     "is_on_sale": true,
-    "sale_count": 3108,
-    "rawg_id": 51079
+    "sale_count": 3108
   },
   {
     "game_id": "app1687950",
@@ -11661,8 +11579,7 @@
     "store_link": "https://store.steampowered.com/app/1903620/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=FNOn6pgwh8%2F4lq4cZGnCMvVsQ2MRNLUV7AcbiQpQ87Y%3D",
     "is_on_sale": true,
-    "sale_count": 3274,
-    "rawg_id": 961684
+    "sale_count": 3274
   },
   {
     "game_id": "app1057090",
@@ -11750,8 +11667,7 @@
     "store_link": "https://store.steampowered.com/app/898890/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=15jSEHrBOzlNazY08JrWezhnpL0lYLd97MTGeOn3WLg%3D",
     "is_on_sale": true,
-    "sale_count": 1349,
-    "rawg_id": 686816
+    "sale_count": 1349
   },
   {
     "game_id": "app1898290",
@@ -11773,8 +11689,7 @@
     "store_link": "https://store.steampowered.com/app/1898290/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PvWiGluyBpO9TCKyWRF1XbNxepPasXt2Q1TFFMfnndY%3D",
     "is_on_sale": true,
-    "sale_count": 1604,
-    "rawg_id": 833436
+    "sale_count": 1604
   },
   {
     "game_id": "app334070",
@@ -11840,8 +11755,7 @@
     "store_link": "https://store.steampowered.com/app/907650/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=J8pf1YGHEylieZ%2B5oE0iFX021rQoNypn%2BiU%2Fmta4f9U%3D",
     "is_on_sale": true,
-    "sale_count": 1869,
-    "rawg_id": 327245
+    "sale_count": 1869
   },
   {
     "game_id": "app1610460",
@@ -12039,8 +11953,7 @@
     "store_link": "https://store.steampowered.com/app/213330/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PLK%2BInMYUooml%2FkEGWW%2Bw8MluNwy5q9ZSzKcLaciTU4%3D",
     "is_on_sale": true,
-    "sale_count": 3497,
-    "rawg_id": 19908
+    "sale_count": 3497
   },
   {
     "game_id": "app383870",
@@ -12084,8 +11997,7 @@
     "store_link": "https://store.steampowered.com/app/415200/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=xuuKaPD0kJj1OMBRVZw%2BwZBMDO8zURj2dhl4e8LUWOU%3D",
     "is_on_sale": true,
-    "sale_count": 5031,
-    "rawg_id": 1222
+    "sale_count": 5031
   },
   {
     "game_id": "app397060",
@@ -12239,8 +12151,7 @@
     "store_link": "https://store.steampowered.com/app/829110/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PIprGWCRai6qXH4oIjNjDDniWWGRKwJ4W1GecAzJLkM%3D",
     "is_on_sale": true,
-    "sale_count": 2475,
-    "rawg_id": 58597
+    "sale_count": 2475
   },
   {
     "game_id": "app1259980",
@@ -12284,8 +12195,7 @@
     "store_link": "https://store.steampowered.com/app/2144640/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=HfQJISUQowk%2Ftb1Oz%2BJ7%2FLVZ6%2BVGWt8f5kGvOYmWqDk%3D",
     "is_on_sale": true,
-    "sale_count": 799,
-    "rawg_id": 965250
+    "sale_count": 799
   },
   {
     "game_id": "app424370",
@@ -12307,8 +12217,7 @@
     "store_link": "https://store.steampowered.com/app/424370/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yR5K2z9jwu85RYZt%2FXFnKdxhofMvwnIGW39SBf%2Fp6mI%3D",
     "is_on_sale": true,
-    "sale_count": 27675,
-    "rawg_id": 11484
+    "sale_count": 27675
   },
   {
     "game_id": "app107310",
@@ -12330,8 +12239,7 @@
     "store_link": "https://store.steampowered.com/app/107310/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=wRPwd8Ssd8WO4zYHHcM38521SQf9wKld0sPcwEA3hpA%3D",
     "is_on_sale": true,
-    "sale_count": 2110,
-    "rawg_id": 2018
+    "sale_count": 2110
   },
   {
     "game_id": "app246110",
@@ -12573,8 +12481,7 @@
     "store_link": "https://store.steampowered.com/app/590380/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=YhTJrjLt5qtqitPFiHiw1itR%2F8KOSi%2Fh7epXy7e82B4%3D",
     "is_on_sale": true,
-    "sale_count": 12119,
-    "rawg_id": 13566
+    "sale_count": 12119
   },
   {
     "game_id": "app493340",
@@ -12684,8 +12591,7 @@
     "store_link": "https://store.steampowered.com/app/589780/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=JYVT0THnJHmtphcOsxkYshUt3czmM2vN3sl4PxS5tYw%3D",
     "is_on_sale": true,
-    "sale_count": 3121,
-    "rawg_id": 49428
+    "sale_count": 3121
   },
   {
     "game_id": "app1262540",
@@ -12927,8 +12833,7 @@
     "store_link": "https://store.steampowered.com/app/396900/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=FYkc9rJX1dCWV3lNGrIJGadw3hNLLiEkZQwxmMCYzL8%3D",
     "is_on_sale": true,
-    "sale_count": 2190,
-    "rawg_id": 9603
+    "sale_count": 2190
   },
   {
     "game_id": "app1328660",
@@ -13082,8 +12987,7 @@
     "store_link": "https://store.steampowered.com/app/270850/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=39M9wIBTzfQsYZwmnYe0sB78hRnI2RrHDu%2FtFHqpU7E%3D",
     "is_on_sale": true,
-    "sale_count": 1592,
-    "rawg_id": 15949
+    "sale_count": 1592
   },
   {
     "game_id": "app1174180",
@@ -13127,8 +13031,7 @@
     "store_link": "https://store.steampowered.com/app/243450/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2FEEkM8ngzWW7AlzThCAJDZGDbeunKUdVLqmFreMyiFI%3D",
     "is_on_sale": true,
-    "sale_count": 1326,
-    "rawg_id": 3905
+    "sale_count": 1326
   },
   {
     "game_id": "app233840",
@@ -13392,8 +13295,7 @@
     "store_link": "https://store.steampowered.com/app/204120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=YpMf78Mii0tZP0%2BsZpGX%2Fjyr4fcQVYlkyk9VKSu2r1o%3D",
     "is_on_sale": true,
-    "sale_count": 958,
-    "rawg_id": 4241
+    "sale_count": 958
   },
   {
     "game_id": "app222750",
@@ -13525,8 +13427,7 @@
     "store_link": "https://store.steampowered.com/app/214510/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=0%2FIRbScq90rZB9W4T4Ditx00RV0kiaJlxfJGZviI9EE%3D",
     "is_on_sale": true,
-    "sale_count": 4708,
-    "rawg_id": 2597
+    "sale_count": 4708
   },
   {
     "game_id": "app360740",
@@ -13570,8 +13471,7 @@
     "store_link": "https://store.steampowered.com/app/779340/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=WKl%2B9QFvtEswmx7OrIvRWfxGtzbm%2FG4RY3WoufaZpEQ%3D",
     "is_on_sale": true,
-    "sale_count": 16958,
-    "rawg_id": 51584
+    "sale_count": 16958
   },
   {
     "game_id": "app264710",
@@ -13637,8 +13537,7 @@
     "store_link": "https://store.steampowered.com/app/204450/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=OK4NFCD%2FLGh6MUuCKofG2cBFKomTav45pI%2F7b%2BmKwcQ%3D",
     "is_on_sale": true,
-    "sale_count": 9597,
-    "rawg_id": 4013
+    "sale_count": 9597
   },
   {
     "game_id": "app1393750",
@@ -13858,8 +13757,7 @@
     "store_link": "https://store.steampowered.com/app/21980/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=xL5HVmkcX9M7VGwRLw6h16U4WrA357auNnDDbshNbw0%3D",
     "is_on_sale": true,
-    "sale_count": 1628,
-    "rawg_id": 4521
+    "sale_count": 1628
   },
   {
     "game_id": "app284460",
@@ -13903,8 +13801,7 @@
     "store_link": "https://store.steampowered.com/app/440880/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yMARWtjt0mUtP%2FI8pxKQABLsvXVVvooWWfjfTII2kP8%3D",
     "is_on_sale": true,
-    "sale_count": 602,
-    "rawg_id": 12140
+    "sale_count": 602
   },
   {
     "game_id": "app234080",
@@ -14102,8 +13999,7 @@
     "store_link": "https://store.steampowered.com/app/212680/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2B4jvkFkPPaCekec%2F%2BZWLgRzWmEIDA5ESmX3RJnCys3o%3D",
     "is_on_sale": true,
-    "sale_count": 45652,
-    "rawg_id": 624
+    "sale_count": 45652
   },
   {
     "game_id": "app220200",
@@ -14191,8 +14087,7 @@
     "store_link": "https://store.steampowered.com/app/1337010/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2FLT1ouli1w8A4fEyUgalgyvud8AZBeDokdWRdaYRT4Y%3D",
     "is_on_sale": true,
-    "sale_count": 2864,
-    "rawg_id": 471019
+    "sale_count": 2864
   },
   {
     "game_id": "app205730",
@@ -14324,8 +14219,7 @@
     "store_link": "https://store.steampowered.com/app/343710/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=YnY0f3ypsAad7T4t55wb1wfHT47IDP0STrVhGcAEfUw%3D",
     "is_on_sale": true,
-    "sale_count": 1997,
-    "rawg_id": 2722
+    "sale_count": 1997
   },
   {
     "game_id": "app562500",
@@ -14589,8 +14483,7 @@
     "store_link": "https://store.steampowered.com/app/99300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=YVakQjhMcizSIK2lDWVgW5zXo35ZV63u7u%2BXazw%2Bfm4%3D",
     "is_on_sale": true,
-    "sale_count": 964,
-    "rawg_id": 4612
+    "sale_count": 964
   },
   {
     "game_id": "app274250",
@@ -14634,8 +14527,7 @@
     "store_link": "https://store.steampowered.com/app/21130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=7qrML90E5z7%2Fj%2Fh1zJLX4ChMu57Zd0N%2F4I8WYn%2FWX3c%3D",
     "is_on_sale": true,
-    "sale_count": 3001,
-    "rawg_id": 447
+    "sale_count": 3001
   },
   {
     "game_id": "app527230",
@@ -14701,8 +14593,7 @@
     "store_link": "https://store.steampowered.com/app/1544360/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=p5dIDfrawO2RTVVQ5L1yN7x%2Fwm6uQIH%2FPAOyYE%2BAQw8%3D",
     "is_on_sale": true,
-    "sale_count": 2315,
-    "rawg_id": 401818
+    "sale_count": 2315
   },
   {
     "game_id": "app460920",
@@ -14790,8 +14681,7 @@
     "store_link": "https://store.steampowered.com/app/501320/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=rPTcx8ELdRLeOob84CAeIMn0VXuTh3xzrahsiR1LNuE%3D",
     "is_on_sale": true,
-    "sale_count": 1137,
-    "rawg_id": 10575
+    "sale_count": 1137
   },
   {
     "game_id": "app40700",
@@ -14923,8 +14813,7 @@
     "store_link": "https://store.steampowered.com/app/314810/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=fGtpXMN%2F%2Bs63L%2FYwl%2BaxXkr9825m3%2B14wDJkiq7gRB4%3D",
     "is_on_sale": true,
-    "sale_count": 1314,
-    "rawg_id": 2802
+    "sale_count": 1314
   },
   {
     "game_id": "app559330",
@@ -14990,8 +14879,7 @@
     "store_link": "https://store.steampowered.com/app/300380/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=DgT%2FpZwdCXgNr%2BwLztbvw0zmip9GugkgnybJaq57J3o%3D",
     "is_on_sale": true,
-    "sale_count": 5565,
-    "rawg_id": 9540
+    "sale_count": 5565
   },
   {
     "game_id": "app7220",
@@ -15189,8 +15077,7 @@
     "store_link": "https://store.steampowered.com/app/303800/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=MxLPz2HWHmYzmNJnSvpw%2BPEadDhyPjjapZyi7rkTdBE%3D",
     "is_on_sale": true,
-    "sale_count": 1041,
-    "rawg_id": 6400
+    "sale_count": 1041
   },
   {
     "game_id": "app582160",
@@ -15410,8 +15297,7 @@
     "store_link": "https://store.steampowered.com/app/332310/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=VksW9KXl5igU7O0NKbwDUbcGL6Mmcozz3B2oNbmYNTA%3D",
     "is_on_sale": true,
-    "sale_count": 7516,
-    "rawg_id": 227
+    "sale_count": 7516
   },
   {
     "game_id": "app446800",
@@ -15455,8 +15341,7 @@
     "store_link": "https://store.steampowered.com/app/1298140/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2Fo1VkwAWGvnvus%2BSs%2FJbyEfSfN%2BaQhP7yGZGRO8eIyw%3D",
     "is_on_sale": true,
-    "sale_count": 1398,
-    "rawg_id": 484814
+    "sale_count": 1398
   },
   {
     "game_id": "app102600",
@@ -15742,8 +15627,7 @@
     "store_link": "https://store.steampowered.com/app/249130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=nLxODFu3j0D%2BPrOMReGNE1nE3exKCdbLqu4kDxDpTAU%3D",
     "is_on_sale": true,
-    "sale_count": 7533,
-    "rawg_id": 3850
+    "sale_count": 7533
   },
   {
     "game_id": "app311240",
@@ -15963,8 +15847,7 @@
     "store_link": "https://store.steampowered.com/app/4780/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=v8YXBbhzLV0glTdUQwwY3nOvmyul9j3DrBiaaNMCkBM%3D",
     "is_on_sale": true,
-    "sale_count": 541,
-    "rawg_id": 14927
+    "sale_count": 541
   },
   {
     "game_id": "app18040",
@@ -16030,8 +15913,7 @@
     "store_link": "https://store.steampowered.com/app/210770/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yZOw9npDUh1Qvb%2FPw24dTNy5ruNIL8q1kK3fl2lwNWM%3D",
     "is_on_sale": true,
-    "sale_count": 4301,
-    "rawg_id": 3912
+    "sale_count": 4301
   },
   {
     "game_id": "app228360",
@@ -16163,8 +16045,7 @@
     "store_link": "https://store.steampowered.com/app/1506510/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Wg939Z1V1VtojllLuyCQSIIrMkrpDD4E2QmHdkkMV7s%3D",
     "is_on_sale": true,
-    "sale_count": 1090,
-    "rawg_id": 644752
+    "sale_count": 1090
   },
   {
     "game_id": "app1388770",
@@ -16296,8 +16177,7 @@
     "store_link": "https://store.steampowered.com/app/2990/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=q2Y7ouu%2BOuVw2QqrYo%2BTDRMpHxgpvzqsy821rT7%2FXpE%3D",
     "is_on_sale": true,
-    "sale_count": 4055,
-    "rawg_id": 19628
+    "sale_count": 4055
   },
   {
     "game_id": "app401360",
@@ -16583,8 +16463,7 @@
     "store_link": "https://store.steampowered.com/app/362890/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=zGwM7abzKD6%2BSgq3iVtJ3bX1LcM3cK9Vs95RM6wWCLE%3D",
     "is_on_sale": true,
-    "sale_count": 67479,
-    "rawg_id": 15426
+    "sale_count": 67479
   },
   {
     "game_id": "app569860",
@@ -16650,8 +16529,7 @@
     "store_link": "https://store.steampowered.com/app/534550/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ouNrvMnZx%2FaGAwVjVpfWy%2F2aOwZ8RtWC9IetBcC0b7Y%3D",
     "is_on_sale": true,
-    "sale_count": 1259,
-    "rawg_id": 58834
+    "sale_count": 1259
   },
   {
     "game_id": "app762830",
@@ -17223,8 +17101,7 @@
     "store_link": "https://store.steampowered.com/app/493540/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=5Tdz5oRNsWTUk%2BOnGKOIR8%2FJcUq9ebDrZ%2BUNJAHRcF0%3D",
     "is_on_sale": true,
-    "sale_count": 1286,
-    "rawg_id": 9906
+    "sale_count": 1286
   },
   {
     "game_id": "app16730",
@@ -17334,8 +17211,7 @@
     "store_link": "https://store.steampowered.com/app/914020/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=YsimXoarnzWOlJDSqnXPAPZgA7I5Wmm%2FpomROIgt4os%3D",
     "is_on_sale": true,
-    "sale_count": 1036,
-    "rawg_id": 60833
+    "sale_count": 1036
   },
   {
     "game_id": "app2310",
@@ -17863,8 +17739,7 @@
     "store_link": "https://store.steampowered.com/app/1119600/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=5HOx3yk25f%2B5u4xMbXBS8JZULWsB%2BisFanQJBrZ6k2c%3D",
     "is_on_sale": true,
-    "sale_count": 753,
-    "rawg_id": 367056
+    "sale_count": 753
   },
   {
     "game_id": "app70600",
@@ -18260,8 +18135,7 @@
     "store_link": "https://store.steampowered.com/app/1128920/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=KGBXcd%2FkqWL5IxLohLyGHVK%2FFRxDvTyacuV00Jksr00%3D",
     "is_on_sale": true,
-    "sale_count": 6828,
-    "rawg_id": 366883
+    "sale_count": 6828
   },
   {
     "game_id": "app1345820",
@@ -18305,8 +18179,7 @@
     "store_link": "https://store.steampowered.com/app/969760/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=zju9lgf0ZyOf2lhaZA4uQkwCDFy3pTgjwfzmp%2BGBgJ4%3D",
     "is_on_sale": true,
-    "sale_count": 1743,
-    "rawg_id": 259932
+    "sale_count": 1743
   },
   {
     "game_id": "app223830",
@@ -18350,8 +18223,7 @@
     "store_link": "https://store.steampowered.com/app/248610/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Ag5ntcKmi1Iih%2FgiSbn45z%2BBdchiBCri6L82VjGeFU8%3D",
     "is_on_sale": true,
-    "sale_count": 3605,
-    "rawg_id": 1808
+    "sale_count": 3605
   },
   {
     "game_id": "app384190",
@@ -18461,8 +18333,7 @@
     "store_link": "https://store.steampowered.com/app/844590/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=mP5QNP2xVSeJYUfkVf403hN9ZPSvI1nYCYy3a27r%2B4w%3D",
     "is_on_sale": true,
-    "sale_count": 4096,
-    "rawg_id": 64173
+    "sale_count": 4096
   },
   {
     "game_id": "app1000010",
@@ -18550,8 +18421,7 @@
     "store_link": "https://store.steampowered.com/app/1069160/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PopqU2w5bTUlASRe%2BKU4WmNedmQe8B7uii%2B61hPLxQQ%3D",
     "is_on_sale": true,
-    "sale_count": 2657,
-    "rawg_id": 587702
+    "sale_count": 2657
   },
   {
     "game_id": "app2450",
@@ -18617,8 +18487,7 @@
     "store_link": "https://store.steampowered.com/app/423230/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=1BZQwaPQ6LUuwl9ioNACkCcUAK7vySp9QLKKh9xGyKc%3D",
     "is_on_sale": true,
-    "sale_count": 6803,
-    "rawg_id": 2239
+    "sale_count": 6803
   },
   {
     "game_id": "app404680",
@@ -18728,8 +18597,7 @@
     "store_link": "https://store.steampowered.com/app/327670/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=kOnhIdJfT%2BwboQJa%2BeNW1PI9DrxCbG7biT7IQI%2BwhhE%3D",
     "is_on_sale": true,
-    "sale_count": 765,
-    "rawg_id": 12
+    "sale_count": 765
   },
   {
     "game_id": "app416210",
@@ -19125,8 +18993,7 @@
     "store_link": "https://store.steampowered.com/app/1630/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=1myORSb88PurpWzzNCzYqA1c1FdF4F%2FI3V5kqpTZeTw%3D",
     "is_on_sale": true,
-    "sale_count": 1220,
-    "rawg_id": 19457
+    "sale_count": 1220
   },
   {
     "game_id": "app1137350",
@@ -19258,8 +19125,7 @@
     "store_link": "https://store.steampowered.com/app/2221490/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9cOp32Bo4jQkBptOXaetZ8rhp%2BXmtI%2BwU52tGqeqzPM%3D",
     "is_on_sale": true,
-    "sale_count": 12887,
-    "rawg_id": 58754
+    "sale_count": 12887
   },
   {
     "game_id": "app3472040",
@@ -19281,8 +19147,7 @@
     "store_link": "https://store.steampowered.com/app/3472040/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=UioDpuPVXmKpil2Dg0jcg%2BacsjiQ7lx%2FFzu4QPCesk0%3D",
     "is_on_sale": true,
-    "sale_count": 3594,
-    "rawg_id": 1010089
+    "sale_count": 3594
   },
   {
     "game_id": "app910830",
@@ -19304,8 +19169,7 @@
     "store_link": "https://store.steampowered.com/app/910830/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=1UJEQUsfAz2WqlzZOSQA9IAxbGTfjG%2FDU2M3ufpY3m0%3D",
     "is_on_sale": true,
-    "sale_count": 850,
-    "rawg_id": 247058
+    "sale_count": 850
   },
   {
     "game_id": "app1623940",
@@ -19327,8 +19191,7 @@
     "store_link": "https://store.steampowered.com/app/1623940/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=wurENHLQj3xUYpG48mM4XSQndhdbFnjrJa0j6TN4170%3D",
     "is_on_sale": true,
-    "sale_count": 2938,
-    "rawg_id": 616687
+    "sale_count": 2938
   },
   {
     "game_id": "app1432910",
@@ -19482,8 +19345,7 @@
     "store_link": "https://store.steampowered.com/app/1085220/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=iCGMXRwFFuNM5RdGa4bH7sJUyZq5bOZ9rmZYYVnCNdw%3D",
     "is_on_sale": true,
-    "sale_count": 833,
-    "rawg_id": 709001
+    "sale_count": 833
   },
   {
     "game_id": "app417430",
@@ -19593,8 +19455,7 @@
     "store_link": "https://store.steampowered.com/app/953490/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=stSlZQ9QduyG%2FaTv4HxV7oQh9ya66hWwi9C8OFOLpr0%3D",
     "is_on_sale": true,
-    "sale_count": 15275,
-    "rawg_id": 249954
+    "sale_count": 15275
   },
   {
     "game_id": "app597220",
@@ -19704,8 +19565,7 @@
     "store_link": "https://store.steampowered.com/app/733210/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=RfHOA3sIpL0Zz02VZJVT9OZd8KZfdl4BZL%2Fj1aE60Gw%3D",
     "is_on_sale": true,
-    "sale_count": 756,
-    "rawg_id": 445453
+    "sale_count": 756
   },
   {
     "game_id": "app1206060",
@@ -19793,8 +19653,7 @@
     "store_link": "https://store.steampowered.com/app/313780/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=LS5p00ldOo%2BHLC6VC5pFKlHlVqjZD0qnM2yZWCgFuTg%3D",
     "is_on_sale": true,
-    "sale_count": 1855,
-    "rawg_id": 10110
+    "sale_count": 1855
   },
   {
     "game_id": "app745920",
@@ -20102,8 +19961,7 @@
     "store_link": "https://store.steampowered.com/app/323720/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=40azIhorRlR899%2BZk1Lj7RuJphHGY9rBvkxPMK4UB70%3D",
     "is_on_sale": true,
-    "sale_count": 1586,
-    "rawg_id": 16709
+    "sale_count": 1586
   },
   {
     "game_id": "app617290",
@@ -20455,8 +20313,7 @@
     "store_link": "https://store.steampowered.com/app/3020/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=KhK5cN0ONLwf6eHAf6cCroAkU%2Bppzkv5HcfJVe7olMQ%3D",
     "is_on_sale": true,
-    "sale_count": 1441,
-    "rawg_id": 19572
+    "sale_count": 1441
   },
   {
     "game_id": "app297120",
@@ -20478,8 +20335,7 @@
     "store_link": "https://store.steampowered.com/app/297120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=m4jVYuNzdY7eNXDD7JSUByDD%2BKomhmxUzX0PIokdETw%3D",
     "is_on_sale": true,
-    "sale_count": 1247,
-    "rawg_id": 19493
+    "sale_count": 1247
   },
   {
     "game_id": "app850320",
@@ -20501,8 +20357,7 @@
     "store_link": "https://store.steampowered.com/app/850320/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=pL0ZTtPFzRw8n%2Bn%2FrN6a3SsvDNb2fM9AzfUqYj66ZyU%3D",
     "is_on_sale": true,
-    "sale_count": 1039,
-    "rawg_id": 244699
+    "sale_count": 1039
   },
   {
     "game_id": "app1139280",
@@ -20612,8 +20467,7 @@
     "store_link": "https://store.steampowered.com/app/252610/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=qSg2VcYzUQwqUvF3Wx77Qik32zw%2FK2kPE6utdwexIEQ%3D",
     "is_on_sale": true,
-    "sale_count": 6056,
-    "rawg_id": 345
+    "sale_count": 6056
   },
   {
     "game_id": "app855640",
@@ -20811,8 +20665,7 @@
     "store_link": "https://store.steampowered.com/app/1140270/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=s8CtgKtWto0RAc7enh281G0ZL4HYvQeoZVe5%2BP0QXfw%3D",
     "is_on_sale": true,
-    "sale_count": 4348,
-    "rawg_id": 370143
+    "sale_count": 4348
   },
   {
     "game_id": "app418530",
@@ -20944,8 +20797,7 @@
     "store_link": "https://store.steampowered.com/app/1386900/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=b74%2BVmou61g6INnoKl2ijQrt%2BKrfvJ5MmseSsTl5iCY%3D",
     "is_on_sale": true,
-    "sale_count": 1133,
-    "rawg_id": 442839
+    "sale_count": 1133
   },
   {
     "game_id": "app208750",
@@ -20989,8 +20841,7 @@
     "store_link": "https://store.steampowered.com/app/1342620/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=aheRTsbeBRx9D9plbNe5zuORUPLzP0xMSIgpVsOzvow%3D",
     "is_on_sale": true,
-    "sale_count": 751,
-    "rawg_id": 484939
+    "sale_count": 751
   },
   {
     "game_id": "app420060",
@@ -21144,8 +20995,7 @@
     "store_link": "https://store.steampowered.com/app/594570/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=miIpqMWBfJkBtACsiOM8QaCmt8qFvxTBAn5IVlQnSk0%3D",
     "is_on_sale": true,
-    "sale_count": 50597,
-    "rawg_id": 9981
+    "sale_count": 50597
   },
   {
     "game_id": "app200910",
@@ -21475,8 +21325,7 @@
     "store_link": "https://store.steampowered.com/app/1805480/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=tZxQOXKST4tm7C%2F%2B6kDu0KVfEbZ4cXTRE1kujLlx4oc%3D",
     "is_on_sale": true,
-    "sale_count": 2446,
-    "rawg_id": 850698
+    "sale_count": 2446
   },
   {
     "game_id": "app357720",
@@ -21520,8 +21369,7 @@
     "store_link": "https://store.steampowered.com/app/238320/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=XU5v9Dm9E%2B2UM4UtgeQArX%2BUP%2BKmmgBXhqN81c2O9JU%3D",
     "is_on_sale": true,
-    "sale_count": 26979,
-    "rawg_id": 3790
+    "sale_count": 26979
   },
   {
     "game_id": "app344740",
@@ -21565,8 +21413,7 @@
     "store_link": "https://store.steampowered.com/app/323850/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=k2fktiodN3Tt3NpKUgTrxd4AfBTyp%2F4FpA7rvGLZqes%3D",
     "is_on_sale": true,
-    "sale_count": 3264,
-    "rawg_id": 11972
+    "sale_count": 3264
   },
   {
     "game_id": "app861540",
@@ -21610,8 +21457,7 @@
     "store_link": "https://store.steampowered.com/app/275390/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=cGz5CbKFO5Lm2Vy%2Bu7r62%2FXEihHmMQ5we0%2BZ4nJ06gE%3D",
     "is_on_sale": true,
-    "sale_count": 1256,
-    "rawg_id": 17875
+    "sale_count": 1256
   },
   {
     "game_id": "app1347970",
@@ -21677,8 +21523,7 @@
     "store_link": "https://store.steampowered.com/app/2591280/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=oG0IUSIBe%2FxlNZTJb%2BYBaP24w4VDGBt2Qf9L8tBy9vc%3D",
     "is_on_sale": true,
-    "sale_count": 1972,
-    "rawg_id": 982815
+    "sale_count": 1972
   },
   {
     "game_id": "app24400",
@@ -21832,8 +21677,7 @@
     "store_link": "https://store.steampowered.com/app/2134770/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=5CePKLqRa8ppjpWzfCM%2BLr27py5JqL3UjGIBg9BNoPQ%3D",
     "is_on_sale": true,
-    "sale_count": 1680,
-    "rawg_id": 914788
+    "sale_count": 1680
   },
   {
     "game_id": "app1029690",
@@ -21921,8 +21765,7 @@
     "store_link": "https://store.steampowered.com/app/323190/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yiJ%2B%2BQm1oghJrTjJJ7BUKdpTlOrbBKCkOYw67UHarPE%3D",
     "is_on_sale": true,
-    "sale_count": 37329,
-    "rawg_id": 45821
+    "sale_count": 37329
   },
   {
     "game_id": "app1449320",
@@ -21966,8 +21809,7 @@
     "store_link": "https://store.steampowered.com/app/2060130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9XekVWkYiWPdXyjT3zGBbpZF3Kj9JaX7nhQ3dG1zLuU%3D",
     "is_on_sale": true,
-    "sale_count": 4777,
-    "rawg_id": 762618
+    "sale_count": 4777
   },
   {
     "game_id": "app12140",
@@ -22011,8 +21853,7 @@
     "store_link": "https://store.steampowered.com/app/541300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=v%2B33yC4WFTicBA5UNJ0Nu%2BW%2F3g3XhrMzgKIwV24CAfQ%3D",
     "is_on_sale": true,
-    "sale_count": 1864,
-    "rawg_id": 23723
+    "sale_count": 1864
   },
   {
     "game_id": "app3260",
@@ -22496,8 +22337,7 @@
     "store_link": "https://store.steampowered.com/app/881320/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=WFYAfB6%2FafDrXvnIRk%2Bbuz41oFxk86ScrG6JhIvzc2Q%3D",
     "is_on_sale": true,
-    "sale_count": 1013,
-    "rawg_id": 269475
+    "sale_count": 1013
   },
   {
     "game_id": "app282070",
@@ -22519,8 +22359,7 @@
     "store_link": "https://store.steampowered.com/app/282070/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9SmMh7Ht%2FEZvHMlMgrqRnQeGZCeIgThhOqSBjK0J6Xs%3D",
     "is_on_sale": true,
-    "sale_count": 22654,
-    "rawg_id": 1090
+    "sale_count": 22654
   },
   {
     "game_id": "app301970",
@@ -22630,8 +22469,7 @@
     "store_link": "https://store.steampowered.com/app/352400/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=zHymqG9Yrqur8McH2Up9mbk588e83IGr7IHSXTRLmSg%3D",
     "is_on_sale": true,
-    "sale_count": 3287,
-    "rawg_id": 3294
+    "sale_count": 3287
   },
   {
     "game_id": "app438640",
@@ -22653,8 +22491,7 @@
     "store_link": "https://store.steampowered.com/app/438640/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=o4XTd5OgrNEDLtQT7ydA2JD6ivEU3qnsMRBhbvSwWtQ%3D",
     "is_on_sale": true,
-    "sale_count": 2059,
-    "rawg_id": 1935
+    "sale_count": 2059
   },
   {
     "game_id": "app718590",
@@ -22918,8 +22755,7 @@
     "store_link": "https://store.steampowered.com/app/1726120/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=QQJrXHufPXLRMgk5FTOzkyIvHbqQz%2BRpsmgCHv6%2FR3o%3D",
     "is_on_sale": true,
-    "sale_count": 631,
-    "rawg_id": 470699
+    "sale_count": 631
   },
   {
     "game_id": "app321800",
@@ -23117,8 +22953,7 @@
     "store_link": "https://store.steampowered.com/app/1037130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=4zqOnt1tYjF3VCJ%2BIoK5sFdLe6LsAGSGSgyw8f%2B59oM%3D",
     "is_on_sale": true,
-    "sale_count": 1031,
-    "rawg_id": 302916
+    "sale_count": 1031
   },
   {
     "game_id": "app1608230",
@@ -23140,8 +22975,7 @@
     "store_link": "https://store.steampowered.com/app/1608230/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=jUbesfVFihhRZSSYuECDFLjyXWxkUNaAsBfU60K9mvA%3D",
     "is_on_sale": true,
-    "sale_count": 2947,
-    "rawg_id": 614961
+    "sale_count": 2947
   },
   {
     "game_id": "app1889740",
@@ -23603,8 +23437,7 @@
     "store_link": "https://store.steampowered.com/app/298630/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=EW6V%2BHdf2sNn%2FZAeJyIKsYQQ1eefiBNp%2BoQtsCpe%2Fbk%3D",
     "is_on_sale": true,
-    "sale_count": 9318,
-    "rawg_id": 3307
+    "sale_count": 9318
   },
   {
     "game_id": "app364360",
@@ -23626,8 +23459,7 @@
     "store_link": "https://store.steampowered.com/app/364360/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=htmElkGELrefyFnGtAh4pe%2Bjz0yGP089QUH5%2BUU3jYI%3D",
     "is_on_sale": true,
-    "sale_count": 18084,
-    "rawg_id": 9845
+    "sale_count": 18084
   },
   {
     "game_id": "app1142710",
@@ -23649,8 +23481,7 @@
     "store_link": "https://store.steampowered.com/app/1142710/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=z933V0e72mT%2BSu66Mql25DCUsCqnlmsnJLFole9koG0%3D",
     "is_on_sale": true,
-    "sale_count": 51102,
-    "rawg_id": 552923
+    "sale_count": 51102
   },
   {
     "game_id": "app80",
@@ -23694,8 +23525,7 @@
     "store_link": "https://store.steampowered.com/app/64000/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2Bsmwra9kpQRFsYafuAE6kr0KQhweQpU9QZp1HBmUf94%3D",
     "is_on_sale": true,
-    "sale_count": 1879,
-    "rawg_id": 18304
+    "sale_count": 1879
   },
   {
     "game_id": "app338390",
@@ -23761,8 +23591,7 @@
     "store_link": "https://store.steampowered.com/app/692850/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=vT2zf7rPAZkwN5uIHmwxORKf%2FtKN%2F4D5m%2BIcS8ubpQc%3D",
     "is_on_sale": true,
-    "sale_count": 10811,
-    "rawg_id": 61176
+    "sale_count": 10811
   },
   {
     "game_id": "app361300",
@@ -23894,8 +23723,7 @@
     "store_link": "https://store.steampowered.com/app/960980/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Ofzj7nc7B60IRLJA4ouyGCi0zb6bohNpMviqNJhQvKY%3D",
     "is_on_sale": true,
-    "sale_count": 1462,
-    "rawg_id": 254652
+    "sale_count": 1462
   },
   {
     "game_id": "app1097110",
@@ -24071,8 +23899,7 @@
     "store_link": "https://store.steampowered.com/app/375530/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=9wufB0e0aXd1c7cvuvh4jsC%2BzhvMSUpc%2Bf5HvCLd7g8%3D",
     "is_on_sale": true,
-    "sale_count": 1414,
-    "rawg_id": 261218
+    "sale_count": 1414
   },
   {
     "game_id": "app888530",
@@ -24116,8 +23943,7 @@
     "store_link": "https://store.steampowered.com/app/865610/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=C6w7ZWHaJO%2FnVCWBZ65sE4%2BDoJm7uVYISiPZWFULwbw%3D",
     "is_on_sale": true,
-    "sale_count": 1400,
-    "rawg_id": 63845
+    "sale_count": 1400
   },
   {
     "game_id": "app666140",
@@ -24271,8 +24097,7 @@
     "store_link": "https://store.steampowered.com/app/1221250/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=%2FOnlgOk4ttBgHhFLxCUQwb7NiR9LME2SB2wrn8fgMa0%3D",
     "is_on_sale": true,
-    "sale_count": 1602,
-    "rawg_id": 573277
+    "sale_count": 1602
   },
   {
     "game_id": "app361550",
@@ -24514,8 +24339,7 @@
     "store_link": "https://store.steampowered.com/app/227300/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=TLpta9VHJ1Snwyv0sFEYrsDMKXgkO5kW1nMfeNJc7YQ%3D",
     "is_on_sale": true,
-    "sale_count": 134755,
-    "rawg_id": 9609
+    "sale_count": 134755
   },
   {
     "game_id": "app1000030",
@@ -24559,8 +24383,7 @@
     "store_link": "https://store.steampowered.com/app/1114290/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=4PSK7yidEo6eGc0YVaRVj%2B%2BaPWaoMyX9l5OdRcPbL1w%3D",
     "is_on_sale": true,
-    "sale_count": 523,
-    "rawg_id": 302303
+    "sale_count": 523
   },
   {
     "game_id": "app1812090",
@@ -24582,8 +24405,7 @@
     "store_link": "https://store.steampowered.com/app/1812090/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=RzD8sHT7%2FcSsmAi%2BerKnf%2Bpy%2FwCfq20ZxuDUR7W%2BoHw%3D",
     "is_on_sale": true,
-    "sale_count": 928,
-    "rawg_id": 795370
+    "sale_count": 928
   },
   {
     "game_id": "app270150",
@@ -24825,8 +24647,7 @@
     "store_link": "https://store.steampowered.com/app/673130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Y%2B9AXULeR%2F%2Bd4gC%2BeQ5yF66yRoOfnvitXYv%2FPoRvz80%3D",
     "is_on_sale": true,
-    "sale_count": 5291,
-    "rawg_id": 49268
+    "sale_count": 5291
   },
   {
     "game_id": "app1436590",
@@ -24892,8 +24713,7 @@
     "store_link": "https://store.steampowered.com/app/407130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=vhInsG6UBn2Qk4EHZ7ufiQPdKC8oU7ticPfRN3YjLJ0%3D",
     "is_on_sale": true,
-    "sale_count": 3226,
-    "rawg_id": 605688
+    "sale_count": 3226
   },
   {
     "game_id": "app826940",
@@ -25157,8 +24977,7 @@
     "store_link": "https://store.steampowered.com/app/311690/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Img7C5JTDs1mI%2Fja3%2BCBCBbNmSfEzctILpseooGwwPs%3D",
     "is_on_sale": true,
-    "sale_count": 38240,
-    "rawg_id": 2574
+    "sale_count": 38240
   },
   {
     "game_id": "app275100",
@@ -25356,8 +25175,7 @@
     "store_link": "https://store.steampowered.com/app/774361/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ZSLJFGK%2FaxD5j5hNK7BA0qH9XeE1LPRUJ2TshhWAtxg%3D",
     "is_on_sale": true,
-    "sale_count": 17306,
-    "rawg_id": 258322
+    "sale_count": 17306
   },
   {
     "game_id": "app1115780",
@@ -25445,8 +25263,7 @@
     "store_link": "https://store.steampowered.com/app/203750/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PIpCbYZfC3yBfIxe5%2BV8zL6PHE1sL5o%2B%2FsDo8kK%2BKuM%3D",
     "is_on_sale": true,
-    "sale_count": 1765,
-    "rawg_id": 3965
+    "sale_count": 1765
   },
   {
     "game_id": "app503560",
@@ -25578,8 +25395,7 @@
     "store_link": "https://store.steampowered.com/app/905340/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=6lFvJaZmIIfglNKqpIRpYG0lvqoOstAdVNEcsB2wPIs%3D",
     "is_on_sale": true,
-    "sale_count": 1922,
-    "rawg_id": 311644
+    "sale_count": 1922
   },
   {
     "game_id": "app555220",
@@ -25623,8 +25439,7 @@
     "store_link": "https://store.steampowered.com/app/6310/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=yELAoqHdKcSkkNd2g4w%2FzxvFl%2BjuMP0NGwMG9sdUp7s%3D",
     "is_on_sale": true,
-    "sale_count": 1798,
-    "rawg_id": 16159
+    "sale_count": 1798
   },
   {
     "game_id": "app3270",
@@ -25866,8 +25681,7 @@
     "store_link": "https://store.steampowered.com/app/906100/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=iO4ThX8tRlENQ41q95sJzB%2FtjXPIS4P%2BFh5lVcru4HM%3D",
     "is_on_sale": true,
-    "sale_count": 2432,
-    "rawg_id": 251596
+    "sale_count": 2432
   },
   {
     "game_id": "app3170",
@@ -25889,8 +25703,7 @@
     "store_link": "https://store.steampowered.com/app/3170/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=a7aai9%2FkT8VYhuY5i9Q7sehnKeC4HAxuUGmyPPXdWyw%3D",
     "is_on_sale": true,
-    "sale_count": 1043,
-    "rawg_id": 17698
+    "sale_count": 1043
   },
   {
     "game_id": "app48700",
@@ -25978,8 +25791,7 @@
     "store_link": "https://store.steampowered.com/app/1042490/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=C6OV3lUKvp%2FE621rCizDq4Yyi7Ma%2FQoKi6fb2D9ndBM%3D",
     "is_on_sale": true,
-    "sale_count": 2189,
-    "rawg_id": 440083
+    "sale_count": 2189
   },
   {
     "game_id": "app729000",
@@ -26133,8 +25945,7 @@
     "store_link": "https://store.steampowered.com/app/1190000/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=rLxocr8d206N7cPj%2BgWmjQmyizNP1L6D4OsTNOA5ZMo%3D",
     "is_on_sale": true,
-    "sale_count": 15160,
-    "rawg_id": 647625
+    "sale_count": 15160
   },
   {
     "game_id": "app1558930",
@@ -26376,8 +26187,7 @@
     "store_link": "https://store.steampowered.com/app/91200/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=XOYard89AJhM%2BioC7Cc50MyY9xVZtCIttfcZaNymw38%3D",
     "is_on_sale": true,
-    "sale_count": 988,
-    "rawg_id": 18287
+    "sale_count": 988
   },
   {
     "game_id": "app6980",
@@ -26443,8 +26253,7 @@
     "store_link": "https://store.steampowered.com/app/519860/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=pwf3buR9SizaTjqUwcJf0YYtvA%2F%2F4toTe4g7kWJVTsg%3D",
     "is_on_sale": true,
-    "sale_count": 16468,
-    "rawg_id": 16999
+    "sale_count": 16468
   },
   {
     "game_id": "app874040",
@@ -26598,8 +26407,7 @@
     "store_link": "https://store.steampowered.com/app/269330/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=R8hq%2Bve1tvsUUQ%2FX3Ih1Vvs4xj%2FdIf2PsmXRP3TFdII%3D",
     "is_on_sale": true,
-    "sale_count": 508,
-    "rawg_id": 17528
+    "sale_count": 508
   },
   {
     "game_id": "app897820",
@@ -26643,8 +26451,7 @@
     "store_link": "https://store.steampowered.com/app/267530/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=UQt11HAN0I3rqMVuWjeBlEp%2B%2FMRVQevsyMc1at5RcvM%3D",
     "is_on_sale": true,
-    "sale_count": 1746,
-    "rawg_id": 17543
+    "sale_count": 1746
   },
   {
     "game_id": "app1077970",
@@ -26688,8 +26495,7 @@
     "store_link": "https://store.steampowered.com/app/285160/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=8vsyRH0aP8EWJ75ZyYz%2BMVaCbvBIzItCAGxFpa8Dy9I%3D",
     "is_on_sale": true,
-    "sale_count": 2117,
-    "rawg_id": 3729
+    "sale_count": 2117
   },
   {
     "game_id": "app25980",
@@ -27173,8 +26979,7 @@
     "store_link": "https://store.steampowered.com/app/247080/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=5Aiw0UGtePMGhVWUzvhkvd8VLBIn9OJEJ3%2BD4SSwr0k%3D",
     "is_on_sale": true,
-    "sale_count": 12371,
-    "rawg_id": 2845
+    "sale_count": 12371
   },
   {
     "game_id": "app2187290",
@@ -27284,8 +27089,7 @@
     "store_link": "https://store.steampowered.com/app/681280/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=xbki%2FKMsK1OSUI%2BkpNwmSojIMwpB9YSB89ExWR91jLM%3D",
     "is_on_sale": true,
-    "sale_count": 10100,
-    "rawg_id": 44996
+    "sale_count": 10100
   },
   {
     "game_id": "app96000",
@@ -27483,8 +27287,7 @@
     "store_link": "https://store.steampowered.com/app/274290/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=X23q0dy3wdYIAH%2FljAkI61EB5BxovRjHB7W4ZhYGYHQ%3D",
     "is_on_sale": true,
-    "sale_count": 1441,
-    "rawg_id": 7442
+    "sale_count": 1441
   },
   {
     "game_id": "app356570",
@@ -27660,8 +27463,7 @@
     "store_link": "https://store.steampowered.com/app/1092660/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=7v3KV3wACdngKBc44S%2BDI%2BZv%2FqIs9aXpVm5KOeg47ck%3D",
     "is_on_sale": true,
-    "sale_count": 2843,
-    "rawg_id": 326235
+    "sale_count": 2843
   },
   {
     "game_id": "app1549970",
@@ -27727,8 +27529,7 @@
     "store_link": "https://store.steampowered.com/app/7830/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=hUfWPdqcmOHr6pQgdd%2BWHe3Z2dm299B3rSo48%2Bo06jQ%3D",
     "is_on_sale": true,
-    "sale_count": 1224,
-    "rawg_id": 19509
+    "sale_count": 1224
   },
   {
     "game_id": "app42910",
@@ -27772,8 +27573,7 @@
     "store_link": "https://store.steampowered.com/app/211260/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=p5tIl3HXCoxlIJBkcaA4GANJ5CGfphgztqphwIOkkOY%3D",
     "is_on_sale": true,
-    "sale_count": 1366,
-    "rawg_id": 13339
+    "sale_count": 1366
   },
   {
     "game_id": "app742520",
@@ -27883,8 +27683,7 @@
     "store_link": "https://store.steampowered.com/app/15320/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=NqoDxWU%2FzhJvkZPL8d6TtP6RESLkJtylo%2Btc307TbJM%3D",
     "is_on_sale": true,
-    "sale_count": 1615,
-    "rawg_id": 19046
+    "sale_count": 1615
   },
   {
     "game_id": "app446020",
@@ -28016,8 +27815,7 @@
     "store_link": "https://store.steampowered.com/app/2157560/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=TDVyWFkEenN7mC9QkcwMyFmT6BGtmBkaweIy%2F8n%2B014%3D",
     "is_on_sale": true,
-    "sale_count": 3492,
-    "rawg_id": 964509
+    "sale_count": 3492
   },
   {
     "game_id": "app1338770",
@@ -28105,8 +27903,7 @@
     "store_link": "https://store.steampowered.com/app/251130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=CwuYVuy5TV7ejZH719dSTi9%2F85519O0FkOvjwc9Qu68%3D",
     "is_on_sale": true,
-    "sale_count": 1439,
-    "rawg_id": 17093
+    "sale_count": 1439
   },
   {
     "game_id": "app348550",
@@ -28238,8 +28035,7 @@
     "store_link": "https://store.steampowered.com/app/1796220/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=AII3PPe3XPdbnAtqXp59ZUSghb2%2BGTE0fUjzcC2linQ%3D",
     "is_on_sale": true,
-    "sale_count": 2908,
-    "rawg_id": 962145
+    "sale_count": 2908
   },
   {
     "game_id": "app307580",
@@ -28547,8 +28343,7 @@
     "store_link": "https://store.steampowered.com/app/270880/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Wj7DO8tOZbcd373mDMGvIMgtCL5MqfFz%2BhCFL5%2FGq4o%3D",
     "is_on_sale": true,
-    "sale_count": 87957,
-    "rawg_id": 10758
+    "sale_count": 87957
   },
   {
     "game_id": "app417880",
@@ -28856,8 +28651,7 @@
     "store_link": "https://store.steampowered.com/app/474210/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=pWwMnAIOWY02%2BwXfmFQ8AYU1PrTR12uXzzecQL0kgR0%3D",
     "is_on_sale": true,
-    "sale_count": 982,
-    "rawg_id": 10387
+    "sale_count": 982
   },
   {
     "game_id": "app302080",
@@ -28879,8 +28673,7 @@
     "store_link": "https://store.steampowered.com/app/302080/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=okzEr6Gvfbuf9fLIGQaEp%2Feoz2%2FJsodmFxvvcX6G6%2Bw%3D",
     "is_on_sale": true,
-    "sale_count": 1891,
-    "rawg_id": 19316
+    "sale_count": 1891
   },
   {
     "game_id": "app463270",
@@ -28990,8 +28783,7 @@
     "store_link": "https://store.steampowered.com/app/1173200/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Mwl4eQP8NsREvjJZvJLbtN8l6Fy4Co3l7zmUVAx9AKo%3D",
     "is_on_sale": true,
-    "sale_count": 2000,
-    "rawg_id": 384557
+    "sale_count": 2000
   },
   {
     "game_id": "app1011670",
@@ -29189,8 +28981,7 @@
     "store_link": "https://store.steampowered.com/app/699170/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=7CGhpKOGh2iarxBhxvp%2BKeILgwHQNu05RafNX6DF3s8%3D",
     "is_on_sale": true,
-    "sale_count": 3346,
-    "rawg_id": 46080
+    "sale_count": 3346
   },
   {
     "game_id": "app405820",
@@ -29410,8 +29201,7 @@
     "store_link": "https://store.steampowered.com/app/297920/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=TI7k2KXJnccSJaDWt1xNmZO5QihJb3%2FlHUtf%2BQiCifU%3D",
     "is_on_sale": true,
-    "sale_count": 543,
-    "rawg_id": 13870
+    "sale_count": 543
   },
   {
     "game_id": "app890720",
@@ -29565,8 +29355,7 @@
     "store_link": "https://store.steampowered.com/app/414700/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ikJ0fNgTScGaOALMxlzGmfB%2FsqzT0cW69YCcz9ddnPU%3D",
     "is_on_sale": true,
-    "sale_count": 10135,
-    "rawg_id": 9835
+    "sale_count": 10135
   },
   {
     "game_id": "app573410",
@@ -29698,8 +29487,7 @@
     "store_link": "https://store.steampowered.com/app/1033950/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=bSrjUJlPHBkh4aRoWUc490%2B%2BCEpb2PU3PYVsqLsYeAU%3D",
     "is_on_sale": true,
-    "sale_count": 631,
-    "rawg_id": 295118
+    "sale_count": 631
   },
   {
     "game_id": "app130",
@@ -30007,8 +29795,7 @@
     "store_link": "https://store.steampowered.com/app/325610/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=8BC8ql9fxZ8YcThrJ44JADmIMzLGaPauajax58AJGVo%3D",
     "is_on_sale": true,
-    "sale_count": 12917,
-    "rawg_id": 13468
+    "sale_count": 12917
   },
   {
     "game_id": "app25900",
@@ -30030,8 +29817,7 @@
     "store_link": "https://store.steampowered.com/app/25900/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=3SptId9EJcJrZ81tHPjT9w1boLX6rf1Le%2BxCVdP2jjM%3D",
     "is_on_sale": true,
-    "sale_count": 915,
-    "rawg_id": 12022
+    "sale_count": 915
   },
   {
     "game_id": "app585450",
@@ -30075,8 +29861,7 @@
     "store_link": "https://store.steampowered.com/app/1096530/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=U4D73wXb5rw%2BZvwl9YklR6%2F8F4h%2ByEs3SeUWLre5XQ8%3D",
     "is_on_sale": true,
-    "sale_count": 12988,
-    "rawg_id": 350126
+    "sale_count": 12988
   },
   {
     "game_id": "app1522820",
@@ -30230,8 +30015,7 @@
     "store_link": "https://store.steampowered.com/app/405310/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=4gQ04axPjZ5FS9JzHkn4d3w6pmL9381%2Bbr6gs2b0C4k%3D",
     "is_on_sale": true,
-    "sale_count": 1938,
-    "rawg_id": 2866
+    "sale_count": 1938
   },
   {
     "game_id": "app300060",
@@ -30627,8 +30411,7 @@
     "store_link": "https://store.steampowered.com/app/691280/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=JCcOlzd3IYnNCaFAPmtNRkrM0COR7gOg4RTAHfkuHCM%3D",
     "is_on_sale": true,
-    "sale_count": 810,
-    "rawg_id": 46181
+    "sale_count": 810
   },
   {
     "game_id": "app251830",
@@ -31134,8 +30917,7 @@
     "store_link": "https://store.steampowered.com/app/939100/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=RrsaMff7t2BxawXu7uEHQBANI5Vf%2FzEEWn4osxLFGMw%3D",
     "is_on_sale": true,
-    "sale_count": 1645,
-    "rawg_id": 275703
+    "sale_count": 1645
   },
   {
     "game_id": "app429570",
@@ -31399,8 +31181,7 @@
     "store_link": "https://store.steampowered.com/app/1622910/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=P%2BBenX75yDROuS6639m%2BTid1qEZ9NUioQGVstCjqt%2BE%3D",
     "is_on_sale": true,
-    "sale_count": 5488,
-    "rawg_id": 982603
+    "sale_count": 5488
   },
   {
     "game_id": "app468490",
@@ -31686,8 +31467,7 @@
     "store_link": "https://store.steampowered.com/app/1661630/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=o84%2FjWAJitEJF31r0w96K%2FMpYbsc%2BIYQylhD1qdwoHA%3D",
     "is_on_sale": true,
-    "sale_count": 928,
-    "rawg_id": 972266
+    "sale_count": 928
   },
   {
     "game_id": "app281990",
@@ -31907,8 +31687,7 @@
     "store_link": "https://store.steampowered.com/app/1552810/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=ZgpOGECKtFt9XiJNHFpbegLzmHApupKpjQzPfDTthD0%3D",
     "is_on_sale": true,
-    "sale_count": 826,
-    "rawg_id": 58725
+    "sale_count": 826
   },
   {
     "game_id": "app571880",
@@ -32128,8 +31907,7 @@
     "store_link": "https://store.steampowered.com/app/308040/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=t6GNusrN7mZ5CSyIryWcdhe%2BBA9U4uX9NAqm%2FR7ge6o%3D",
     "is_on_sale": true,
-    "sale_count": 709,
-    "rawg_id": 7353
+    "sale_count": 709
   },
   {
     "game_id": "app322500",
@@ -32591,8 +32369,7 @@
     "store_link": "https://store.steampowered.com/app/3130/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Wk%2FU1Zg6TvuFO5c3ngdrUgSJnBhP8%2BuBFtJkcqAeWwg%3D",
     "is_on_sale": true,
-    "sale_count": 703,
-    "rawg_id": 19370
+    "sale_count": 703
   },
   {
     "game_id": "app73210",
@@ -32724,8 +32501,7 @@
     "store_link": "https://store.steampowered.com/app/2072450/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Y2p9e1B%2ByPF2duPi4yXypN7V%2FPAFX12MDn4b1CI%2F%2F7w%3D",
     "is_on_sale": true,
-    "sale_count": 6892,
-    "rawg_id": 962025
+    "sale_count": 6892
   },
   {
     "game_id": "app613100",
@@ -32791,8 +32567,7 @@
     "store_link": "https://store.steampowered.com/app/885970/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=m14rX4iFYjsUYSNkIqRgSiEs0lrM1kR5uwnLdt1dszo%3D",
     "is_on_sale": true,
-    "sale_count": 7719,
-    "rawg_id": 579517
+    "sale_count": 7719
   },
   {
     "game_id": "app1402110",
@@ -32814,8 +32589,7 @@
     "store_link": "https://store.steampowered.com/app/1402110/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=RsXg6hcufUBt09%2B3jRY2iEk%2FsFh3iJExUtrrsKytNtU%3D",
     "is_on_sale": true,
-    "sale_count": 1427,
-    "rawg_id": 795939
+    "sale_count": 1427
   },
   {
     "game_id": "app1333200",
@@ -32969,8 +32743,7 @@
     "store_link": "https://store.steampowered.com/app/7670/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=7OKT5vjgeNTOpZUf6NTct4pDEozvxfM3KwdevolT%2FCE%3D",
     "is_on_sale": true,
-    "sale_count": 12478,
-    "rawg_id": 4286
+    "sale_count": 12478
   },
   {
     "game_id": "app1158370",
@@ -33014,8 +32787,7 @@
     "store_link": "https://store.steampowered.com/app/1011190/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=nlkLUXzt81nbAZezqThTpf8RXzWoFok3hsJdbPS7Ixk%3D",
     "is_on_sale": true,
-    "sale_count": 1328,
-    "rawg_id": 370222
+    "sale_count": 1328
   },
   {
     "game_id": "app632360",
@@ -33169,8 +32941,7 @@
     "store_link": "https://store.steampowered.com/app/686810/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=z6RicPJYbcZehMpZZwSM1LvOC%2F9%2FnU3be25ErnYVKCo%3D",
     "is_on_sale": true,
-    "sale_count": 59858,
-    "rawg_id": 270653
+    "sale_count": 59858
   },
   {
     "game_id": "app63910",
@@ -33192,8 +32963,7 @@
     "store_link": "https://store.steampowered.com/app/63910/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=PkvSLQvZaVaUnoA1qXw4aoHmPJds90mk2P8hc8EG9oo%3D",
     "is_on_sale": true,
-    "sale_count": 1246,
-    "rawg_id": 12032
+    "sale_count": 1246
   },
   {
     "game_id": "app396350",
@@ -33325,8 +33095,7 @@
     "store_link": "https://store.steampowered.com/app/63940/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=Hwx1n2QcRLzh9s3L%2BMKNZgCN4J9uJbUD4bZAiqW2eiQ%3D",
     "is_on_sale": true,
-    "sale_count": 1079,
-    "rawg_id": 17863
+    "sale_count": 1079
   },
   {
     "game_id": "app287390",
@@ -33348,8 +33117,7 @@
     "store_link": "https://store.steampowered.com/app/287390/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=XhuIoeWVY29a9sUD6GO1N8Imy7c6MN06GhWf5F293oE%3D",
     "is_on_sale": true,
-    "sale_count": 18732,
-    "rawg_id": 3604
+    "sale_count": 18732
   },
   {
     "game_id": "app1250",
@@ -33371,8 +33139,7 @@
     "store_link": "https://store.steampowered.com/app/1250/",
     "cheapshark_url": "https://www.cheapshark.com/redirect?dealID=QG4u%2BE3Zcsd4vcDGgeBNuvhmRpUD%2BMNRLPr0sFh6EPU%3D",
     "is_on_sale": true,
-    "sale_count": 21458,
-    "rawg_id": 17352
+    "sale_count": 21458
   },
   {
     "game_id": "app47790",

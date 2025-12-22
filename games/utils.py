@@ -368,6 +368,11 @@ def update_game_with_rawg(game, force_refresh=False):
     
     if trailer_count > 0:
         logger.info(f"Added {trailer_count} new trailers for '{game.title}'")
+    
+    # RAWG에 트레일러가 없으면 Steam API로 fallback
+    if trailer_count == 0 and game.steam_appid:
+        logger.info(f"RAWG has no trailers for '{game.title}'. Trying Steam...")
+        fetch_steam_trailers(game)
 
     logger.info(f"Successfully updated RAWG data for '{game.title}'")
     return True
@@ -958,3 +963,73 @@ def get_upcoming_games(page_size=20):
     except requests.RequestException as e:
         logger.error(f"Error fetching upcoming games: {e}")
         return []
+
+
+# ============================================================================
+# G. Steam API (RAWG 대체용)
+# ============================================================================
+
+def fetch_steam_trailers(game):
+    """
+    Steam Store API를 통해 트레일러 정보를 가져와 저장 (RAWG 대체용)
+    
+    Args:
+        game: Game 모델 인스턴스
+        
+    Returns:
+        bool: 성공 여부
+    """
+    if not game.steam_appid:
+        return False
+
+    try:
+        # Steam Store API (공개)
+        url = f"https://store.steampowered.com/api/appdetails?appids={game.steam_appid}"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code != 200:
+            return False
+            
+        data = response.json()
+        
+        # success가 false거나 데이터가 없으면 실패
+        app_id_str = str(game.steam_appid)
+        if not data or app_id_str not in data or not data[app_id_str].get('success'):
+            return False
+            
+        app_data = data[app_id_str]['data']
+        movies = app_data.get('movies', [])
+        
+        if not movies:
+            return False
+            
+        # 기존 트레일러 삭제 (중복 방지)
+        GameTrailer.objects.filter(game=game).delete()
+        
+        count = 0
+        for movie in movies:
+            # mp4 포맷 사용
+            mp4_data = movie.get('mp4', {})
+            
+            # max 화질 또는 480p 화질 가져오기
+            url_max = mp4_data.get('max', '')
+            url_480 = mp4_data.get('480', '')
+            
+            if url_max or url_480:
+                GameTrailer.objects.create(
+                    game=game,
+                    name=movie.get('name', 'Steam Trailer'),
+                    preview_url=movie.get('thumbnail', ''),
+                    data_480=url_480,
+                    data_max=url_max
+                )
+                count += 1
+                
+        if count > 0:
+            logger.info(f"🎥 {game.title}: Steam에서 트레일러 {count}개 가져옴")
+            return True
+            
+    except Exception as e:
+        logger.error(f"Error fetching Steam trailers for {game.title}: {e}")
+        
+    return False

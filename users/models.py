@@ -109,6 +109,7 @@ class GameRating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='game_ratings')
     game = models.ForeignKey('games.Game', on_delete=models.CASCADE, related_name='user_ratings')
     score = models.FloatField("평점", choices=RATING_CHOICES)
+    comment = models.TextField("코멘트", blank=True, help_text='선택적 한줄평')
     
     # 평가 소스 (온보딩 vs 일반)
     is_onboarding = models.BooleanField("온보딩 평가 여부", default=False)

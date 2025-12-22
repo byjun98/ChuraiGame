@@ -1,88 +1,87 @@
 <!-- PAGE 1: Authentication (Login & Signup) -->
-<transition name="fade" mode="out-in">
-    <div v-if="currentStep === 'auth'" key="auth"
-        class="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
-        <div class="w-full max-w-md space-y-8">
+<div v-if="currentStep === 'auth'" key="auth"
+    class="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
+    <div class="w-full max-w-md space-y-8">
 
-            <!-- Logo Area -->
-            <div class="text-center space-y-2">
-                <div class="inline-flex p-4 bg-blue-50 rounded-3xl mb-4">
-                    <i class="ph-fill ph-game-controller text-4xl text-blue-600"></i>
-                </div>
-                <h2 class="text-3xl font-bold text-[#191F28]">
-                    {% verbatim %}{{ isLoginMode ? '다시 만나서 반가워요' : '게이머를 위한 첫 걸음' }}{% endverbatim %}
-                </h2>
-                <p class="text-[#8B95A1]">
-                    {% verbatim %}{{ isLoginMode ? '나만의 게임 취향을 찾아보세요.' : '3초만에 가입하고 추천을 받아보세요.' }}{% endverbatim %}
-                </p>
+        <!-- Logo Area -->
+        <div class="text-center space-y-2">
+            <div class="inline-flex p-4 bg-blue-50 rounded-3xl mb-4">
+                <i class="ph-fill ph-game-controller text-4xl text-blue-600"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-[#191F28]">
+                {% verbatim %}{{ isLoginMode ? '다시 만나서 반가워요' : '게이머를 위한 첫 걸음' }}{% endverbatim %}
+            </h2>
+            <p class="text-[#8B95A1]">
+                {% verbatim %}{{ isLoginMode ? '나만의 게임 취향을 찾아보세요.' : '3초만에 가입하고 추천을 받아보세요.' }}{% endverbatim %}
+            </p>
+        </div>
+
+        <!-- Form Area -->
+        <div class="space-y-4">
+            <!-- Name Input (Signup Only) -->
+            <div v-if="!isLoginMode" class="input-group">
+                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">닉네임</label>
+                <input type="text" v-model="authForm.nickname" placeholder="게임매니아"
+                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
             </div>
 
-            <!-- Form Area -->
-            <div class="space-y-4">
-                <!-- Name Input (Signup Only) -->
-                <div v-if="!isLoginMode" class="input-group">
-                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">닉네임</label>
-                    <input type="text" v-model="authForm.nickname" placeholder="게임매니아"
-                        class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
-                </div>
+            <!-- Email Input -->
+            <div class="input-group">
+                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">이메일</label>
+                <input type="email" v-model="authForm.email" placeholder="example@email.com"
+                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
+            </div>
 
-                <!-- Email Input -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">이메일</label>
-                    <input type="email" v-model="authForm.email" placeholder="example@email.com"
-                        class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
-                </div>
+            <!-- Password Input -->
+            <div class="input-group">
+                <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">비밀번호</label>
+                <input type="password" v-model="authForm.password" placeholder="비밀번호 입력"
+                    class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
+            </div>
 
-                <!-- Password Input -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">비밀번호</label>
-                    <input type="password" v-model="authForm.password" placeholder="비밀번호 입력"
-                        class="w-full px-4 py-3 bg-[#F9FAFB] border border-transparent rounded-xl focus:bg-white focus:outline-none transition-colors text-[#191F28]">
-                </div>
+            <!-- Action Button -->
+            <button @click="handleAuthAction"
+                class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-[0.98] transition-all">
+                {% verbatim %}{{ isLoginMode ? '로그인' : '동의하고 회원가입' }}{% endverbatim %}
+            </button>
+        </div>
 
-                <!-- Action Button -->
-                <button @click="handleAuthAction"
-                    class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 active:scale-[0.98] transition-all">
-                    {% verbatim %}{{ isLoginMode ? '로그인' : '동의하고 회원가입' }}{% endverbatim %}
+        <!-- Social Login -->
+        <div class="space-y-4">
+            <div class="flex items-center gap-4 py-2">
+                <div class="h-px bg-gray-200 flex-1"></div>
+                <span class="text-xs text-gray-400 font-medium">또는 소셜 계정으로 시작</span>
+                <div class="h-px bg-gray-200 flex-1"></div>
+            </div>
+            <div class="flex justify-center gap-4">
+                <!-- Naver -->
+                <button @click="socialLogin('Naver')"
+                    class="w-12 h-12 rounded-full bg-[#03C75A] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
+                    title="네이버 로그인">
+                    <span class="font-black text-xs">N</span>
                 </button>
-            </div>
-
-            <!-- Social Login -->
-            <div class="space-y-4">
-                <div class="flex items-center gap-4 py-2">
-                    <div class="h-px bg-gray-200 flex-1"></div>
-                    <span class="text-xs text-gray-400 font-medium">또는 소셜 계정으로 시작</span>
-                    <div class="h-px bg-gray-200 flex-1"></div>
-                </div>
-                <div class="flex justify-center gap-4">
-                    <!-- Naver -->
-                    <button @click="socialLogin('Naver')"
-                        class="w-12 h-12 rounded-full bg-[#03C75A] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
-                        title="네이버 로그인">
-                        <span class="font-black text-xs">N</span>
-                    </button>
-                    <!-- Google -->
-                    <button @click="socialLogin('Google')"
-                        class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
-                        title="구글 로그인">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
-                            class="w-5 h-5">
-                    </button>
-                    <!-- Steam -->
-                    <a href="{% url 'users:steam_login' %}"
-                        class="w-12 h-12 rounded-full bg-[#171A21] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
-                        title="스팀 로그인">
-                        <i class="ph-fill ph-steam-logo text-xl"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Toggle Mode -->
-            <div class="text-center">
-                <button @click="toggleAuthMode"
-                    class="text-sm text-gray-500 underline decoration-gray-300 hover:text-gray-800">
-                    {% verbatim %}{{ isLoginMode ? '아직 계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인' }}{% endverbatim %}
+                <!-- Google -->
+                <button @click="socialLogin('Google')"
+                    class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+                    title="구글 로그인">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                        class="w-5 h-5">
                 </button>
+                <!-- Steam -->
+                <a href="{% url 'users:steam_login' %}"
+                    class="w-12 h-12 rounded-full bg-[#171A21] text-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
+                    title="스팀 로그인">
+                    <i class="ph-fill ph-steam-logo text-xl"></i>
+                </a>
             </div>
         </div>
+
+        <!-- Toggle Mode -->
+        <div class="text-center">
+            <button @click="toggleAuthMode"
+                class="text-sm text-gray-500 underline decoration-gray-300 hover:text-gray-800">
+                {% verbatim %}{{ isLoginMode ? '아직 계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인' }}{% endverbatim %}
+            </button>
+        </div>
     </div>
+</div>

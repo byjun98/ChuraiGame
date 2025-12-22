@@ -81,13 +81,13 @@ class Command(BaseCommand):
                     'genre': 'Unknown',  # 나중에 RAWG에서 업데이트
                 }
                 
-                # Steam App ID를 rawg_id 필드에 저장 (고유 식별자로 사용)
+                # Steam App ID로 중복 체크 (rawg_id는 나중에 fetch_rawg_data로 업데이트)
                 try:
                     game, created = Game.objects.get_or_create(
-                        rawg_id=steam_id_int,
+                        steam_appid=steam_id_int,
                         defaults={
                             **game_data,
-                            'steam_appid': steam_id_int,  # Steam App ID도 저장
+                            # rawg_id는 null로 두고 나중에 RAWG API로 업데이트
                         }
                     )
                     

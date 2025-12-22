@@ -45,4 +45,19 @@ urlpatterns = [
     
     # Public User Profile API
     path('api/profile/<str:username>/', views.get_user_profile_api, name='get_user_profile'),
+    
+    # Google OAuth
+    path('google/login/', views.google_login, name='google_login'),
+    path('google/callback/', views.google_callback, name='google_callback'),
+    path('google/unlink/', views.google_unlink, name='google_unlink'),
+    
+    # Naver OAuth
+    path('naver/login/', views.naver_login, name='naver_login'),
+    path('naver/callback/', views.naver_callback, name='naver_callback'),
+    path('naver/unlink/', views.naver_unlink, name='naver_unlink'),
+    
+    # Genre Analysis & Steam-Style Recommendations
+    path('api/genre-analysis/', views.genre_analysis_api, name='genre_analysis'),
+    path('api/steam-recommendations/', views.steam_style_recommendations_api, name='steam_recommendations'),
 ]
+

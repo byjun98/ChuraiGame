@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404
-from .models import Game, Rating, CachedGameList
+from .models import Game, Rating, CachedGameList, SteamReview
+from users.models import GameRating  # 실제 유저 평가 데이터
 from .utils import (
     update_game_with_rawg, 
     search_games, 
@@ -47,19 +48,32 @@ def game_search_by_title(request):
     """
     title = request.GET.get('title', '').strip()
     steam_appid = request.GET.get('steam_appid', '')
+    rawg_id_param = request.GET.get('rawg_id', '')
+    
+    print(f"[DEBUG] game_search_by_title called: title='{title}', steam_appid={steam_appid}, rawg_id={rawg_id_param}")
     
     if not title:
+        print("[DEBUG] No title provided, redirecting to main")
         return redirect('users:main')
     
+    # rawg_id가 직접 제공된 경우 바로 상세페이지로
+    if rawg_id_param:
+        print(f"[DEBUG] rawg_id provided directly, redirecting to /games/{rawg_id_param}/")
+        return redirect('games:detail', game_id=str(rawg_id_param))
+    
     # RAWG에서 제목으로 검색
+    print(f"[DEBUG] Searching RAWG for: '{title}'")
     games = search_games(title, page_size=1)
+    print(f"[DEBUG] RAWG search result: {len(games) if games else 0} games found")
     
     if games:
         rawg_id = games[0].get('id')
+        print(f"[DEBUG] Found game! rawg_id={rawg_id}, redirecting to /games/{rawg_id}/")
         # 상세페이지로 리다이렉트 (game_detail에서 자동 생성됨)
         return redirect('games:detail', game_id=str(rawg_id))
     
     # 검색 결과 없음 - 메인으로 돌아감
+    print(f"[DEBUG] No games found for '{title}', redirecting to main")
     from django.contrib import messages
     messages.warning(request, f'"{title}" 게임을 찾을 수 없습니다.')
     return redirect('users:main')
@@ -75,24 +89,34 @@ def game_detail(request, game_id):
     """
     # Get RAWG API key from environment
     rawg_api_key = RAWG_API_KEY or os.getenv('RAWG_API_KEY', '')
+    
+    print(f"[DEBUG] game_detail called with game_id: {game_id} (type: {type(game_id).__name__})")
+    
     numeric_id = extract_app_id(game_id)
+    print(f"[DEBUG] Extracted numeric_id: {numeric_id}")
+    
     game = None
     
     # 1. Steam 형식 ID (app123, bundle456 등)
     if is_steam_id(game_id):
         game = Game.objects.filter(steam_appid=numeric_id).first()
+        print(f"[DEBUG] Steam ID search result: {game}")
     
     # 2. 순수 숫자 ID - Steam AppID로 먼저 검색
     if not game:
         game = Game.objects.filter(steam_appid=numeric_id).first()
+        print(f"[DEBUG] Steam AppID search result: {game}")
     
     # 3. 여전히 없으면 RAWG ID로 검색
     if not game:
         game = Game.objects.filter(rawg_id=numeric_id).first()
+        print(f"[DEBUG] RAWG ID search result: {game}")
     
     # 4. DB에 없으면 RAWG API에서 가져와 자동 생성
     if not game:
+        print(f"[DEBUG] Game not in DB, fetching from RAWG API...")
         rawg_data = fetch_rawg_game_details(numeric_id)
+        print(f"[DEBUG] RAWG API result: {rawg_data is not None}")
         
         if rawg_data:
             # 게임 생성
@@ -118,30 +142,35 @@ def game_detail(request, game_id):
             print(f"✅ Auto-created game from RAWG: {game.title} (ID: {numeric_id})")
         else:
             # RAWG에서도 찾을 수 없음
+            print(f"[DEBUG] ❌ Game not found anywhere, redirecting to main. game_id={game_id}")
             from django.contrib import messages
             messages.error(request, f'게임을 찾을 수 없습니다 (ID: {game_id})')
             return redirect('users:main')
     
-    # 리뷰 POST 처리
+    # 리뷰 POST 처리 (users.GameRating 사용)
     if request.method == 'POST':
         score = request.POST.get('score')
-        content = request.POST.get('content')
+        comment = request.POST.get('comment', '')
         if score:
-            Rating.objects.update_or_create(
+            GameRating.objects.update_or_create(
                 user=request.user,
                 game=game,
-                defaults={'score': float(score), 'content': content}
+                defaults={'score': float(score), 'comment': comment}
             )
             return redirect('games:detail', game_id=game_id)
     
-    # 리뷰 데이터
-    reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
-    my_review = reviews.filter(user=request.user).first()
+    # 유저 평가 데이터 (score=0 "안해봤어요"는 제외)
+    user_ratings = GameRating.objects.filter(game=game).exclude(score=0).select_related('user').order_by('-updated_at')
+    my_rating = GameRating.objects.filter(game=game, user=request.user).first()
+    
+    # Steam 크롤링 리뷰 (games.SteamReview - 한국어 리뷰)
+    steam_reviews = game.steam_reviews.all()[:10]  # 상위 10개
     
     context = {
         'game': game,
-        'reviews': reviews,
-        'my_review': my_review,
+        'user_ratings': user_ratings,
+        'my_rating': my_rating,
+        'steam_reviews': steam_reviews,
         'screenshots': game.screenshots.all(),
         'trailers': game.trailers.all(),
         'rawg_api_key': rawg_api_key,
@@ -535,16 +564,16 @@ def api_reviews_by_rawg_id(request, rawg_id):
     """
     try:
         game = Game.objects.get(rawg_id=rawg_id)
-        reviews = Rating.objects.filter(game=game).select_related('user').order_by('-updated_at')
-        my_review = reviews.filter(user=request.user).first()
+        # users.GameRating 사용 (실제 데이터)
+        ratings = GameRating.objects.filter(game=game).select_related('user').order_by('-updated_at')
+        my_rating = ratings.filter(user=request.user).first()
         
         reviews_data = [{
             'id': r.id,
-            'user': r.user.nickname,
+            'user': r.user.nickname or r.user.username,
             'score': r.score,
-            'content': r.content,
             'created_at': r.updated_at.strftime('%Y.%m.%d'),
-        } for r in reviews]
+        } for r in ratings]
         
         return JsonResponse({
             'game_exists': True,
@@ -552,9 +581,8 @@ def api_reviews_by_rawg_id(request, rawg_id):
             'reviews': reviews_data,
             'review_count': len(reviews_data),
             'my_review': {
-                'score': my_review.score,
-                'content': my_review.content,
-            } if my_review else None
+                'score': my_rating.score,
+            } if my_rating else None
         })
     except Game.DoesNotExist:
         return JsonResponse({
@@ -656,13 +684,12 @@ def api_submit_review_by_rawg_id(request, rawg_id):
         if created:
             print(f"Created new game from RAWG: {game_title} (rawg_id: {rawg_id})")
         
-        # 리뷰 저장/업데이트
-        rating, rating_created = Rating.objects.update_or_create(
+        # 평가 저장/업데이트 (users.GameRating 사용)
+        rating, rating_created = GameRating.objects.update_or_create(
             user=request.user,
             game=game,
             defaults={
                 'score': score,
-                'content': content
             }
         )
         

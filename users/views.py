@@ -1277,3 +1277,712 @@ def get_user_profile_api(request, username):
         data['steamLibrary'] = []
 
     return JsonResponse(data)
+
+
+# =============================================================================
+# Google OAuth Login Views
+# =============================================================================
+
+from .google_auth import (
+    get_google_auth_url,
+    exchange_code_for_tokens,
+    get_google_user_info,
+    verify_state
+)
+
+def google_login(request):
+    """
+    Initiate Google OAuth login
+    Redirects user to Google consent page
+    """
+    try:
+        # Build callback URL
+        callback_url = request.build_absolute_uri('/users/google/callback/')
+        google_url = get_google_auth_url(request, callback_url)
+        
+        # Store next URL if provided
+        next_url = request.GET.get('next', '/')
+        request.session['google_login_next'] = next_url
+        
+        # Store if this is a link request (user already logged in)
+        if request.user.is_authenticated:
+            request.session['google_link_mode'] = True
+        else:
+            request.session['google_link_mode'] = False
+        
+        return redirect(google_url)
+    
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('users:login')
+
+
+def google_callback(request):
+    """
+    Handle Google OAuth callback
+    Creates or logs in user based on Google account
+    """
+    # Get authorization code and state
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+    error = request.GET.get('error')
+    
+    # Handle errors from Google
+    if error:
+        messages.error(request, f'Google 로그인이 취소되었습니다: {error}')
+        return redirect('users:login')
+    
+    if not code:
+        messages.error(request, 'Google 로그인에 실패했습니다. 인증 코드가 없습니다.')
+        return redirect('users:login')
+    
+    # Verify state for CSRF protection
+    if not verify_state(request, state):
+        messages.error(request, '보안 검증에 실패했습니다. 다시 시도해주세요.')
+        return redirect('users:login')
+    
+    try:
+        # Exchange code for tokens
+        callback_url = request.build_absolute_uri('/users/google/callback/')
+        tokens = exchange_code_for_tokens(code, callback_url)
+        access_token = tokens.get('access_token')
+        
+        if not access_token:
+            messages.error(request, 'Access token을 받지 못했습니다.')
+            return redirect('users:login')
+        
+        # Get user info from Google
+        google_info = get_google_user_info(access_token)
+        google_id = google_info.get('id')
+        google_email = google_info.get('email')
+        google_name = google_info.get('name', '')
+        google_picture = google_info.get('picture', '')
+        
+        if not google_id:
+            messages.error(request, 'Google 사용자 정보를 가져올 수 없습니다.')
+            return redirect('users:login')
+        
+        # Check if this is a link request
+        is_link_mode = request.session.pop('google_link_mode', False)
+        next_url = request.session.pop('google_login_next', '/')
+        
+        if is_link_mode and request.user.is_authenticated:
+            # Link Google account to existing user
+            user = request.user
+            
+            # Check if this Google account is already linked to another user
+            # We'll use email to check since we don't store google_id separately
+            existing_user = User.objects.filter(email=google_email).exclude(pk=user.pk).first()
+            if existing_user and existing_user.is_google_linked:
+                messages.error(request, '이 Google 계정은 이미 다른 계정에 연동되어 있습니다.')
+                return redirect(next_url)
+            
+            # Link Google account
+            user.email = google_email
+            user.is_google_linked = True
+            user.save()
+            
+            messages.success(request, f"Google 계정 '{google_email}'이(가) 연동되었습니다!")
+            return redirect(next_url)
+        
+        else:
+            # Login or register new user with Google
+            
+            # First, check by email (most reliable)
+            try:
+                user = User.objects.get(email=google_email, is_google_linked=True)
+                # User exists with Google, log them in
+                login(request, user)
+                messages.success(request, f"Google로 로그인되었습니다. 환영합니다, {user.nickname or user.username}님!")
+                return redirect(next_url)
+            
+            except User.DoesNotExist:
+                pass
+            
+            # Check if email exists but not Google linked
+            try:
+                user = User.objects.get(email=google_email)
+                # Email exists but not linked - link it
+                user.is_google_linked = True
+                user.save()
+                login(request, user)
+                messages.success(request, f"기존 계정에 Google이 연동되었습니다. 환영합니다!")
+                return redirect(next_url)
+            
+            except User.DoesNotExist:
+                # Create new user
+                base_username = google_email.split('@')[0]
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}_{counter}"
+                    counter += 1
+                
+                # Create user
+                user = User.objects.create_user(
+                    username=username,
+                    email=google_email,
+                    nickname=google_name or base_username,
+                    is_google_linked=True,
+                )
+                # Set unusable password since they'll login via Google
+                user.set_unusable_password()
+                user.save()
+                
+                login(request, user)
+                messages.success(request, f"Google 계정으로 가입이 완료되었습니다! 환영합니다, {google_name or username}님!")
+                return redirect(next_url)
+    
+    except Exception as e:
+        print(f"Google OAuth error: {e}")
+        messages.error(request, f'Google 로그인 중 오류가 발생했습니다: {str(e)}')
+        return redirect('users:login')
+
+
+@login_required
+def google_unlink(request):
+    """
+    Unlink Google account from user profile
+    """
+    if request.method == 'POST':
+        user = request.user
+        
+        # Check if user has a password (can still login without Google)
+        if user.has_usable_password():
+            user.is_google_linked = False
+            user.save()
+            messages.success(request, 'Google 계정 연동이 해제되었습니다.')
+        else:
+            # Check if they have other login methods
+            if user.is_steam_linked:
+                user.is_google_linked = False
+                user.save()
+                messages.success(request, 'Google 계정 연동이 해제되었습니다. (Steam으로 로그인 가능)')
+            else:
+                messages.error(request, 'Google로만 가입한 계정입니다. 비밀번호를 설정한 후 연동 해제할 수 있습니다.')
+        
+        return redirect('home')
+    
+    return redirect('home')
+
+
+# =============================================================================
+# Naver OAuth Login Views
+# =============================================================================
+
+from .naver_auth import (
+    get_naver_auth_url,
+    exchange_code_for_tokens as naver_exchange_code,
+    get_naver_user_info,
+    verify_state as naver_verify_state
+)
+
+
+def naver_login(request):
+    """
+    Initiate Naver OAuth login
+    Redirects user to Naver login page
+    """
+    try:
+        # Build callback URL
+        callback_url = request.build_absolute_uri('/users/naver/callback/')
+        naver_url = get_naver_auth_url(request, callback_url)
+        
+        # Store next URL if provided
+        next_url = request.GET.get('next', '/')
+        request.session['naver_login_next'] = next_url
+        
+        # Store if this is a link request (user already logged in)
+        if request.user.is_authenticated:
+            request.session['naver_link_mode'] = True
+        else:
+            request.session['naver_link_mode'] = False
+        
+        return redirect(naver_url)
+    
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('users:login')
+
+
+def naver_callback(request):
+    """
+    Handle Naver OAuth callback
+    Creates or logs in user based on Naver account
+    """
+    # Get authorization code and state
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+    error = request.GET.get('error')
+    
+    # Handle errors from Naver
+    if error:
+        error_desc = request.GET.get('error_description', error)
+        messages.error(request, f'네이버 로그인이 취소되었습니다: {error_desc}')
+        return redirect('users:login')
+    
+    if not code:
+        messages.error(request, '네이버 로그인에 실패했습니다. 인증 코드가 없습니다.')
+        return redirect('users:login')
+    
+    # Verify state for CSRF protection
+    if not naver_verify_state(request, state):
+        messages.error(request, '보안 검증에 실패했습니다. 다시 시도해주세요.')
+        return redirect('users:login')
+    
+    try:
+        # Exchange code for tokens
+        tokens = naver_exchange_code(code, state)
+        access_token = tokens.get('access_token')
+        
+        if not access_token:
+            messages.error(request, 'Access token을 받지 못했습니다.')
+            return redirect('users:login')
+        
+        # Get user info from Naver
+        naver_info = get_naver_user_info(access_token)
+        naver_id = naver_info.get('id')
+        naver_email = naver_info.get('email', '')
+        naver_nickname = naver_info.get('nickname', '')
+        naver_name = naver_info.get('name', '')
+        naver_profile_image = naver_info.get('profile_image', '')
+        
+        if not naver_id:
+            messages.error(request, '네이버 사용자 정보를 가져올 수 없습니다.')
+            return redirect('users:login')
+        
+        # Check if this is a link request
+        is_link_mode = request.session.pop('naver_link_mode', False)
+        next_url = request.session.pop('naver_login_next', '/')
+        
+        if is_link_mode and request.user.is_authenticated:
+            # Link Naver account to existing user
+            user = request.user
+            
+            # Check if this Naver account is already linked to another user
+            existing_user = User.objects.filter(
+                email=naver_email, 
+                is_naver_linked=True
+            ).exclude(pk=user.pk).first() if naver_email else None
+            
+            if existing_user:
+                messages.error(request, '이 네이버 계정은 이미 다른 계정에 연동되어 있습니다.')
+                return redirect(next_url)
+            
+            # Link Naver account
+            if naver_email:
+                user.email = naver_email
+            user.is_naver_linked = True
+            user.save()
+            
+            display_name = naver_nickname or naver_email or naver_id
+            messages.success(request, f"네이버 계정 '{display_name}'이(가) 연동되었습니다!")
+            return redirect(next_url)
+        
+        else:
+            # Login or register new user with Naver
+            
+            # First, try to find by email if available
+            if naver_email:
+                try:
+                    user = User.objects.get(email=naver_email, is_naver_linked=True)
+                    # User exists with Naver, log them in
+                    login(request, user)
+                    messages.success(request, f"네이버로 로그인되었습니다. 환영합니다, {user.nickname or user.username}님!")
+                    return redirect(next_url)
+                
+                except User.DoesNotExist:
+                    pass
+                
+                # Check if email exists but not Naver linked
+                try:
+                    user = User.objects.get(email=naver_email)
+                    # Email exists but not linked - link it
+                    user.is_naver_linked = True
+                    user.save()
+                    login(request, user)
+                    messages.success(request, f"기존 계정에 네이버가 연동되었습니다. 환영합니다!")
+                    return redirect(next_url)
+                
+                except User.DoesNotExist:
+                    pass
+            
+            # Create new user
+            display_name = naver_nickname or naver_name or f'naver_{naver_id[-6:]}'
+            base_username = naver_email.split('@')[0] if naver_email else f'naver_{naver_id[-8:]}'
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}_{counter}"
+                counter += 1
+            
+            # Create user
+            user = User.objects.create_user(
+                username=username,
+                email=naver_email or '',
+                nickname=display_name,
+                is_naver_linked=True,
+            )
+            # Set unusable password since they'll login via Naver
+            user.set_unusable_password()
+            user.save()
+            
+            login(request, user)
+            messages.success(request, f"네이버 계정으로 가입이 완료되었습니다! 환영합니다, {display_name}님!")
+            return redirect(next_url)
+    
+    except Exception as e:
+        print(f"Naver OAuth error: {e}")
+        messages.error(request, f'네이버 로그인 중 오류가 발생했습니다: {str(e)}')
+        return redirect('users:login')
+
+
+@login_required
+def naver_unlink(request):
+    """
+    Unlink Naver account from user profile
+    """
+    if request.method == 'POST':
+        user = request.user
+        
+        # Check if user has a password (can still login without Naver)
+        if user.has_usable_password():
+            user.is_naver_linked = False
+            user.save()
+            messages.success(request, '네이버 계정 연동이 해제되었습니다.')
+        else:
+            # Check if they have other login methods
+            if user.is_steam_linked or user.is_google_linked:
+                user.is_naver_linked = False
+                user.save()
+                other_method = 'Steam' if user.is_steam_linked else 'Google'
+                messages.success(request, f'네이버 계정 연동이 해제되었습니다. ({other_method}으로 로그인 가능)')
+            else:
+                messages.error(request, '네이버로만 가입한 계정입니다. 비밀번호를 설정한 후 연동 해제할 수 있습니다.')
+        
+        return redirect('home')
+    
+    return redirect('home')
+
+
+# =============================================================================
+# Genre Analysis & Steam-Style Recommendations API
+# =============================================================================
+
+@login_required
+def genre_analysis_api(request):
+    """
+    유저의 평가한 게임 장르 분석 API
+    원형 차트용 데이터 반환
+    """
+    from .models import GameRating
+    from collections import Counter
+    
+    user = request.user
+    
+    # 좋아요 평가 게임들 가져오기 (score > 0)
+    liked_ratings = GameRating.objects.filter(
+        user=user, 
+        score__gt=0
+    ).select_related('game')
+    
+    if liked_ratings.count() == 0:
+        return JsonResponse({
+            'has_data': False,
+            'message': '아직 평가한 게임이 없습니다.',
+            'genres': []
+        })
+    
+    # 장르 카운트
+    genre_counter = Counter()
+    for rating in liked_ratings:
+        game = rating.game
+        if game.genre and game.genre not in ['Unknown', '게임', '']:
+            # 장르가 콤마로 구분되어 있을 수 있음
+            genres = [g.strip() for g in game.genre.split(',')]
+            for genre in genres:
+                if genre:
+                    genre_counter[genre] += 1
+    
+    if not genre_counter:
+        return JsonResponse({
+            'has_data': False,
+            'message': '장르 정보가 있는 게임이 없습니다.',
+            'genres': []
+        })
+    
+    # 상위 5개 장르 + 기타
+    total = sum(genre_counter.values())
+    top_genres = genre_counter.most_common(5)
+    
+    genres_data = []
+    colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#6B7280']
+    
+    top_sum = 0
+    for i, (genre, count) in enumerate(top_genres):
+        percentage = round(count / total * 100, 1)
+        top_sum += count
+        genres_data.append({
+            'name': genre,
+            'count': count,
+            'percentage': percentage,
+            'color': colors[i]
+        })
+    
+    # 기타
+    others = total - top_sum
+    if others > 0:
+        genres_data.append({
+            'name': '기타',
+            'count': others,
+            'percentage': round(others / total * 100, 1),
+            'color': colors[5]
+        })
+    
+    # 주요 장르 추출
+    main_genres = [g['name'] for g in genres_data[:3]]
+    
+    return JsonResponse({
+        'has_data': True,
+        'total_rated': liked_ratings.count(),
+        'genres': genres_data,
+        'main_genres': main_genres,
+        'message': f'{main_genres[0]} 장르를 특히 좋아하시는 것 같아요!' if main_genres else ''
+    })
+
+
+@login_required
+def steam_style_recommendations_api(request):
+    """
+    스팀 스타일 무한스크롤 추천 API - 한 게임씩 반환
+    큰 썸네일 + 스크린샷 4개 형태로 표시
+    
+    Query params:
+        - page: 페이지 번호 (1부터)
+        - per_page: 페이지당 개수 (기본 1, 무한스크롤용)
+    """
+    from .models import GameRating
+    from games.models import Game, GameScreenshot
+    import requests
+    import os
+    
+    user = request.user
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 1))  # 기본 1개씩 (스팀 스타일)
+    
+    # 이미 평가한 게임 ID 목록 (제외용)
+    rated_game_ids = set(GameRating.objects.filter(user=user).values_list('game_id', flat=True))
+    
+    # 찜한 게임 목록
+    wishlisted_games = list(user.wishlist.all().values('id', 'rawg_id', 'title', 'image_url', 'genre'))
+    wishlisted_ids = set(g['id'] for g in wishlisted_games)
+    
+    # 좋아한 게임 (score > 0) - 최근 20개
+    liked_ratings = GameRating.objects.filter(
+        user=user,
+        score__gt=0
+    ).select_related('game').order_by('-score', '-updated_at')[:20]
+    
+    liked_games = []
+    for rating in liked_ratings:
+        game = rating.game
+        liked_games.append({
+            'id': game.id,
+            'rawg_id': game.rawg_id,
+            'title': game.title,
+            'image_url': game.image_url or game.background_image,
+            'genre': game.genre,
+            'score': rating.score
+        })
+    
+    # 이미 추천한 게임 ID 추적
+    used_game_ids = set()
+    used_reason_ids = set()
+    
+    # 추천 게임 리스트 생성 (한 게임씩)
+    recommendations = []
+    
+    def get_game_screenshots(game):
+        """게임의 스크린샷 URL 목록 반환"""
+        # DB에서 스크린샷 가져오기
+        screenshots = list(GameScreenshot.objects.filter(game=game).values_list('image_url', flat=True)[:4])
+        
+        # DB에 없으면 RAWG API에서 가져오기
+        if not screenshots and game.rawg_id:
+            try:
+                api_key = os.getenv('RAWG_API_KEY')
+                if api_key:
+                    response = requests.get(
+                        f"https://api.rawg.io/api/games/{game.rawg_id}/screenshots",
+                        params={'key': api_key, 'page_size': 4},
+                        timeout=5
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        screenshots = [s['image'] for s in data.get('results', [])[:4]]
+                        
+                        # DB에 저장
+                        for url in screenshots:
+                            GameScreenshot.objects.get_or_create(game=game, image_url=url)
+            except Exception as e:
+                print(f"Screenshot fetch error: {e}")
+        
+        return screenshots
+    
+    # 1. 좋아한 게임 기반 추천
+    for liked_game in liked_games[:30]:  # 더 많이 처리
+        if liked_game['id'] in used_reason_ids:
+            continue
+            
+        genres = [g.strip() for g in (liked_game.get('genre') or '').split(',') if g.strip()]
+        if not genres or genres[0] in ['Unknown', '']:
+            continue
+        
+        liked_genre = genres[0]
+        
+        # 같은 장르 게임 찾기 (한 개씩)
+        similar_games = Game.objects.filter(
+            genre__icontains=liked_genre
+        ).exclude(
+            id__in=rated_game_ids
+        ).exclude(
+            id__in=wishlisted_ids
+        ).exclude(
+            id=liked_game['id']
+        ).exclude(
+            id__in=used_game_ids
+        ).order_by('-metacritic_score', '-rawg_id')[:5]
+        
+        for game in similar_games:
+            if game.id in used_game_ids:
+                continue
+            
+            used_game_ids.add(game.id)
+            
+            # 스크린샷 가져오기
+            screenshots = get_game_screenshots(game)
+            
+            score_text = '인생게임' if liked_game['score'] == 5 else '재밌어요' if liked_game['score'] == 3.5 else '좋아요'
+            
+            recommendations.append({
+                'reason_type': 'played',
+                'reason_game': liked_game,
+                'reason_text': f"{liked_game['title']}을(를) {score_text}로 평가해서",
+                'game': {
+                    'id': game.id,
+                    'rawg_id': game.rawg_id,
+                    'title': game.title,
+                    'image_url': game.background_image or game.image_url,
+                    'genre': game.genre,
+                    'metacritic_score': game.metacritic_score,
+                    'screenshots': screenshots
+                }
+            })
+        
+        used_reason_ids.add(liked_game['id'])
+    
+    # 2. 찜한 게임 기반 추천
+    for wish_game in wishlisted_games[:10]:
+        wish_genre = (wish_game.get('genre') or '').split(',')[0].strip()
+        if not wish_genre or wish_genre in ['Unknown', '']:
+            continue
+        
+        similar_games = Game.objects.filter(
+            genre__icontains=wish_genre
+        ).exclude(
+            id__in=rated_game_ids
+        ).exclude(
+            id__in=wishlisted_ids
+        ).exclude(
+            id__in=used_game_ids
+        ).order_by('-metacritic_score', '-rawg_id')[:3]
+        
+        for game in similar_games:
+            if game.id in used_game_ids:
+                continue
+                
+            used_game_ids.add(game.id)
+            
+            screenshots = get_game_screenshots(game)
+            
+        recommendations.append({
+                'reason_type': 'wishlist',
+                'reason_game': wish_game,
+                'reason_text': f"{wish_game['title']}을(를) 찜해서",
+                'game': {
+                    'id': game.id,
+                    'rawg_id': game.rawg_id,
+                    'title': game.title,
+                    'image_url': game.background_image or game.image_url,
+                    'genre': game.genre,
+                    'metacritic_score': game.metacritic_score,
+                    'screenshots': screenshots
+                }
+            })
+    
+    # 3. Fallback: 선호 장르/고평점 기반 무한 추천 (데이터 고갈 방지)
+    # 추천 리스트가 충분하지 않거나(50개 미만), 페이지 요청이 범위를 넘어설 때 대비
+    if len(recommendations) < 100:
+        # 선호 장르 추출
+        from collections import Counter
+        genre_counter = Counter()
+        for g in liked_games:
+            if g.get('genre'):
+                for genre_part in g['genre'].split(','):
+                    genre_clean = genre_part.strip()
+                    if genre_clean and genre_clean not in ['Unknown', '']:
+                        genre_counter[genre_clean] += 1
+        
+        top_genres = [g[0] for g in genre_counter.most_common(3)]
+        if not top_genres:
+            top_genres = ['Action', 'RPG', 'Adventure', 'Strategy', 'Indie']
+            
+        for genre in top_genres:
+            if len(recommendations) >= 100: 
+                break
+                
+            fallback_games = Game.objects.filter(
+                genre__icontains=genre
+            ).exclude(
+                id__in=used_game_ids
+            ).exclude(
+                id__in=rated_game_ids
+            ).order_by('-metacritic_score', '?')[:10]
+            
+            for game in fallback_games:
+                if game.id in used_game_ids:
+                    continue
+                    
+                used_game_ids.add(game.id)
+                screenshots = get_game_screenshots(game)
+                
+                recommendations.append({
+                    'reason_type': 'genre',
+                    'reason_text': f"선호 장르 '{genre}'에서 인기 있는",
+                    'game': {
+                        'id': game.id,
+                        'rawg_id': game.rawg_id,
+                        'title': game.title,
+                        'image_url': game.background_image or game.image_url,
+                        'genre': game.genre,
+                        'metacritic_score': game.metacritic_score,
+                        'screenshots': screenshots
+                    }
+                })
+    
+    # 페이지네이션 (한 개씩)
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated = recommendations[start_idx:end_idx]
+    
+    has_more = end_idx < len(recommendations)
+    
+    return JsonResponse({
+        'recommendations': paginated,
+        'page': page,
+        'per_page': per_page,
+        'total': len(recommendations),
+        'has_more': has_more
+    })
+
+

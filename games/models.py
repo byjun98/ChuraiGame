@@ -183,3 +183,64 @@ class Rating(models.Model):
 
     class Meta:
         unique_together = ('user', 'game') # 한 유저는 한 게임에 하나의 평가만
+
+
+class SteamReview(models.Model):
+    """
+    Steam에서 크롤링한 실제 유저 리뷰
+    
+    - 게임 상세 페이지에서 "Steam 유저 리뷰" 섹션에 표시
+    - 유저 Rating과 별도 관리 (크롤링 데이터)
+    - 한국어 리뷰만 수집
+    
+    데이터 출처: Steam Store API
+    https://store.steampowered.com/appreviews/{app_id}?language=koreana
+    """
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='steam_reviews')
+    
+    # 리뷰 작성자 정보 (Steam 원본)
+    steam_author_id = models.CharField("Steam 작성자 ID", max_length=50)
+    author_playtime_hours = models.IntegerField("작성자 플레이 시간(시간)", default=0)
+    author_playtime_at_review = models.IntegerField("리뷰 작성 시점 플레이 시간(시간)", default=0)
+    
+    # 리뷰 내용
+    content = models.TextField("리뷰 내용")
+    is_recommended = models.BooleanField("추천 여부", default=True)  # True=추천, False=비추천
+    
+    # Steam 리뷰 메타데이터
+    votes_up = models.IntegerField("유용함 투표수", default=0)
+    votes_funny = models.IntegerField("웃김 투표수", default=0)
+    
+    # 리뷰 ID (중복 방지용)
+    steam_review_id = models.CharField("Steam 리뷰 ID", max_length=50, unique=True)
+    
+    # 시간 정보
+    timestamp_created = models.DateTimeField("작성 시간", null=True, blank=True)
+    timestamp_updated = models.DateTimeField("수정 시간", null=True, blank=True)
+    crawled_at = models.DateTimeField("크롤링 시간", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Steam 리뷰"
+        verbose_name_plural = "Steam 리뷰"
+        ordering = ['-votes_up', '-crawled_at']  # 유용함 순 정렬
+        indexes = [
+            models.Index(fields=['game', '-votes_up']),
+            models.Index(fields=['game', 'is_recommended']),
+        ]
+    
+    def __str__(self):
+        status = "👍" if self.is_recommended else "👎"
+        return f"{status} {self.game.title} - {self.content[:30]}..."
+    
+    @property
+    def playtime_badge(self):
+        """플레이 시간에 따른 뱃지 반환"""
+        hours = self.author_playtime_hours
+        if hours >= 500:
+            return "🏆 베테랑 (500시간+)"
+        elif hours >= 100:
+            return "⭐ 매니아 (100시간+)"
+        elif hours >= 20:
+            return "✅ 경험자 (20시간+)"
+        else:
+            return "🆕 뉴비"

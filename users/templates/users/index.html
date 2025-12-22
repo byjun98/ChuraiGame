@@ -152,6 +152,32 @@
     const otherSteamStats = ref({ total: 0, hours: 0 });
     const isLoadingProfile = ref(false);
 
+    // Genre Analysis State (Home Page)
+    const genreAnalysisData = ref(null);
+    const isLoadingGenreAnalysis = ref(false);
+
+    // Steam-Style Recommendations State (Infinite Scroll)
+    const steamRecommendations = ref([]);
+    const steamRecommendationPage = ref(1);
+    const hasMoreSteamRecommendations = ref(true);
+    const isLoadingSteamRecommendations = ref(false);
+
+    // Computed: Genre Chart Gradient (Conic Gradient for Pie Chart)
+    const genreChartGradient = computed(() => {
+        if (!genreAnalysisData.value || !genreAnalysisData.value.genres) return 'gray';
+        const genres = genreAnalysisData.value.genres;
+        let gradient = 'conic-gradient(from 0deg, ';
+        let currentAngle = 0;
+        genres.forEach((genre, index) => {
+            const angle = (genre.percentage / 100) * 360;
+            gradient += `${genre.color} ${currentAngle}deg ${currentAngle + angle}deg`;
+            if (index < genres.length - 1) gradient += ', ';
+            currentAngle += angle;
+        });
+        gradient += ')';
+        return gradient;
+    });
+
     // Computed Properties for Profile Display (Switch between Me and Other)
     const isMe = computed(() => !targetUsername.value || targetUsername.value === user.value.nickname || targetUsername.value === user.value.username); // Assuming nickname is unique or we use username. API uses username. 
     // NOTE: user.value has nickname and email. It might not have 'username' explicitly if not passed from Django context. 
@@ -262,6 +288,15 @@
 
         // Check if user needs onboarding (Steam 미연동 사용자)
         checkOnboardingStatus();
+
+        // Fetch Genre Analysis for Home Page
+        fetchGenreAnalysis();
+
+        // Fetch Steam-Style Recommendations
+        fetchSteamRecommendations();
+        
+        // Setup Steam infinite scroll
+        setupSteamInfiniteScroll();
     });
 
     const loadGameTab = async (tabName) => {
@@ -382,6 +417,7 @@
                     if (saleMatch) {
                         matchedGames.push({
                             ...rawgGame,
+                            rawg_id: rawgGame.rawg_id || rawgGame.id,  // rawg_id 명시적 보장
                             discount_rate: saleMatch.discount_rate,
                             current_price: saleMatch.current_price,
                             original_price: saleMatch.original_price,
@@ -1031,14 +1067,29 @@
     const openRawgGame = (game) => {
         if (!game) return;
 
-        // rawg_id가 있으면 RAWG 기반 상세 페이지로
-        if (game.rawg_id) {
-            window.location.href = `/games/${game.rawg_id}/`;
+        console.log('[DEBUG openRawgGame] game object:', game);
+        
+        // RAWG API에서는 'id', DB에서는 'rawg_id' 사용
+        const gameId = game.rawg_id || game.id;
+        const gameTitle = game.title || game.name;
+
+        console.log('[DEBUG openRawgGame] gameId:', gameId, 'gameTitle:', gameTitle);
+
+        // ID가 있으면 상세 페이지로
+        if (gameId) {
+            const url = `/games/${gameId}/`;
+            console.log('[DEBUG openRawgGame] Navigating to:', url);
+            window.location.href = url;
         }
-        // 게임 제목이 있으면 검색 페이지로
-        else if (game.title) {
-            const params = new URLSearchParams({ title: game.title });
-            window.location.href = `/games/search/?${params.toString()}`;
+        // ID가 없으면 제목으로 검색
+        else if (gameTitle) {
+            const params = new URLSearchParams({ title: gameTitle });
+            const url = `/games/search/?${params.toString()}`;
+            console.log('[DEBUG openRawgGame] Navigating (search) to:', url);
+            window.location.href = url;
+        }
+        else {
+            console.error('Game has no id or title:', game);
         }
     };
 
@@ -1159,6 +1210,127 @@
             currentRecommendCount.value += recommendItemsPerPage.value;
             isLoadingMoreRecommendations.value = false;
         }, 300);
+    };
+
+    // --- Genre Analysis Methods (Home Page) ---
+    const fetchGenreAnalysis = async () => {
+        if (isLoadingGenreAnalysis.value) return;
+
+        isLoadingGenreAnalysis.value = true;
+        try {
+            const response = await fetch('/users/api/genre-analysis/');
+            if (response.ok) {
+                const data = await response.json();
+                genreAnalysisData.value = data;
+            }
+        } catch (e) {
+            console.error('Error fetching genre analysis:', e);
+        } finally {
+            isLoadingGenreAnalysis.value = false;
+        }
+    };
+
+    // --- Steam-Style Recommendations Methods ---
+    const steamScrollTrigger = ref(null);
+    
+    const fetchSteamRecommendations = async () => {
+        if (isLoadingSteamRecommendations.value) return;
+
+        isLoadingSteamRecommendations.value = true;
+        steamRecommendationPage.value = 1;
+        steamRecommendations.value = [];
+
+        try {
+            // Load 3 items initially to ensure scrollbar appears/trigger moves
+            const response = await fetch(`/users/api/steam-recommendations/?page=1&per_page=3`);
+            if (response.ok) {
+                const data = await response.json();
+                steamRecommendations.value = data.recommendations || [];
+                hasMoreSteamRecommendations.value = data.has_more;
+                // If we loaded 3, set page to 1 (API might treat page 1 as offset 0..N).
+                // Wait, python views.py: start = (page - 1) * per_page
+                // If I request page=1, per_page=3. I get items 0, 1, 2.
+                // Next load: loadMore uses steamRecommendationPage += 1.
+                // It will request page=2, per_page=1.
+                // start = (2-1)*1 = 1.
+                // items 1..2.
+                // DUPLICATE ITEMS!
+                
+                // Correction: The pagination logic on server is standard.
+                // If I change initial load to per_page=3, I must adjust the next page / offset logic OR just use same per_page.
+                // Or I should manually manage offsets.
+                
+                // Server logic:
+                // start = (page - 1) * per_page
+                
+                // Client logic:
+                // steamRecommendationPage increments.
+                
+                // If I mix per_page, I break the pagination alignment.
+                // Fix: keep per_page consistent OR adjust page number.
+                
+                // If I fetch page 1 with per_page=3. Items 0, 1, 2.
+                // Next, I want item 3.
+                // If I request page=X with per_page=1.
+                // I need start=3.
+                // (page-1)*1 = 3 => page-1=3 => page=4.
+                
+                // So if initial load is 3 items, the next "page" for per_page=1 is 4.
+                steamRecommendationPage.value = 3; 
+            }
+        } catch (e) {
+            console.error('Error fetching steam recommendations:', e);
+        } finally {
+            isLoadingSteamRecommendations.value = false;
+        }
+    };
+
+    const loadMoreSteamRecommendations = async () => {
+        if (isLoadingSteamRecommendations.value || !hasMoreSteamRecommendations.value) return;
+
+        isLoadingSteamRecommendations.value = true;
+        steamRecommendationPage.value += 1;
+
+        try {
+            const response = await fetch(`/users/api/steam-recommendations/?page=${steamRecommendationPage.value}&per_page=1`);
+            if (response.ok) {
+                const data = await response.json();
+                steamRecommendations.value = [...steamRecommendations.value, ...(data.recommendations || [])];
+                hasMoreSteamRecommendations.value = data.has_more;
+            }
+        } catch (e) {
+            console.error('Error loading more steam recommendations:', e);
+        } finally {
+            isLoadingSteamRecommendations.value = false;
+        }
+    };
+    
+    // Hide/Remove a recommendation from the list
+    const hideRecommendation = (index) => {
+        steamRecommendations.value.splice(index, 1);
+        // Load more if we have less than 2 visible
+        if (steamRecommendations.value.length < 2 && hasMoreSteamRecommendations.value) {
+            loadMoreSteamRecommendations();
+        }
+    };
+    
+    // Setup infinite scroll for Steam recommendations
+    const setupSteamInfiniteScroll = () => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && currentTab.value === 'home' && hasMoreSteamRecommendations.value) {
+                loadMoreSteamRecommendations();
+            }
+        }, { threshold: 0.1, rootMargin: '100px' });
+        
+        // Watch for changes (e.g. tab switch)
+        Vue.watch(steamScrollTrigger, (el) => {
+            if (el) observer.observe(el);
+        });
+
+        // Observe immediately if already present
+        if (steamScrollTrigger.value) {
+            observer.observe(steamScrollTrigger.value);
+        }
     };
 
     // Watch for tab change to load recommendations and update URL hash
@@ -1644,7 +1816,23 @@
         displaySteamTotalHours,
         targetUsername,
         isLoadingProfile,
-        fetchUserProfile
+        fetchUserProfile,
+
+        // Genre Analysis (Home Page)
+        genreAnalysisData,
+        isLoadingGenreAnalysis,
+        genreChartGradient,
+        fetchGenreAnalysis,
+
+        // Steam-Style Recommendations
+        steamRecommendations,
+        steamRecommendationPage,
+        hasMoreSteamRecommendations,
+        isLoadingSteamRecommendations,
+        fetchSteamRecommendations,
+        loadMoreSteamRecommendations,
+        steamScrollTrigger,
+        hideRecommendation
     };
 
         }

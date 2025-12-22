@@ -68,17 +68,16 @@
                     <!-- Slide Container with Transition -->
                     <div class="relative overflow-hidden min-h-[280px]">
                         <!-- Loading State (positioned absolutely to not affect layout) -->
-                        <Transition name="fade">
+                        <transition name="fade">
                             <div v-if="isLoadingOnboarding"
                                 class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 z-10">
                                 <i class="ph-bold ph-spinner animate-spin text-4xl text-purple-500 mr-3"></i>
                                 <span class="text-gray-500 text-lg">게임 목록을 불러오는 중...</span>
                             </div>
-                        </Transition>
+                        </transition>
 
-                        <!-- Games Grid with Slide Animation -->
-                        <Transition :name="slideDirection" mode="out-in">
-                            <div :key="onboardingCurrentPage" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <!-- Games Grid (transition 제거 - v-for 내부에서 transition 사용 불가) -->
+                        <div :key="onboardingCurrentPage" class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 <div v-for="game in onboardingGames" :key="game.rawg_id"
                                     class="relative group rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 transition-all duration-300"
                                     :class="{ 'ring-4 ring-purple-500': onboardingRatings[game.rawg_id] }">
@@ -149,11 +148,10 @@
                                                 title="인생게임!">
                                                 <span class="text-[9px] font-bold">👍👍</span>
                                             </button>
-                                    </div>
                                 </div>
                             </div>
-                        </Transition>
-
+                        </div>
+                        </div>
                         <!-- Rating Legend (고정 - 슬라이드 안 함) -->
                         <div class="flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-500">
                             <div class="flex items-center gap-1">
