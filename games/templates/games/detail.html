@@ -986,15 +986,15 @@
                 btn.target = '_blank';
                 btn.onclick = null;
                 btn.classList.remove('opacity-50', 'cursor-wait');
-                btn.title = currentPrice ? `$${currentPrice}` : '가격 비교';
+                btn.title = currentPrice ? `₩${currentPrice}` : '가격 비교';
                 
                 icon.classList.remove('ph-spinner', 'animate-spin');
                 icon.classList.add('ph-lightning');
                 
                 if (currentPrice && discountPercent > 0) {
-                    text.innerHTML = `$${currentPrice} <span class="text-yellow-300">(-${discountPercent}%)</span>`;
+                    text.innerHTML = `₩${currentPrice} <span class="text-yellow-300">(-${discountPercent}%)</span>`;
                 } else if (currentPrice) {
-                    text.textContent = `$${currentPrice}`;
+                    text.textContent = `₩${currentPrice}`;
                 } else {
                     text.textContent = '바로 구매';
                 }

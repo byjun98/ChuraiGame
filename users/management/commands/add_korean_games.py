@@ -810,6 +810,14 @@ class Command(BaseCommand):
                             existing.description = rawg_data.get('description_raw')[:2000]
                     
                     existing.save()
+                    
+                    # 기존 게임에도 태그 연결 (누락된 태그만 추가)
+                    tag_slugs = game_data.get('tags', [])
+                    for slug in tag_slugs:
+                        tag = Tag.objects.filter(slug=slug).first()
+                        if tag and not existing.tags.filter(pk=tag.pk).exists():
+                            existing.tags.add(tag)
+                    
                     updated_count += 1
                     self.stdout.write(f"  업데이트: {title}")
                     continue

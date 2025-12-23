@@ -121,20 +121,35 @@ def main_view(request):
         games_json = "[]"
         best_prices_json = "[]"
 
-    # Wishlist IDs (RAWG ID를 우선으로 사용, 없으면 steam_appid)
+    # Wishlist IDs 및 상세 정보 (RAWG ID를 우선으로 사용, 없으면 steam_appid)
     wishlist_ids = []
+    wishlisted_games_info = {}
+    
     for game in request.user.wishlist.all():
         if game.rawg_id:
-            wishlist_ids.append(game.rawg_id)
+            game_id = game.rawg_id
         elif game.steam_appid:
-            wishlist_ids.append(game.steam_appid)
+            game_id = game.steam_appid
+        else:
+            game_id = game.id
+        wishlist_ids.append(game_id)
+        
+        # 게임 상세 정보 추가
+        wishlisted_games_info[str(game_id)] = {
+            'title': game.title,
+            'image_url': game.image_url or '',
+            'genre': game.genre or '',
+        }
+    
     wishlist_json = json.dumps(wishlist_ids, cls=DjangoJSONEncoder)
+    wishlisted_games_info_json = json.dumps(wishlisted_games_info, cls=DjangoJSONEncoder)
 
     return render(request, 'users/index.html', {
         'user': request.user,
         'games_json': games_json,
         'best_prices_json': best_prices_json,
         'wishlist_json': wishlist_json,
+        'wishlisted_games_info_json': wishlisted_games_info_json,
     })
 
 
@@ -954,8 +969,13 @@ def onboarding_status_api(request):
     # 찜한 게임 상세 정보 추가 (user.wishlist 사용)
     wishlisted_games_info = {}
     for game in user.wishlist.all():
-        # RAWG ID가 없으면 로컬 ID 사용
-        game_id = str(game.rawg_id) if game.rawg_id else str(game.id)
+        # main_view와 동일한 ID 결정 로직: rawg_id 우선, 없으면 steam_appid
+        if game.rawg_id:
+            game_id = str(game.rawg_id)
+        elif game.steam_appid:
+            game_id = str(game.steam_appid)
+        else:
+            game_id = str(game.id)
         
         wishlisted_games_info[game_id] = {
             'title': game.title,
@@ -1288,7 +1308,13 @@ def get_user_profile_api(request, username):
     wishlisted_games_info = {}
     
     for game in target_user.wishlist.all():
-        game_id = game.rawg_id if game.rawg_id else game.id
+        # main_view와 동일한 ID 결정 로직
+        if game.rawg_id:
+            game_id = game.rawg_id
+        elif game.steam_appid:
+            game_id = game.steam_appid
+        else:
+            game_id = game.id
         wishlist_ids.append(game_id)
         
         # 상세 정보도 함께 제공 (프로필 모달 타이틀 표시용)

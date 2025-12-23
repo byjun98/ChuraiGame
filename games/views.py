@@ -612,18 +612,20 @@ def api_toggle_wishlist_by_rawg_id(request, rawg_id):
         game_title = data.get('game_title', f'Game {rawg_id}')
         game_image = data.get('game_image', '')
         
-        # 게임 찾기 또는 생성
-        game, created = Game.objects.get_or_create(
-            rawg_id=rawg_id,
-            defaults={
-                'title': game_title,
-                'image_url': game_image,
-                'background_image': game_image,
-                'genre': '게임',
-            }
-        )
+        # 게임 찾기 (중복 rawg_id가 있을 수 있으므로 filter 사용)
+        game = Game.objects.filter(rawg_id=rawg_id).first()
+        created = False
         
-        if created:
+        if not game:
+            # 게임이 없으면 새로 생성
+            game = Game.objects.create(
+                rawg_id=rawg_id,
+                title=game_title,
+                image_url=game_image,
+                background_image=game_image,
+                genre='게임',
+            )
+            created = True
             print(f"Created new game for wishlist from RAWG: {game_title} (rawg_id: {rawg_id})")
         
         # 찜하기 토글

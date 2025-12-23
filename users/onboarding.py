@@ -42,6 +42,7 @@ def load_korean_games_from_db():
     - 이미지가 있는 게임만 필터링
     - 더 많은 제목 패턴 매칭
     - RAWG 데이터가 있는 게임 우선
+    - 태그 정보도 함께 반환
     """
     global _korean_games_cache
     
@@ -88,12 +89,12 @@ def load_korean_games_from_db():
         # 3. 두 쿼리 결과 합치기 (Union)
         all_korean_games = korean_tagged | title_matched
         
-        # 4. 이미지가 있는 게임만 필터링 + RAWG 데이터 있는 것 우선
+        # 4. 이미지가 있는 게임만 필터링 + RAWG 데이터 있는 것 우선 + 태그 prefetch
         all_korean_games = all_korean_games.filter(
             Q(image_url__isnull=False, image_url__gt='') |
             Q(background_image__isnull=False, background_image__gt='') |
             Q(steam_appid__isnull=False)
-        ).distinct().order_by('-rawg_id', '-metacritic_score')
+        ).distinct().prefetch_related('tags').order_by('-rawg_id', '-metacritic_score')
         
         formatted_games = []
         seen_titles = set()  # 중복 제거용
@@ -115,12 +116,26 @@ def load_korean_games_from_db():
             if not image:
                 continue
             
+            # 태그 정보 추출 (한국어 이름 사용)
+            tags = list(game.tags.all())
+            tag_names = [tag.name for tag in tags]
+            tag_slugs = [tag.slug for tag in tags]
+            
+            # genre가 비어있거나 Unknown이면 태그에서 장르 추출
+            genre = game.genre
+            if not genre or genre in ['Unknown', '게임', '']:
+                genre_tags = [tag.name for tag in tags if tag.tag_type == 'genre']
+                if genre_tags:
+                    genre = ', '.join(genre_tags[:3])
+            
             formatted_games.append({
                 'title': game.title,
                 'rawg_id': game.rawg_id or game.id,  # rawg_id 없으면 DB id 사용
                 'steam_app_id': game.steam_appid,
                 'image': image,
-                'genre': game.genre,
+                'genre': genre,
+                'tags': tag_names,  # 태그 이름 리스트 추가
+                'tag_slugs': tag_slugs,  # 태그 slug 리스트 추가
                 'description': game.description[:100] if game.description else '',
                 'metacritic': game.metacritic_score,
             })
