@@ -68,6 +68,7 @@ class Game(models.Model):
     description_kr = models.TextField(blank=True, help_text='한국어 설명 (AI 번역)')
     background_image = models.URLField(max_length=500, blank=True)
     metacritic_score = models.IntegerField(null=True, blank=True)
+    is_on_gamepass = models.BooleanField("게임패스 포함", default=False, help_text='Xbox Game Pass에 포함된 게임')
     
     class Meta:
         verbose_name = "게임"

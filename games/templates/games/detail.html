@@ -50,6 +50,13 @@
                                 class="hidden inline-block px-4 py-1.5 bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-bold rounded-full shadow-lg">
                                 <i class="ph-fill ph-trophy mr-1"></i> <span id="rawgMetacriticValue"></span>
                             </span>
+                            <!-- Game Pass 뱃지 -->
+                            {% if game.is_on_gamepass %}
+                            <span
+                                class="inline-block px-4 py-1.5 bg-gradient-to-r from-[#107C10] to-[#2ECC71] text-white text-xs font-bold rounded-full shadow-lg animate-pulse">
+                                <i class="ph-fill ph-game-controller mr-1"></i> Game Pass
+                            </span>
+                            {% endif %}
                         </div>
                         <h1 class="text-4xl sm:text-5xl font-black text-white mb-3 tracking-tight drop-shadow-2xl">
                             {{ game.title }}
