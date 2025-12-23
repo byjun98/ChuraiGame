@@ -2060,3 +2060,62 @@ def steam_style_recommendations_api(request):
     })
 
 
+def cheapshark_url_api(request, steam_appid):
+    """
+    Steam AppID로 CheapShark URL 반환 (데이터셋에서 조회)
+    
+    데이터셋에 저장된 redirect URL을 반환하므로 더 안정적입니다.
+    CheapShark API 사용 조건 준수를 위해 그들의 링크를 사용합니다.
+    """
+    try:
+        # JSON 데이터셋 로드
+        json_file_path = os.path.join(settings.BASE_DIR, 'users', 'steam_sale_dataset_fast.json')
+        
+        if not os.path.exists(json_file_path):
+            return JsonResponse({
+                'found': False,
+                'cheapshark_url': None,
+                'error': '데이터셋을 찾을 수 없습니다.'
+            })
+        
+        with open(json_file_path, 'r', encoding='utf-8') as f:
+            games_data = json.load(f)
+        
+        # steam_appid로 게임 찾기
+        steam_appid_str = str(steam_appid)
+        matching_game = None
+        
+        for game in games_data:
+            if str(game.get('steam_app_id', '')) == steam_appid_str:
+                matching_game = game
+                break
+        
+        if matching_game:
+            cheapshark_url = matching_game.get('cheapshark_url', '')
+            current_price = matching_game.get('current_price')
+            original_price = matching_game.get('original_price')
+            discount_rate = matching_game.get('discount_rate', 0)
+            
+            return JsonResponse({
+                'found': True,
+                'cheapshark_url': cheapshark_url,
+                'current_price': current_price,
+                'original_price': original_price,
+                'discount_percent': round(discount_rate * 100) if discount_rate else 0,
+                'title': matching_game.get('title', ''),
+                'is_on_sale': matching_game.get('is_on_sale', False)
+            })
+        else:
+            return JsonResponse({
+                'found': False,
+                'cheapshark_url': None,
+                'message': '해당 게임이 세일 데이터에 없습니다.'
+            })
+            
+    except Exception as e:
+        print(f"CheapShark URL API error: {e}")
+        return JsonResponse({
+            'found': False,
+            'cheapshark_url': None,
+            'error': str(e)
+        }, status=500)

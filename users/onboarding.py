@@ -25,10 +25,23 @@ logger = logging.getLogger(__name__)
 _onboarding_games_cache = None
 _korean_games_cache = None
 
+
+def clear_korean_games_cache():
+    """한국 게임 캐시 무효화 (데이터 업데이트 후 호출)"""
+    global _korean_games_cache
+    _korean_games_cache = None
+    logger.info("Korean games cache cleared")
+
+
 def load_korean_games_from_db():
     """
     DB에서 한국 유명 게임 목록 로드 (온보딩 '아니요' 선택 시 사용)
     korean 태그가 있거나 한국어 제목이 포함된 게임
+    
+    개선사항:
+    - 이미지가 있는 게임만 필터링
+    - 더 많은 제목 패턴 매칭
+    - RAWG 데이터가 있는 게임 우선
     """
     global _korean_games_cache
     
@@ -38,34 +51,69 @@ def load_korean_games_from_db():
     from games.models import Game
     
     try:
-        # korean 태그가 있거나 특정 제목 패턴이 있는 게임 필터링
-        korean_games_query = Game.objects.filter(
+        # 1. korean 태그가 있는 게임
+        korean_tagged = Game.objects.filter(
             tags__slug='korean'
         ).distinct()
         
-        # 게임이 충분하지 않으면 한글 제목 포함 게임도 추가
-        if korean_games_query.count() < 20:
-            # 메이플, 던파, 리니지 등 한글 포함 제목 추가
-            korean_titles_pattern = [
-                '메이플', '던전앤파이터', '리니지', '마비노기', '서든', '카스', 
-                '카트라이더', '테일즈런너', '크레이지', '바람의나라', '뮤 온라인',
-                '블레이드앤소울', '검은사막', '로스트아크', '엘소드', '그랜드체이스',
-                'MapleStory', 'Lost Ark', 'Black Desert', 'PUBG', 'Overwatch',
-                'Valorant', 'League of Legends', 'StarCraft', 'Diablo', 'FIFA'
-            ]
-            from django.db.models import Q
-            title_filter = Q()
-            for pattern in korean_titles_pattern:
-                title_filter |= Q(title__icontains=pattern)
-            korean_games_query = Game.objects.filter(title_filter).distinct()
+        # 2. 한글/영문 제목 패턴 매칭 (더 포괄적으로)
+        korean_titles_pattern = [
+            # 한국 온라인게임
+            '메이플', '던전앤파이터', '던파', '리니지', '마비노기', '서든', '카스',
+            '카트라이더', '테일즈런너', '크레이지', '바람의나라', '뮤 온라인', '뮤',
+            '블레이드앤소울', '검은사막', '로스트아크', '엘소드', '그랜드체이스',
+            '아이온', '마영전', '블루아카이브', '쿠키런', '니케', '명일방주',
+            # 글로벌 인기 게임 (한국에서 유행)
+            'MapleStory', 'Lost Ark', 'Black Desert', 'PUBG', 'Overwatch',
+            'Valorant', 'League of Legends', 'StarCraft', 'Diablo', 'FIFA',
+            'Counter-Strike', 'Dungeon Fighter', 'Mabinogi', 'Lineage', 'Vindictus',
+            # 닌텐도/콘솔 게임
+            'Mario', 'Zelda', 'Pokemon', 'Animal Crossing', '동물의 숲', '포켓몬',
+            'Splatoon', 'Kirby', 'Fire Emblem', 'Xenoblade', 'Metroid',
+            # 모바일 게임
+            'Genshin', 'Honkai', 'Arknights', 'Fate/Grand', 'Blue Archive',
+            'Cookie Run', 'Clash of Clans', 'Clash Royale', 'Brawl Stars',
+            'Among Us', 'Fall Guys', 'Roblox', 'Marvel Snap',
+            # 추가 한국 게임
+            '스페셜포스', '배틀그라운드', '발로란트', '오버워치', '리그 오브',
+        ]
+        
+        from django.db.models import Q
+        title_filter = Q()
+        for pattern in korean_titles_pattern:
+            title_filter |= Q(title__icontains=pattern)
+        
+        title_matched = Game.objects.filter(title_filter).distinct()
+        
+        # 3. 두 쿼리 결과 합치기 (Union)
+        all_korean_games = korean_tagged | title_matched
+        
+        # 4. 이미지가 있는 게임만 필터링 + RAWG 데이터 있는 것 우선
+        all_korean_games = all_korean_games.filter(
+            Q(image_url__isnull=False, image_url__gt='') |
+            Q(background_image__isnull=False, background_image__gt='') |
+            Q(steam_appid__isnull=False)
+        ).distinct().order_by('-rawg_id', '-metacritic_score')
         
         formatted_games = []
-        for game in korean_games_query:
-            # 이미지 URL 결정
-            image = game.image_url or game.background_image or ''
+        seen_titles = set()  # 중복 제거용
+        
+        for game in all_korean_games:
+            # 제목 중복 체크 (한글/영문 중복 방지)
+            title_key = game.title.split(' (')[0].lower().strip()
+            if title_key in seen_titles:
+                continue
+            seen_titles.add(title_key)
+            
+            # 이미지 URL 결정 (우선순위: background_image > image_url > Steam CDN)
+            image = game.background_image or game.image_url or ''
             if not image and game.steam_appid:
                 # Steam CDN 폴백
                 image = f'https://cdn.cloudflare.steamstatic.com/steam/apps/{game.steam_appid}/header.jpg'
+            
+            # 이미지가 없으면 스킵
+            if not image:
+                continue
             
             formatted_games.append({
                 'title': game.title,
@@ -74,6 +122,7 @@ def load_korean_games_from_db():
                 'image': image,
                 'genre': game.genre,
                 'description': game.description[:100] if game.description else '',
+                'metacritic': game.metacritic_score,
             })
         
         _korean_games_cache = formatted_games
@@ -82,6 +131,8 @@ def load_korean_games_from_db():
         
     except Exception as e:
         logger.error(f"Error loading Korean games from DB: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return []
 
 

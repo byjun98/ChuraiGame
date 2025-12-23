@@ -277,18 +277,23 @@
                     <p>찜한 게임이 없습니다</p>
                 </div>
                 <div v-else class="space-y-3">
-                    <div v-for="gameId in displayWishlist" :key="gameId"
-                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
-                        <div
-                            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                            {{ gameId }}
+                    <div v-for="game in displayWishlistDetails" :key="game.rawg_id"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                        @click="window.location.href = '/games/' + game.rawg_id + '/'">
+                        <div v-if="game.image_url"
+                            class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                            <img :src="game.image_url" :alt="game.title" class="w-full h-full object-cover">
                         </div>
-                        <div class="flex-1">
-                            <p class="font-medium text-gray-800 dark:text-white">게임 #{{ gameId }}</p>
-                            <p class="text-xs text-gray-500">찜한 게임</p>
+                        <div v-else
+                            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                            {{ game.rawg_id }}
                         </div>
-                        <button v-if="isMe" @click.stop="toggleWishlist({ game_id: gameId })"
-                            class="text-pink-500 hover:text-pink-700">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-gray-800 dark:text-white truncate">{{ game.title }}</p>
+                            <p class="text-xs text-gray-500">{{ game.genre || '찜한 게임' }}</p>
+                        </div>
+                        <button v-if="isMe" @click.stop="toggleWishlist({ game_id: game.rawg_id })"
+                            class="text-pink-500 hover:text-pink-700 flex-shrink-0">
                             <i class="ph-fill ph-heart"></i>
                         </button>
                     </div>
@@ -326,26 +331,43 @@
                     </button>
                 </div>
                 <div v-else class="space-y-3">
-                    <div v-for="(score, gameId) in displayRatings" :key="gameId" v-if="score !== 0"
-                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white" :class="{
-                            'bg-red-500': score === -1,
-                            'bg-blue-500': score === 3.5,
-                            'bg-green-500': score === 5
+                    <div v-for="game in displayRatingDetails" :key="game.rawg_id"
+                        class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                        @click="window.location.href = '/games/' + game.rawg_id + '/'">
+                        <div v-if="game.image_url" class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 relative">
+                            <img :src="game.image_url" :alt="game.title" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 flex items-center justify-center" :class="{
+                                'bg-red-500/70': game.score === -1,
+                                'bg-blue-500/70': game.score === 3.5,
+                                'bg-green-500/70': game.score === 5
+                            }">
+                                <i v-if="game.score === -1" class="ph-fill ph-thumbs-down text-white text-lg"></i>
+                                <i v-else-if="game.score === 3.5" class="ph-fill ph-thumbs-up text-white text-lg"></i>
+                                <div v-else-if="game.score === 5" class="flex text-white">
+                                    <i class="ph-fill ph-thumbs-up text-sm"></i>
+                                    <i class="ph-fill ph-thumbs-up text-sm -ml-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0" :class="{
+                            'bg-red-500': game.score === -1,
+                            'bg-blue-500': game.score === 3.5,
+                            'bg-green-500': game.score === 5
                         }">
-                            <i v-if="score === -1" class="ph-fill ph-thumbs-down text-xl"></i>
-                            <i v-else-if="score === 3.5" class="ph-fill ph-thumbs-up text-xl"></i>
-                            <div v-else-if="score === 5" class="flex">
+                            <i v-if="game.score === -1" class="ph-fill ph-thumbs-down text-xl"></i>
+                            <i v-else-if="game.score === 3.5" class="ph-fill ph-thumbs-up text-xl"></i>
+                            <div v-else-if="game.score === 5" class="flex">
                                 <i class="ph-fill ph-thumbs-up text-lg"></i>
                                 <i class="ph-fill ph-thumbs-up text-lg -ml-1"></i>
                             </div>
                         </div>
-                        <div class="flex-1">
-                            <p class="font-medium text-gray-800 dark:text-white">게임 ID: {{ gameId }}</p>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-gray-800 dark:text-white truncate">{{ game.title }}</p>
                             <p class="text-xs text-gray-500">
-                                <span v-if="score === -1">별로예요</span>
-                                <span v-else-if="score === 3.5">재밌어요</span>
-                                <span v-else-if="score === 5">인생게임!</span>
+                                <span v-if="game.score === -1">별로예요</span>
+                                <span v-else-if="game.score === 3.5">재밌어요</span>
+                                <span v-else-if="game.score === 5">인생게임!</span>
+                                <span v-if="game.genre" class="ml-1">• {{ game.genre }}</span>
                             </p>
                         </div>
                     </div>

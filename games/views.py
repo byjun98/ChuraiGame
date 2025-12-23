@@ -652,6 +652,38 @@ def api_toggle_wishlist_by_rawg_id(request, rawg_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+@require_http_methods(["GET"])
+def api_wishlist_status_by_rawg_id(request, rawg_id):
+    """
+    RAWG ID로 게임 찜 상태 확인 (로그인 여부 확인 후)
+    
+    Returns:
+        - is_wishlisted: True/False
+    """
+    # 로그인하지 않은 경우
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'is_wishlisted': False,
+            'authenticated': False
+        })
+    
+    try:
+        game = Game.objects.get(rawg_id=rawg_id)
+        is_wishlisted = request.user.wishlist.filter(pk=game.pk).exists()
+        
+        return JsonResponse({
+            'is_wishlisted': is_wishlisted,
+            'authenticated': True,
+            'game_id': game.rawg_id
+        })
+    except Game.DoesNotExist:
+        return JsonResponse({
+            'is_wishlisted': False,
+            'authenticated': True,
+            'game_exists': False
+        })
+
+
 @login_required
 @require_http_methods(["POST"])
 def api_submit_review_by_rawg_id(request, rawg_id):

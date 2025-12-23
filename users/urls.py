@@ -59,5 +59,8 @@ urlpatterns = [
     # Genre Analysis & Steam-Style Recommendations
     path('api/genre-analysis/', views.genre_analysis_api, name='genre_analysis'),
     path('api/steam-recommendations/', views.steam_style_recommendations_api, name='steam_recommendations'),
+    
+    # CheapShark Price Comparison
+    path('api/cheapshark/<int:steam_appid>/', views.cheapshark_url_api, name='cheapshark_url'),
 ]
 

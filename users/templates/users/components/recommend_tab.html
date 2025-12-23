@@ -102,9 +102,16 @@
                         class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                     </div>
 
+                    <!-- Wishlist Button -->
+                    <button @click.stop.prevent="toggleWishlist(game)"
+                        class="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur flex items-center justify-center transition-colors hover:bg-black/50">
+                        <i class="ph-fill ph-heart text-lg transition-transform active:scale-75"
+                            :class="isWishlisted(game.rawg_id || game.id) ? 'text-red-500' : 'text-white/70'"></i>
+                    </button>
+
                     <!-- Recommendation Score Badge -->
                     <div v-if="game.recommendation_score"
-                        class="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
+                        class="absolute top-3 left-14 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
                         🎯 {{ game.recommendation_score }}점
                     </div>
 

@@ -93,6 +93,12 @@
                                 <span class="flex"><i class="ph-fill ph-thumbs-up text-lg"></i><i
                                         class="ph-fill ph-thumbs-up text-lg"></i></span>
                             </button>
+                            <!-- 찜(하트) 버튼 -->
+                            <button onclick="toggleWishlistDetail()" id="wishlistBtn"
+                                class="wishlist-btn w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-lg bg-white/20 text-white hover:bg-pink-500"
+                                title="찜하기">
+                                <i class="ph-fill ph-heart text-xl" id="wishlistIcon"></i>
+                            </button>
                         </div>
                         <div id="ratingLabel" class="text-center text-white text-sm font-medium hidden"></div>
                     </div>
@@ -115,13 +121,14 @@
                     {% endif %}
 
                     {% if game.steam_appid %}
-                    <!-- CheapShark Price Comparison (fallback - shows all store prices) -->
-                    <a href="https://www.cheapshark.com/browse/games?steamAppID={{ game.steam_appid }}" target="_blank"
-                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95">
-                        <i class="ph-bold ph-lightning text-xl"></i>
+                    <!-- CheapShark Price Comparison (API로 dealID 가져오기) -->
+                    <a id="cheapsharkBtn" href="#" onclick="return false;"
+                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95 opacity-50 cursor-wait"
+                        title="가격 정보 로딩 중...">
+                        <i class="ph-bold ph-spinner animate-spin text-xl" id="cheapsharkIcon"></i>
                         <span class="flex flex-col items-start leading-tight">
                             <span class="text-xs opacity-80">최저가</span>
-                            <span>바로 구매</span>
+                            <span id="cheapsharkText">로딩 중...</span>
                         </span>
                     </a>
                     {% endif %}
@@ -654,6 +661,7 @@
     let currentUserRating = null;
     const GAME_RAWG_ID = '{{ game.rawg_id|default:""|escapejs }}';
     const GAME_IMAGE = '{{ game.background_image|default:game.image_url|default:""|escapejs }}';
+    const STEAM_APPID = '{{ game.steam_appid|default:""|escapejs }}';
 
     // CSRF 토큰 가져오기
     function getCsrfToken() {
@@ -765,6 +773,83 @@
         }
     }
 
+    // ========== 찜(위시리스트) 기능 ==========
+    let isWishlisted = false;
+
+    // 찜 상태 UI 업데이트
+    function updateWishlistUI(wishlisted) {
+        const btn = document.getElementById('wishlistBtn');
+        const icon = document.getElementById('wishlistIcon');
+        
+        if (!btn || !icon) return;
+        
+        if (wishlisted) {
+            btn.classList.remove('bg-white/20');
+            btn.classList.add('bg-pink-500');
+            icon.classList.add('text-white');
+            icon.classList.remove('text-white/70');
+            btn.title = '찜 해제';
+        } else {
+            btn.classList.add('bg-white/20');
+            btn.classList.remove('bg-pink-500');
+            icon.classList.remove('text-white');
+            icon.classList.add('text-white/70');
+            btn.title = '찜하기';
+        }
+    }
+
+    // 찜 토글
+    async function toggleWishlistDetail() {
+        if (!GAME_RAWG_ID) {
+            console.log('No RAWG ID available');
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/games/api/wishlist/${GAME_RAWG_ID}/toggle/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    title: GAME_TITLE,
+                    image_url: GAME_IMAGE
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                isWishlisted = data.is_wishlisted;
+                updateWishlistUI(isWishlisted);
+                console.log('Wishlist toggled:', isWishlisted);
+            } else if (response.status === 401 || response.status === 403) {
+                alert('로그인이 필요합니다.');
+            } else {
+                console.error('Failed to toggle wishlist');
+            }
+        } catch (e) {
+            console.error('Wishlist toggle error:', e);
+        }
+    }
+
+    // 찜 상태 불러오기
+    async function fetchWishlistStatus() {
+        if (!GAME_RAWG_ID) return;
+
+        try {
+            const response = await fetch(`/games/api/wishlist/${GAME_RAWG_ID}/status/`);
+            if (response.ok) {
+                const data = await response.json();
+                isWishlisted = data.is_wishlisted;
+                updateWishlistUI(isWishlisted);
+            }
+        } catch (e) {
+            // 로그인하지 않았거나 오류가 있는 경우 무시
+        }
+    }
+
     // ========== 번역 기능 ==========
     let isTranslating = false;
     const translationBtn = document.getElementById('translationBtn');
@@ -870,8 +955,81 @@
         return text.split('\n\n').map(p => `<p class="mb-4">${p}</p>`).join('');
     }
 
-    // 페이지 로드 시 기존 평가 불러오기
-    document.addEventListener('DOMContentLoaded', fetchUserRating);
+    // ========== CheapShark 가격 비교 기능 ==========
+    async function fetchCheapSharkDeal() {
+        if (!STEAM_APPID) {
+            // Steam AppID가 없으면 버튼 숨김
+            const btn = document.getElementById('cheapsharkBtn');
+            if (btn) btn.style.display = 'none';
+            return;
+        }
+
+        const btn = document.getElementById('cheapsharkBtn');
+        const icon = document.getElementById('cheapsharkIcon');
+        const text = document.getElementById('cheapsharkText');
+        
+        if (!btn || !icon || !text) return;
+
+        try {
+            // 백엔드 API에서 데이터셋의 CheapShark URL 가져오기 (더 안정적)
+            const response = await fetch(`/users/api/cheapshark/${STEAM_APPID}/`);
+            if (!response.ok) throw new Error('API error');
+            
+            const data = await response.json();
+            
+            if (data.found && data.cheapshark_url) {
+                // 데이터셋에서 찾은 경우 - 저장된 redirect URL 사용
+                const currentPrice = data.current_price;
+                const discountPercent = data.discount_percent;
+                
+                btn.href = data.cheapshark_url;
+                btn.target = '_blank';
+                btn.onclick = null;
+                btn.classList.remove('opacity-50', 'cursor-wait');
+                btn.title = currentPrice ? `$${currentPrice}` : '가격 비교';
+                
+                icon.classList.remove('ph-spinner', 'animate-spin');
+                icon.classList.add('ph-lightning');
+                
+                if (currentPrice && discountPercent > 0) {
+                    text.innerHTML = `$${currentPrice} <span class="text-yellow-300">(-${discountPercent}%)</span>`;
+                } else if (currentPrice) {
+                    text.textContent = `$${currentPrice}`;
+                } else {
+                    text.textContent = '바로 구매';
+                }
+            } else {
+                // 데이터셋에 없는 경우 - Steam 링크로 폴백
+                btn.href = `https://store.steampowered.com/app/${STEAM_APPID}`;
+                btn.target = '_blank';
+                btn.onclick = null;
+                btn.classList.remove('opacity-50', 'cursor-wait');
+                btn.title = 'Steam에서 확인';
+                
+                icon.classList.remove('ph-spinner', 'animate-spin');
+                icon.classList.add('ph-storefront');
+                text.textContent = 'Steam 확인';
+            }
+        } catch (e) {
+            console.error('CheapShark API error:', e);
+            // 에러 시 Steam 링크로 폴백
+            btn.href = `https://store.steampowered.com/app/${STEAM_APPID}`;
+            btn.target = '_blank';
+            btn.onclick = null;
+            btn.classList.remove('opacity-50', 'cursor-wait');
+            
+            icon.classList.remove('ph-spinner', 'animate-spin');
+            icon.classList.add('ph-storefront');
+            text.textContent = 'Steam 확인';
+        }
+    }
+
+    // 페이지 로드 시 기존 평가 및 찜 상태 불러오기
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchUserRating();
+        fetchWishlistStatus();
+        fetchCheapSharkDeal();
+    });
 
     // ========== 별점 리뷰 시각 효과 ==========
     const starContainer = document.getElementById('starRatingContainer');

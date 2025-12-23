@@ -101,7 +101,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '서든어택 (Sudden Attack)',
         'genre': 'FPS, Shooter, Multiplayer',
         'description': '한국의 국민 FPS. 게임하이에서 개발, 넥슨 서비스. 팀 데스매치, 폭파 미션 등 클래식 FPS 모드. PC방 점유율 1위를 오래 지켰던 게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/6e/Sudden_Attack_logo.png',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4914048932261689118',
+        'skip_rawg': True,  # 한국 고유 게임
         'tags': ['fps', 'shooter', 'multiplayer', 'competitive', 'free-to-play', 'korean'],
     },
     {
@@ -109,13 +110,15 @@ KOREAN_POPULAR_GAMES = [
         'genre': 'FPS, Shooter, Zombie, Multiplayer',
         'description': '넥슨이 서비스한 카스의 온라인화 버전. 좀비 모드, 다양한 무기 스킨 추가. 오리지널 카스에 한국식 컨텐츠 가미.',
         'image_url': 'https://upload.wikimedia.org/wikipedia/en/archive/9/94/20220826012455%21Counter-Strike_Online_capsule.jpg',
+        'skip_rawg': True,  # RAWG에서 다른 게임과 혼동될 수 있음
         'tags': ['fps', 'shooter', 'zombie', 'multiplayer', 'free-to-play', 'korean'],
     },
     {
         'title': '스페셜포스 (Special Force)',
         'genre': 'FPS, Shooter, Tactical',
         'description': '드래곤플라이에서 개발한 밀리터리 FPS. 서든어택의 라이벌로 PC방에서 인기. 다양한 총기와 맵.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/37/Special_Force_logo.png',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640042',
+        'skip_rawg': True,  # 한국 고유 게임
         'tags': ['fps', 'shooter', 'tactical', 'military', 'multiplayer', 'free-to-play', 'korean'],
     },
     {
@@ -174,21 +177,24 @@ KOREAN_POPULAR_GAMES = [
         'title': '크레이지레이싱 카트라이더 (KartRider)',
         'genre': 'Racing, Arcade, Multiplayer',
         'description': '넥슨의 캐주얼 레이싱 게임. 아이템전과 스피드전. 휴대폰 시절부터 PC방, 모바일까지 국민게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/8/86/KartRider_Drift_logo.png',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640043',
+        'skip_rawg': True,  # 한국 고유 게임
         'tags': ['racing', 'arcade', 'multiplayer', 'casual', 'fun', 'free-to-play', 'korean'],
     },
     {
         'title': '테일즈런너 (TalesRunner)',
         'genre': 'Racing, Platformer, Multiplayer',
         'description': '로커스에서 개발한 달리기 게임. 동화 속 세계관에서 점프와 대시, 아이템을 활용한 레이싱.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/3c/Tales_Runner_logo.png',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4914048932261689116',
+        'skip_rawg': True,  # RAWG에 없는 한국 고유 게임
         'tags': ['racing', 'platformer', 'multiplayer', 'casual', 'anime', 'free-to-play', 'korean'],
     },
     {
         'title': '크레이지아케이드 (Crazy Arcade)',
         'genre': 'Puzzle, Action, Multiplayer',
         'description': '넥슨의 폭탄게임. 봄버맨 스타일에 아이템과 캐릭터 커스터마이징. 카트라이더와 함께 넥슨의 양대 캐주얼 게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/61/Crazy_Arcade_BnB_logo.png',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640041',
+        'skip_rawg': True,  # 한국 고유 게임
         'tags': ['puzzle', 'action', 'multiplayer', 'party-game', 'casual', 'free-to-play', 'korean'],
     },
     
@@ -262,8 +268,9 @@ KOREAN_POPULAR_GAMES = [
     {
         'title': '거상 (Gersang)',
         'genre': 'MMORPG, Trading, Economy',
-        'description': '바람의나라와 함께 넥슨 초기 게임. 무역과 경제 시스템이 특징.',
-        'image_url': '',  # 이미지 없음
+        'description': '넥슨 초기 게임. 조선시대 배경의 무역과 경제 시스템이 특징인 온라인 게임.',
+        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640044',
+        'skip_rawg': True,  # RAWG에 없는 한국 고유 게임
         'tags': ['mmorpg', 'economy', 'trading', 'korean', 'classic', 'free-to-play'],
     },
     {
@@ -703,7 +710,7 @@ KOREAN_POPULAR_GAMES = [
 
 
 class Command(BaseCommand):
-    help = '한국에서 유행했던 유명 온라인/PC방 게임들을 DB에 추가합니다'
+    help = '한국에서 유행했던 유명 온라인/PC방 게임들을 DB에 추가합니다 (RAWG API 연동)'
     
     def add_arguments(self, parser):
         parser.add_argument(
@@ -711,8 +718,26 @@ class Command(BaseCommand):
             action='store_true',
             help='기존 한국 게임 데이터 삭제 후 재생성',
         )
+        parser.add_argument(
+            '--fetch-rawg',
+            action='store_true',
+            help='RAWG API에서 추가 정보 가져오기 (이미지, 설명 등)',
+        )
+        parser.add_argument(
+            '--update-images',
+            action='store_true',
+            help='기존 게임의 이미지만 RAWG에서 업데이트',
+        )
     
     def handle(self, *args, **options):
+        import time
+        import requests
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        RAWG_API_KEY = os.getenv('RAWG_API_KEY', '')
+        
         self.stdout.write("한국 유명 게임 데이터 추가 시작...")
         
         # 태그 생성 먼저
@@ -720,8 +745,9 @@ class Command(BaseCommand):
         
         created_count = 0
         updated_count = 0
+        rawg_fetched = 0
         
-        for game_data in KOREAN_POPULAR_GAMES:
+        for idx, game_data in enumerate(KOREAN_POPULAR_GAMES):
             title = game_data['title']
             
             # 기존 게임 찾기 (제목으로)
@@ -734,27 +760,94 @@ class Command(BaseCommand):
             if not existing and english_title:
                 existing = Game.objects.filter(title__icontains=english_title).first()
             
+            # skip_rawg 플래그 확인 - RAWG에 없거나 잘못 매칭되는 게임은 건너뜀
+            skip_rawg = game_data.get('skip_rawg', False)
+            
+            # Steam CDN 이미지 URL 생성 (steam_appid가 있는 경우)
+            steam_cdn_image = None
+            if game_data.get('steam_appid'):
+                steam_cdn_image = f"https://cdn.akamai.steamstatic.com/steam/apps/{game_data['steam_appid']}/header.jpg"
+            
+            # RAWG에서 데이터 가져오기 (skip_rawg가 아닌 경우에만)
+            rawg_data = None
+            if not skip_rawg and (options.get('fetch_rawg') or options.get('update_images')) and RAWG_API_KEY:
+                search_term = english_title or korean_title
+                rawg_data = self._fetch_from_rawg(search_term, RAWG_API_KEY)
+                if rawg_data:
+                    # RAWG 매칭 결과 유사도 검증 (제목이 너무 다르면 무시)
+                    rawg_name = (rawg_data.get('name') or '').lower()
+                    search_lower = search_term.lower()
+                    if search_lower in rawg_name or rawg_name in search_lower:
+                        rawg_fetched += 1
+                        self.stdout.write(f"  🔍 RAWG 매칭: {title} → {rawg_data.get('name')}")
+                    else:
+                        self.stdout.write(self.style.WARNING(f"  ⚠️ RAWG 불일치: {title} → {rawg_data.get('name')} (무시)"))
+                        rawg_data = None  # 불일치하면 무시
+                time.sleep(0.3)  # API 레이트 리밋 방지
+            elif skip_rawg:
+                self.stdout.write(f"  ⏭️ RAWG 건너뜀: {title} (skip_rawg=True)")
+            
             if existing:
                 if options['delete']:
                     existing.delete()
                     self.stdout.write(f"  삭제: {title}")
                 else:
-                    # 업데이트만
-                    existing.description = game_data.get('description', existing.description)
+                    # 업데이트
+                    if not existing.description:
+                        existing.description = game_data.get('description', existing.description)
                     existing.genre = game_data.get('genre', existing.genre)
+                    
+                    # RAWG 데이터로 업데이트
+                    if rawg_data:
+                        if not existing.rawg_id:
+                            existing.rawg_id = rawg_data.get('id')
+                        if not existing.background_image or options.get('update_images'):
+                            existing.background_image = rawg_data.get('background_image', '')
+                            existing.image_url = rawg_data.get('background_image', existing.image_url)
+                        if rawg_data.get('metacritic') and not existing.metacritic_score:
+                            existing.metacritic_score = rawg_data.get('metacritic')
+                        if rawg_data.get('description_raw') and not existing.description:
+                            existing.description = rawg_data.get('description_raw')[:2000]
+                    
                     existing.save()
                     updated_count += 1
                     self.stdout.write(f"  업데이트: {title}")
                     continue
             
             # 새 게임 생성
+            image_url = game_data.get('image_url', '')
+            background_image = ''
+            rawg_id = None
+            metacritic = None
+            description = game_data.get('description', '')
+            
+            # 이미지 우선순위: 1) Steam CDN, 2) 수동 지정, 3) RAWG
+            if steam_cdn_image:
+                # Steam AppID가 있으면 Steam CDN 이미지 우선
+                background_image = steam_cdn_image
+                if not image_url:
+                    image_url = steam_cdn_image
+            
+            # RAWG 데이터 사용 (skip_rawg가 아닌 경우에만)
+            if rawg_data:
+                rawg_id = rawg_data.get('id')
+                # RAWG 이미지는 수동 지정이 없을 때만 사용
+                if rawg_data.get('background_image') and not game_data.get('image_url'):
+                    image_url = rawg_data.get('background_image')
+                    background_image = rawg_data.get('background_image')
+                metacritic = rawg_data.get('metacritic')
+                if rawg_data.get('description_raw') and not description:
+                    description = rawg_data.get('description_raw')[:2000]
+            
             game = Game.objects.create(
                 title=title,
                 genre=game_data.get('genre', ''),
-                description=game_data.get('description', ''),
-                image_url=game_data.get('image_url', ''),
+                description=description,
+                image_url=image_url,
+                background_image=background_image,
                 steam_appid=game_data.get('steam_appid'),
-                rawg_id=None,  # RAWG에 없는 게임
+                rawg_id=rawg_id,
+                metacritic_score=metacritic,
             )
             
             # 태그 연결
@@ -768,8 +861,43 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"  추가: {title}"))
         
         self.stdout.write(self.style.SUCCESS(
-            f"\n완료! 생성: {created_count}개, 업데이트: {updated_count}개"
+            f"\n완료! 생성: {created_count}개, 업데이트: {updated_count}개, RAWG 매칭: {rawg_fetched}개"
         ))
+    
+    def _fetch_from_rawg(self, search_term, api_key):
+        """RAWG API에서 게임 검색하여 상세 정보 반환"""
+        import requests
+        
+        try:
+            # 1. 검색
+            search_url = f"https://api.rawg.io/api/games"
+            params = {
+                'key': api_key,
+                'search': search_term,
+                'page_size': 1,
+            }
+            response = requests.get(search_url, params=params, timeout=10)
+            if response.status_code != 200:
+                return None
+            
+            data = response.json()
+            results = data.get('results', [])
+            if not results:
+                return None
+            
+            game_id = results[0].get('id')
+            
+            # 2. 상세 정보 가져오기
+            detail_url = f"https://api.rawg.io/api/games/{game_id}"
+            detail_response = requests.get(detail_url, params={'key': api_key}, timeout=10)
+            if detail_response.status_code == 200:
+                return detail_response.json()
+            
+            return results[0]  # 상세 정보 실패 시 검색 결과 반환
+            
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"  RAWG 오류: {e}"))
+            return None
     
     def _ensure_tags(self):
         """필요한 태그가 없으면 생성"""

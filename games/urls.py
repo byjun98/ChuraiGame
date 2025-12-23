@@ -39,4 +39,5 @@ urlpatterns = [
     
     # API Endpoints - Wishlist for RAWG Games (RAWG ID 기반 찜하기 - 자동 게임 생성)
     path('api/wishlist/<int:rawg_id>/toggle/', views.api_toggle_wishlist_by_rawg_id, name='api_toggle_wishlist_rawg'),
+    path('api/wishlist/<int:rawg_id>/status/', views.api_wishlist_status_by_rawg_id, name='api_wishlist_status_rawg'),
 ]
