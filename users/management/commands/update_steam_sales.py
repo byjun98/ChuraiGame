@@ -177,7 +177,7 @@ class Command(BaseCommand):
         # ===== 1단계: Deal Rating 정렬로 수집 (할인 가성비 높은 게임) =====
         self.stdout.write("📊 1단계: Deal Rating 기준 수집 중...")
         page = 0
-        deal_rating_target = target_count // 2  # 절반은 Deal Rating으로
+        deal_rating_target = target_count // 3  # 1/3은 Deal Rating으로
         
         while len(collected_data) < deal_rating_target:
             deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Deal Rating")
@@ -193,17 +193,18 @@ class Command(BaseCommand):
             page += 1
             time.sleep(0.2)
             
-            if page > 30:
+            if page > 50:
                 break
         
         deal_rating_count = len(collected_data)
         self.stdout.write(f"   ✅ Deal Rating: {deal_rating_count}개 수집 완료")
         
-        # ===== 2단계: Reviews 정렬로 수집 (인기 게임 - 다크소울, 스카이림 등) =====
+        # ===== 2단계: Reviews 정렬로 수집 (인기 게임 - 리뷰 많은 게임) =====
         self.stdout.write("🔥 2단계: 인기도(Reviews) 기준 수집 중...")
         page = 0
+        reviews_target = (target_count * 2) // 3  # 2/3 지점까지
         
-        while len(collected_data) < target_count:
+        while len(collected_data) < reviews_target:
             deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Reviews")
             
             if not deals:
@@ -217,11 +218,36 @@ class Command(BaseCommand):
             page += 1
             time.sleep(0.2)
             
-            if page > 30:
+            if page > 50:
                 break
         
         reviews_count = len(collected_data) - deal_rating_count
         self.stdout.write(f"   ✅ Reviews 기준: {reviews_count}개 추가 수집 완료")
+        
+        # ===== 3단계: Metacritic 정렬로 수집 (고평가 게임 - 엘든링, 세키로 등) =====
+        self.stdout.write("🏆 3단계: Metacritic 기준 수집 중... (엘든링, 세키로 등 명작)")
+        page = 0
+        before_metacritic = len(collected_data)
+        
+        while len(collected_data) < target_count:
+            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Metacritic")
+            
+            if not deals:
+                break
+            
+            added = process_deals(deals, "Metacritic")
+            
+            if page % 5 == 0:
+                self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개, +{added} 신규)")
+            
+            page += 1
+            time.sleep(0.2)
+            
+            if page > 50:
+                break
+        
+        metacritic_count = len(collected_data) - before_metacritic
+        self.stdout.write(f"   ✅ Metacritic 기준: {metacritic_count}개 추가 수집 완료")
         self.stdout.write(f"   📊 총 수집: {len(collected_data)}개 (중복 제거 완료)")
         
         # 목표 개수에 맞춰 자르기
