@@ -370,7 +370,12 @@
             const response = await fetch(url);
             const data = await response.json();
             if (data.games) {
-                rawgGames.value = data.games;
+                // "요즘 뜨는" 탭은 별점순으로 정렬
+                if (tabName === 'popular') {
+                    rawgGames.value = data.games.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                } else {
+                    rawgGames.value = data.games;
+                }
             }
         } catch (e) {
             console.error("Failed to fetch games for tab " + tabName, e);
@@ -413,7 +418,7 @@
             }
 
             // Fetch all-time popular games (no date filter) for sale matching
-            const response = await fetch('/games/api/popular/?limit=100&all_time=true');
+            const response = await fetch('/games/api/popular/?limit=200&all_time=true');
             const data = await response.json();
 
             console.log(`RAWG popular games fetched: ${data.games?.length || 0}`);
@@ -479,7 +484,7 @@
                         });
 
                         // Stop when we have enough matches
-                        if (matchedGames.length >= 15) break;
+                        if (matchedGames.length >= 30) break;
                     }
                 }
 

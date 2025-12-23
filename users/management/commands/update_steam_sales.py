@@ -63,15 +63,19 @@ class Command(BaseCommand):
             help='Skip fetching historical low prices'
         )
 
-    def fetch_deals(self, page_number=0, min_rating=75):
-        """CheapShark Deals API로 세일 게임 목록 조회"""
+    def fetch_deals(self, page_number=0, min_rating=75, sort_by="Deal Rating"):
+        """CheapShark Deals API로 세일 게임 목록 조회
+        
+        Args:
+            sort_by: 정렬 기준 ("Deal Rating", "Reviews", "Savings", "Price", "Metacritic", "recent")
+        """
         params = {
             "storeID": "1",          # 1 = Steam
             "onSale": "1",           # 현재 세일 중
             "steamRating": str(min_rating),
             "pageSize": str(self.PAGE_SIZE),
             "pageNumber": str(page_number),
-            "sortBy": "Deal Rating"
+            "sortBy": sort_by
         }
         
         try:
@@ -106,29 +110,28 @@ class Command(BaseCommand):
         self.stdout.write(f"   필터: 스팀 평가 {min_rating}% 이상, 리뷰 {min_reviews}개 이상")
         self.stdout.write("")
         
+        # 중복 체크용 set (steam_app_id 기준)
+        seen_app_ids = set()
         collected_data = []
-        page = 0
         
-        # 데이터 수집
-        while len(collected_data) < target_count:
-            deals = self.fetch_deals(page_number=page, min_rating=min_rating)
-            
-            if not deals:
-                self.stdout.write(self.style.WARNING("🏁 더 이상 데이터가 없습니다."))
-                break
-            
-            filtered_count = 0
+        def process_deals(deals, source_name=""):
+            """딜 데이터를 처리하여 collected_data에 추가 (중복 제거)"""
+            added = 0
             for deal in deals:
                 # 리뷰 개수 필터링 (핵심! 스캠 게임 차단)
                 review_count = int(deal.get('steamRatingCount') or 0)
                 if review_count < min_reviews:
-                    filtered_count += 1
                     continue
                 
                 # 스팀 앱 ID가 없는 경우 스킵
                 steam_app_id = deal.get('steamAppID')
                 if not steam_app_id:
                     continue
+                
+                # 중복 체크
+                if steam_app_id in seen_app_ids:
+                    continue
+                seen_app_ids.add(steam_app_id)
                 
                 # 할인율 계산
                 savings = float(deal.get('savings') or 0)
@@ -168,16 +171,58 @@ class Command(BaseCommand):
                 }
                 
                 collected_data.append(game_info)
+                added += 1
+            return added
+        
+        # ===== 1단계: Deal Rating 정렬로 수집 (할인 가성비 높은 게임) =====
+        self.stdout.write("📊 1단계: Deal Rating 기준 수집 중...")
+        page = 0
+        deal_rating_target = target_count // 2  # 절반은 Deal Rating으로
+        
+        while len(collected_data) < deal_rating_target:
+            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Deal Rating")
             
-            if page % 3 == 0:
+            if not deals:
+                break
+            
+            added = process_deals(deals, "Deal Rating")
+            
+            if page % 5 == 0:
                 self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개)")
             
             page += 1
-            time.sleep(0.3)
+            time.sleep(0.2)
             
-            if page > 50:
-                self.stdout.write(self.style.WARNING("⚠️ 최대 페이지 도달"))
+            if page > 30:
                 break
+        
+        deal_rating_count = len(collected_data)
+        self.stdout.write(f"   ✅ Deal Rating: {deal_rating_count}개 수집 완료")
+        
+        # ===== 2단계: Reviews 정렬로 수집 (인기 게임 - 다크소울, 스카이림 등) =====
+        self.stdout.write("🔥 2단계: 인기도(Reviews) 기준 수집 중...")
+        page = 0
+        
+        while len(collected_data) < target_count:
+            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Reviews")
+            
+            if not deals:
+                break
+            
+            added = process_deals(deals, "Reviews")
+            
+            if page % 5 == 0:
+                self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개, +{added} 신규)")
+            
+            page += 1
+            time.sleep(0.2)
+            
+            if page > 30:
+                break
+        
+        reviews_count = len(collected_data) - deal_rating_count
+        self.stdout.write(f"   ✅ Reviews 기준: {reviews_count}개 추가 수집 완료")
+        self.stdout.write(f"   📊 총 수집: {len(collected_data)}개 (중복 제거 완료)")
         
         # 목표 개수에 맞춰 자르기
         collected_data = collected_data[:target_count]

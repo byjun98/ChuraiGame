@@ -97,19 +97,20 @@ def main_view(request):
             with open(fast_json_path, 'r', encoding='utf-8') as f:
                 games_data = json.load(f)
         
-        # Generate best_prices from games that are at historical low price
-        # (current_price <= cheapest_price_ever)
+        # Generate best_prices from highly rated games with high discount
+        # (steam_rating >= 85% AND discount_rate >= 50%)
         if games_data:
-            historical_lows = [
+            # 평점 85% 이상, 할인율 50% 이상인 게임 (역대 최대 할인)
+            high_discount_quality = [
                 g for g in games_data 
-                if g.get('is_historical_low', False)
+                if g.get('steam_rating', 0) >= 85 and g.get('discount_rate', 0) >= 0.5
             ]
-            # Sort by discount rate (highest first) and take top 30
+            # Sort by steam rating (highest first) and take top 50
             best_prices = sorted(
-                historical_lows,
-                key=lambda x: x.get('discount_rate', 0),
+                high_discount_quality,
+                key=lambda x: x.get('steam_rating', 0),
                 reverse=True
-            )[:30]
+            )[:50]
         else:
             best_prices = []
 
@@ -2121,6 +2122,7 @@ def cheapshark_url_api(request, steam_appid):
             current_price = matching_game.get('current_price')
             original_price = matching_game.get('original_price')
             discount_rate = matching_game.get('discount_rate', 0)
+            cheapest_price_ever_krw = matching_game.get('cheapest_price_ever_krw')
             
             return JsonResponse({
                 'found': True,
@@ -2129,7 +2131,9 @@ def cheapshark_url_api(request, steam_appid):
                 'original_price': original_price,
                 'discount_percent': round(discount_rate * 100) if discount_rate else 0,
                 'title': matching_game.get('title', ''),
-                'is_on_sale': matching_game.get('is_on_sale', False)
+                'is_on_sale': matching_game.get('is_on_sale', False),
+                'cheapest_price_ever_krw': cheapest_price_ever_krw,
+                'is_historical_low': matching_game.get('is_historical_low', False)
             })
         else:
             return JsonResponse({
