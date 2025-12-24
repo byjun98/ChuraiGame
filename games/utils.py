@@ -253,10 +253,25 @@ def update_game_with_rawg(game, force_refresh=False):
         return True
     
     # Get or find RAWG ID
+    rawg_id = None
+    had_existing_rawg_id = bool(game.rawg_id)
+    
     if game.rawg_id:
         rawg_id = game.rawg_id
         logger.info(f"Using existing RAWG ID {rawg_id} for '{game.title}'")
-    else:
+        
+        # Validate existing RAWG ID by fetching details first
+        details = fetch_rawg_game_details(rawg_id)
+        if details is None:
+            # 404 error - likely a Steam ID stored as RAWG ID
+            logger.warning(f"Invalid RAWG ID {rawg_id} for '{game.title}' (possibly Steam ID). Clearing and re-searching...")
+            game.rawg_id = None
+            game.save(update_fields=['rawg_id'])
+            rawg_id = None
+            had_existing_rawg_id = False
+    
+    # If no valid RAWG ID, search for it
+    if not rawg_id:
         rawg_id = get_rawg_game_id(game.title, steam_appid=game.steam_appid)
         if not rawg_id:
             logger.warning(f"Could not find RAWG ID for '{game.title}'")
@@ -265,8 +280,12 @@ def update_game_with_rawg(game, force_refresh=False):
         game.save(update_fields=['rawg_id'])
         logger.info(f"Saved RAWG ID {rawg_id} for '{game.title}'")
 
-    # Fetch and update game details
-    details = fetch_rawg_game_details(rawg_id)
+    # Fetch and update game details (if not already fetched during validation)
+    if not had_existing_rawg_id:
+        # Need to fetch details for newly found RAWG ID
+        details = fetch_rawg_game_details(rawg_id)
+    # else: details was already fetched during validation above
+    
     if details:
         # Update description (prefer raw text over HTML)
         description = details.get('description_raw', '') or details.get('description', '')

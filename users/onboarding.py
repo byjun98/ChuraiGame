@@ -77,6 +77,14 @@ def load_korean_games_from_db():
             'Among Us', 'Fall Guys', 'Roblox', 'Marvel Snap',
             # 추가 한국 게임
             '스페셜포스', '배틀그라운드', '발로란트', '오버워치', '리그 오브',
+            # 인기 무료 게임 (F2P)
+            'Team Fortress', 'Dota 2', '도타', 'Apex Legends', '에이펙스',
+            'Fortnite', '포트나이트', 'Warframe', '워프레임',
+            'Path of Exile', 'Destiny 2', '데스티니', 'World of Tanks', '월드 오브 탱크',
+            'War Thunder', '워 썬더', 'Once Human', '원스 휴먼',
+            'THE FINALS', '더 파이널스', 'Marvel Rivals', '마블 라이벌',
+            'NARAKA', '나라카', 'Eternal Return', '이터널 리턴',
+            'RuneScape', 'SMITE', 'KartRider', '벨루시아', '연운',
         ]
         
         from django.db.models import Q

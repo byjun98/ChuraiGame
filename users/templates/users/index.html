@@ -178,6 +178,24 @@
     const hasMoreSteamRecommendations = ref(true);
     const isLoadingSteamRecommendations = ref(false);
 
+    // AI Profile Generation State
+    const showAiProfileModal = ref(false);
+    const aiProfileUploadedImage = ref(null);  // File object
+    const aiProfilePreview = ref('');  // Base64 preview URL
+    const isGeneratingAiProfile = ref(false);
+    const aiProfileGenerated = ref(false);
+    const aiProfileResult = ref('');  // Generated image URL (base64)
+    const aiProfileInput = ref(null);  // File input ref
+    const userTopGenres = ref([]);  // User's favorite genres for prompt
+
+    // Password Verification State (개인정보 수정 전 비밀번호 확인)
+    const showPasswordVerifyModal = ref(false);
+    const verifyPassword = ref('');
+    const showVerifyPassword = ref(false);
+    const isVerifyingPassword = ref(false);
+    const passwordVerifyError = ref('');
+
+
     // Computed: Genre Chart Gradient (Conic Gradient for Pie Chart)
     const genreChartGradient = computed(() => {
         if (!genreAnalysisData.value || !genreAnalysisData.value.genres) return 'gray';
@@ -1385,7 +1403,225 @@
         }
     };
 
-    // Setup infinite scroll for Steam recommendations
+    // --- AI Profile Generation Methods ---
+    const handleAiProfileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            aiProfileUploadedImage.value = file;
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                aiProfilePreview.value = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleAiProfileDrop = (event) => {
+        const file = event.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            aiProfileUploadedImage.value = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                aiProfilePreview.value = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeAiProfileImage = () => {
+        aiProfileUploadedImage.value = null;
+        aiProfilePreview.value = '';
+    };
+
+    const generateAiProfile = async (auto = false) => {
+        isGeneratingAiProfile.value = true;
+        aiProfileGenerated.value = false;
+        
+        try {
+            // Build prompt based on user data
+            const nickname = user.value.nickname || '게이머';
+            const genres = userTopGenres.value.length > 0 ? userTopGenres.value.slice(0, 3).join(', ') : 'RPG, 액션';
+            
+            // Base prompt (as specified by user)
+            let prompt = `Create a 3D game character illustration in Animal Crossing / Fantasy Life style.
+
+IMPORTANT RULES:
+- DO NOT add ANY text, letters, words, or characters to the image
+- NO Korean text, NO English text, NO numbers
+- NO watermarks, NO signatures, NO labels
+- ONLY draw the character and background, absolutely NO TEXT
+
+Style: Warm, cozy, 3D rendered game character like Animal Crossing or Fantasy Life
+Background: Match the game genre theme (${genres})
+Character: Cute, friendly design inspired by the persona "${nickname}"
+
+If a reference photo is provided, make the character resemble that person's features.
+Add small decorative elements around the character that hint at ${genres} games (weapons, magic effects, game items, etc.)
+
+Remember: ABSOLUTELY NO TEXT OR LETTERS IN THE IMAGE!`;
+
+            // Prepare request body
+            const requestBody = {
+                contents: [{
+                    parts: []
+                }],
+                generationConfig: {
+                    responseModalities: ["Text", "Image"]
+                }
+            };
+
+            // If user uploaded an image, include it
+            if (aiProfileUploadedImage.value && aiProfilePreview.value) {
+                const base64Data = aiProfilePreview.value.split(',')[1];
+                const mimeType = aiProfileUploadedImage.value.type;
+                
+                requestBody.contents[0].parts.push({
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                    }
+                });
+            }
+
+            // Add text prompt
+            requestBody.contents[0].parts.push({
+                text: prompt
+            });
+
+            // Call the backend API (which proxies to Gemini)
+            const response = await fetch('/users/api/generate-ai-profile/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error('AI 이미지 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            
+            if (data.image_base64) {
+                aiProfileResult.value = `data:image/png;base64,${data.image_base64}`;
+                aiProfileGenerated.value = true;
+            } else {
+                throw new Error('생성된 이미지가 없습니다.');
+            }
+        } catch (error) {
+            console.error('AI Profile generation error:', error);
+            alert('AI 프로필 생성 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            isGeneratingAiProfile.value = false;
+        }
+    };
+
+    const applyAiProfile = async () => {
+        if (!aiProfileResult.value) return;
+        
+        try {
+            // Convert base64 to blob
+            const response = await fetch(aiProfileResult.value);
+            const blob = await response.blob();
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('avatar', blob, 'ai-profile.png');
+            
+            // Upload to server
+            const uploadResponse = await fetch('/users/api/avatar/upload/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+            
+            if (uploadResponse.ok) {
+                const data = await uploadResponse.json();
+                user.value.avatar = data.avatar_url;
+                showAiProfileModal.value = false;
+                resetAiProfile();
+                alert('AI 프로필이 적용되었습니다!');
+            } else {
+                throw new Error('프로필 업로드에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Apply AI profile error:', error);
+            alert('프로필 적용 중 오류가 발생했습니다: ' + error.message);
+        }
+    };
+
+    const resetAiProfile = () => {
+        aiProfileGenerated.value = false;
+        aiProfileResult.value = '';
+        aiProfileUploadedImage.value = null;
+        aiProfilePreview.value = '';
+    };
+
+    // Fetch user's top genres from ratings (for AI prompt)
+    const fetchUserTopGenres = async () => {
+        try {
+            const response = await fetch('/users/api/genre-analysis/');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.genres && data.genres.length > 0) {
+                    userTopGenres.value = data.genres.slice(0, 5).map(g => g.name);
+                }
+            }
+        } catch (e) {
+            console.log('Failed to fetch user genres for AI profile');
+        }
+    };
+
+    // Fetch genres when modal opens
+    Vue.watch(showAiProfileModal, (show) => {
+        if (show && userTopGenres.value.length === 0) {
+            fetchUserTopGenres();
+        }
+    });
+
+    // Password verification for settings page
+    const verifyPasswordAndGoToSettings = async () => {
+        if (!verifyPassword.value) return;
+        
+        isVerifyingPassword.value = true;
+        passwordVerifyError.value = '';
+        
+        try {
+            const response = await fetch('/users/api/verify-password/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ password: verifyPassword.value })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.valid) {
+                // Password verified, redirect to settings page
+                showPasswordVerifyModal.value = false;
+                verifyPassword.value = '';
+                
+                // Navigate to settings page with token
+                window.location.href = `/users/settings/?token=${data.token}`;
+            } else {
+                passwordVerifyError.value = data.error || '비밀번호가 일치하지 않습니다.';
+            }
+        } catch (error) {
+            console.error('Password verification error:', error);
+            passwordVerifyError.value = '서버 오류가 발생했습니다.';
+        } finally {
+            isVerifyingPassword.value = false;
+        }
+    };
+
+
     const setupSteamInfiniteScroll = () => {
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && currentTab.value === 'home' && hasMoreSteamRecommendations.value) {
@@ -1713,8 +1949,8 @@
                 const data = await response.json();
                 console.log('Onboarding completed:', data);
 
-                // 완료 후 추천 목록 새로고침을 위해 페이지 리로드
-                // (유사도 데이터가 갱신되었으므로)
+                // 완료 후 추천 탭으로 이동 (유사도 데이터가 갱신되었으므로)
+                window.location.href = '/#recommend';
                 window.location.reload();
             }
         } catch (e) {
@@ -1981,7 +2217,31 @@
         fetchSteamRecommendations,
         loadMoreSteamRecommendations,
         steamScrollTrigger,
-        hideRecommendation
+        hideRecommendation,
+
+        // AI Profile Generation
+        showAiProfileModal,
+        aiProfileUploadedImage,
+        aiProfilePreview,
+        isGeneratingAiProfile,
+        aiProfileGenerated,
+        aiProfileResult,
+        aiProfileInput,
+        userTopGenres,
+        handleAiProfileUpload,
+        handleAiProfileDrop,
+        removeAiProfileImage,
+        generateAiProfile,
+        applyAiProfile,
+        resetAiProfile,
+
+        // Password Verification (개인정보 수정)
+        showPasswordVerifyModal,
+        verifyPassword,
+        showVerifyPassword,
+        isVerifyingPassword,
+        passwordVerifyError,
+        verifyPasswordAndGoToSettings
     };
 
         }

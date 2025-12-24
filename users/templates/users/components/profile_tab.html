@@ -11,7 +11,14 @@
         <p class="text-gray-500">프로필 정보를 불러오는 중입니다...</p>
     </div>
 
-    <div v-else class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
+    <div v-else class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden mb-8 relative">
+        <!-- Settings Button (톱니바퀴) -->
+        <button v-if="isMe" @click="showPasswordVerifyModal = true"
+            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors z-10"
+            title="개인정보 수정">
+            <i class="ph-bold ph-gear text-xl"></i>
+        </button>
+        
         <div class="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-50">
             <!-- Avatar with Edit Button -->
             <div class="relative">
@@ -86,6 +93,31 @@
         </div>
     </div>
 
+    <!-- AI 프로필 이미지 생성 카드 (본인 프로필에서만 표시) -->
+    <div v-if="isMe" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-sm p-6 mb-6 text-white relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+        </div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="ph-fill ph-magic-wand"></i>
+                    AI 프로필 만들기
+                </h3>
+            </div>
+            <p class="text-white/80 text-sm mb-4">
+                AI가 당신을 게임 캐릭터처럼 그려드려요!
+            </p>
+            <button @click="showAiProfileModal = true"
+                class="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-white/30">
+                <i class="ph-bold ph-sparkle"></i>
+                AI 프로필 생성하기
+            </button>
+        </div>
+    </div>
+
     <!-- 게임 취향 분석 섹션 -->
     <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-sm p-6 mb-6 text-white">
         <div class="flex items-center justify-between mb-4">
@@ -96,7 +128,7 @@
             <button v-if="isMe" @click="restartOnboarding"
                 class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                 <i class="ph-bold ph-arrows-clockwise"></i>
-                다시 분석하기
+                취향 분석하기
             </button>
         </div>
         <p class="text-white/80 text-sm">
@@ -292,7 +324,7 @@
                             <p class="font-medium text-gray-800 dark:text-white truncate">{{ game.title }}</p>
                             <p class="text-xs text-gray-500">{{ game.genre || '찜한 게임' }}</p>
                         </div>
-                        <button v-if="isMe" @click.stop="toggleWishlist({ game_id: game.rawg_id })"
+                        <button v-if="isMe" @click.stop="toggleWishlist({ rawg_id: game.rawg_id, game_title: game.title, game_image: game.image_url })"
                             class="text-pink-500 hover:text-pink-700 flex-shrink-0">
                             <i class="ph-fill ph-heart"></i>
                         </button>
@@ -429,6 +461,182 @@
                     <p v-else>Steam 라이브러리 정보가 없습니다.</p>
                 </div>
             </div>
+        </div>
+    </div>
+</Teleport>
+{% endverbatim %}
+
+<!-- AI Profile Generation Modal -->
+{% verbatim %}
+<Teleport to="body">
+    <div v-if="showAiProfileModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showAiProfileModal = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="ph-fill ph-magic-wand"></i>
+                        AI 프로필 만들기
+                    </h3>
+                    <button @click="showAiProfileModal = false" class="text-white/80 hover:text-white">
+                        <i class="ph-bold ph-x text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-white/80 mt-2">
+                    AI가 당신을 귀여운 그림체로 그려드려요!
+                </p>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <!-- 생성 완료 상태 -->
+                <div v-if="aiProfileGenerated" class="text-center">
+                    <div class="w-48 h-48 mx-auto rounded-2xl overflow-hidden shadow-lg mb-4 border-4 border-purple-200">
+                        <img :src="aiProfileResult" class="w-full h-full object-cover">
+                    </div>
+                    <p class="text-green-600 font-bold mb-4">
+                        <i class="ph-fill ph-check-circle mr-1"></i>
+                        프로필 이미지가 생성되었습니다!
+                    </p>
+                    <div class="flex gap-3">
+                        <button @click="applyAiProfile"
+                            class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity">
+                            프로필에 적용하기
+                        </button>
+                        <button @click="resetAiProfile"
+                            class="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                            다시 만들기
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 생성 중 상태 -->
+                <div v-else-if="isGeneratingAiProfile" class="text-center py-8">
+                    <div class="w-24 h-24 mx-auto mb-6 relative">
+                        <div class="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
+                        <i class="ph-fill ph-magic-wand text-purple-500 text-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 font-medium">AI가 열심히 그리는 중...</p>
+                    <p class="text-sm text-gray-400 mt-2">약 10~20초 정도 소요됩니다</p>
+                </div>
+                
+                <!-- 업로드/생성 선택 -->
+                <div v-else>
+                    <!-- 사진 업로드 영역 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            <i class="ph-fill ph-image mr-1"></i>
+                            참고용 사진 업로드 (선택)
+                        </label>
+                        <div 
+                            class="border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer"
+                            :class="aiProfileUploadedImage ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'"
+                            @click="$refs.aiProfileInput.click()"
+                            @dragover.prevent
+                            @drop.prevent="handleAiProfileDrop">
+                            
+                            <div v-if="aiProfileUploadedImage" class="relative inline-block">
+                                <img :src="aiProfilePreview" class="w-32 h-32 object-cover rounded-xl mx-auto">
+                                <button @click.stop="removeAiProfileImage"
+                                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                                    <i class="ph-bold ph-x text-xs"></i>
+                                </button>
+                            </div>
+                            <div v-else>
+                                <i class="ph ph-cloud-arrow-up text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-500">클릭하거나 이미지를 드래그하세요</p>
+                                <p class="text-xs text-gray-400 mt-1">사진을 업로드하면 AI가 참고해서 그려요</p>
+                            </div>
+                        </div>
+                        <input type="file" ref="aiProfileInput" @change="handleAiProfileUpload" accept="image/*" class="hidden">
+                    </div>
+                    
+                    <!-- 생성 버튼들 -->
+                    <div class="space-y-3">
+                        <button @click="generateAiProfile(true)"
+                            class="w-full py-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg">
+                            <i class="ph-bold ph-sparkle"></i>
+                            {{ aiProfileUploadedImage ? '사진 기반으로 생성' : '자동으로 생성하기' }}
+                        </button>
+                        
+                        <div class="text-center text-xs text-gray-400">
+                            <p>닉네임: <span class="font-bold text-gray-600">{{ displayUser.nickname }}</span></p>
+                            <p v-if="userTopGenres.length > 0" class="mt-1">
+                                좋아하는 장르: <span class="font-bold text-purple-500">{{ userTopGenres.slice(0, 3).join(', ') }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Teleport>
+{% endverbatim %}
+
+<!-- Password Verification Modal (개인정보 수정 전 비밀번호 확인) -->
+{% verbatim %}
+<Teleport to="body">
+    <div v-if="showPasswordVerifyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showPasswordVerifyModal = false; passwordVerifyError = ''"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="ph-fill ph-lock text-blue-500"></i>
+                        비밀번호 확인
+                    </h3>
+                    <button @click="showPasswordVerifyModal = false; passwordVerifyError = ''" class="text-gray-400 hover:text-gray-600">
+                        <i class="ph-bold ph-x text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    개인정보 수정을 위해 현재 비밀번호를 입력해주세요.
+                </p>
+            </div>
+            
+            <!-- Content -->
+            <form @submit.prevent="verifyPasswordAndGoToSettings" class="p-6">
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-gray-700 dark:text-gray-300">현재 비밀번호</label>
+                        <div class="relative">
+                            <input 
+                                :type="showVerifyPassword ? 'text' : 'password'" 
+                                v-model="verifyPassword"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all pr-12"
+                                placeholder="비밀번호 입력"
+                                required
+                            >
+                            <button type="button" @click="showVerifyPassword = !showVerifyPassword"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i :class="showVerifyPassword ? 'ph-fill ph-eye' : 'ph-fill ph-eye-slash'" class="text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div v-if="passwordVerifyError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+                        <i class="ph-fill ph-warning-circle"></i>
+                        {{ passwordVerifyError }}
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" @click="showPasswordVerifyModal = false; passwordVerifyError = ''"
+                        class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                        취소
+                    </button>
+                    <button type="submit"
+                        :disabled="isVerifyingPassword || !verifyPassword"
+                        class="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <span v-if="isVerifyingPassword" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span v-else>확인</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </Teleport>

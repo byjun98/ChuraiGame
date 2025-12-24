@@ -2149,3 +2149,287 @@ def cheapshark_url_api(request, steam_appid):
             'cheapshark_url': None,
             'error': str(e)
         }, status=500)
+
+
+# =============================================================================
+# AI Profile Image Generation (Gemini 2.0 Flash Image Generation)
+# =============================================================================
+@login_required
+@require_http_methods(["POST"])
+def generate_ai_profile_api(request):
+    """
+    AI 프로필 이미지 생성 API
+    
+    Gemini 2.0 Flash Exp Image Generation 모델을 사용하여
+    사용자의 사진을 게임 캐릭터 스타일로 변환하거나,
+    닉네임/취향 장르 기반으로 새로운 프로필 이미지 생성
+    
+    Request Body (Gemini API 형식):
+        - contents: [{parts: [{text: prompt}, {inlineData: {mimeType, data}}]}]
+        - generationConfig: {responseModalities: ["Text", "Image"]}
+    
+    Response:
+        - success: bool
+        - image_base64: 생성된 이미지 (base64 encoded)
+        - text: AI 텍스트 응답 (있는 경우)
+    """
+    import os
+    import base64
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    # Get API key from environment
+    api_key = os.getenv('GMS_API_KEY')
+    
+    if not api_key:
+        return JsonResponse({
+            'error': 'API 키가 설정되지 않았습니다.',
+            'success': False
+        }, status=500)
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Gemini Image Generation API endpoint
+        url = f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key={api_key}"
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        # Forward the request body as-is (already in Gemini format)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=data,
+            timeout=60  # Image generation takes longer
+        )
+        
+        print(f"[DEBUG] Gemini Image Gen Response Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            
+            # Parse Gemini response
+            candidates = result.get('candidates', [])
+            if candidates and len(candidates) > 0:
+                content = candidates[0].get('content', {})
+                parts = content.get('parts', [])
+                
+                image_base64 = None
+                text_response = None
+                
+                for part in parts:
+                    # Check for inline image data
+                    if 'inlineData' in part:
+                        image_base64 = part['inlineData'].get('data')
+                    # Check for text
+                    if 'text' in part:
+                        text_response = part['text']
+                
+                if image_base64:
+                    return JsonResponse({
+                        'success': True,
+                        'image_base64': image_base64,
+                        'text': text_response
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': '이미지가 생성되지 않았습니다.',
+                        'text': text_response
+                    }, status=500)
+            
+            return JsonResponse({
+                'success': False,
+                'error': 'AI가 응답을 생성하지 못했습니다.'
+            }, status=500)
+            
+        else:
+            print(f"[DEBUG] Gemini error response: {response.text}")
+            return JsonResponse({
+                'success': False,
+                'error': f'AI 서버 오류 (Status: {response.status_code})',
+                'debug': response.text[:500] if response.text else ''
+            }, status=response.status_code)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': '잘못된 JSON 형식입니다.'
+        }, status=400)
+    except requests.Timeout:
+        return JsonResponse({
+            'success': False,
+            'error': 'AI 서버 응답 시간이 초과되었습니다. 다시 시도해주세요.'
+        }, status=504)
+    except Exception as e:
+        import traceback
+        print(f"AI Profile generation error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+# =============================================================================
+# User Settings (개인정보 수정)
+# =============================================================================
+import hashlib
+import time
+
+# Simple token storage (in production, use Redis or database)
+_settings_tokens = {}
+
+@login_required
+@require_http_methods(["POST"])
+def verify_password_api(request):
+    """
+    비밀번호 확인 API
+    
+    개인정보 수정 페이지 접근 전 현재 비밀번호 검증
+    검증 성공 시 임시 토큰 발급 (5분 유효)
+    """
+    try:
+        data = json.loads(request.body)
+        password = data.get('password', '')
+        
+        if not password:
+            return JsonResponse({'valid': False, 'error': '비밀번호를 입력해주세요.'}, status=400)
+        
+        user = request.user
+        
+        # Check password
+        if user.check_password(password):
+            # Generate temporary token (5 min expiry)
+            token = hashlib.sha256(f"{user.id}:{time.time()}:{password}".encode()).hexdigest()[:32]
+            _settings_tokens[token] = {
+                'user_id': user.id,
+                'created_at': time.time(),
+                'expires_at': time.time() + 300  # 5 minutes
+            }
+            
+            return JsonResponse({'valid': True, 'token': token})
+        else:
+            return JsonResponse({'valid': False, 'error': '비밀번호가 일치하지 않습니다.'})
+            
+    except Exception as e:
+        return JsonResponse({'valid': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def settings_view(request):
+    """
+    개인정보 수정 페이지
+    
+    토큰 검증 후 접근 허용
+    """
+    token = request.GET.get('token', '')
+    
+    # Validate token
+    if token and token in _settings_tokens:
+        token_data = _settings_tokens[token]
+        
+        # Check if token belongs to current user and not expired
+        if token_data['user_id'] == request.user.id and token_data['expires_at'] > time.time():
+            # Token is valid, render settings page
+            return render(request, 'users/settings.html', {
+                'user': request.user,
+                'token': token
+            })
+        else:
+            # Token expired or invalid user
+            del _settings_tokens[token]
+    
+    # Invalid or missing token, redirect to profile with error
+    from django.contrib import messages
+    messages.error(request, '세션이 만료되었습니다. 다시 시도해주세요.')
+    return redirect('users:main')
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_profile_api(request):
+    """
+    개인정보 수정 API
+    
+    닉네임, 이메일, 비밀번호 변경
+    """
+    try:
+        token = request.POST.get('token', '')
+        
+        # Validate token
+        if not token or token not in _settings_tokens:
+            return JsonResponse({'success': False, 'error': '세션이 만료되었습니다.'}, status=403)
+        
+        token_data = _settings_tokens[token]
+        if token_data['user_id'] != request.user.id or token_data['expires_at'] < time.time():
+            if token in _settings_tokens:
+                del _settings_tokens[token]
+            return JsonResponse({'success': False, 'error': '세션이 만료되었습니다.'}, status=403)
+        
+        user = request.user
+        
+        # Get form data
+        nickname = request.POST.get('nickname', '').strip()
+        email = request.POST.get('email', '').strip()
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        changes = []
+        
+        # Update nickname
+        if nickname and nickname != user.nickname:
+            # Check if nickname is already taken
+            from .models import CustomUser
+            if CustomUser.objects.filter(nickname=nickname).exclude(id=user.id).exists():
+                return JsonResponse({'success': False, 'error': '이미 사용 중인 닉네임입니다.'})
+            user.nickname = nickname
+            changes.append('닉네임')
+        
+        # Update email
+        if email and email != user.email:
+            # Basic email validation
+            import re
+            if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+                return JsonResponse({'success': False, 'error': '올바른 이메일 형식이 아닙니다.'})
+            # Check if email is already taken
+            from .models import CustomUser
+            if CustomUser.objects.filter(email=email).exclude(id=user.id).exists():
+                return JsonResponse({'success': False, 'error': '이미 사용 중인 이메일입니다.'})
+            user.email = email
+            changes.append('이메일')
+        
+        # Update password
+        if new_password:
+            if len(new_password) < 4:
+                return JsonResponse({'success': False, 'error': '비밀번호는 4자 이상이어야 합니다.'})
+            if new_password != confirm_password:
+                return JsonResponse({'success': False, 'error': '비밀번호가 일치하지 않습니다.'})
+            user.set_password(new_password)
+            changes.append('비밀번호')
+        
+        if changes:
+            user.save()
+            # Invalidate token after use
+            if token in _settings_tokens:
+                del _settings_tokens[token]
+            
+            # Re-login if password changed
+            if '비밀번호' in changes:
+                from django.contrib.auth import login
+                login(request, user)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{", ".join(changes)}이(가) 변경되었습니다.',
+                'changes': changes
+            })
+        else:
+            return JsonResponse({'success': True, 'message': '변경된 내용이 없습니다.', 'changes': []})
+            
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

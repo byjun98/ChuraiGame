@@ -62,5 +62,14 @@ urlpatterns = [
     
     # CheapShark Price Comparison
     path('api/cheapshark/<int:steam_appid>/', views.cheapshark_url_api, name='cheapshark_url'),
+    
+    # AI Profile Generation
+    path('api/generate-ai-profile/', views.generate_ai_profile_api, name='generate_ai_profile'),
+    path('api/avatar/upload/', views.avatar_upload_api, name='avatar_upload_new'),
+    
+    # User Settings (개인정보 수정)
+    path('api/verify-password/', views.verify_password_api, name='verify_password'),
+    path('settings/', views.settings_view, name='settings'),
+    path('api/update-profile/', views.update_profile_api, name='update_profile'),
 ]
 

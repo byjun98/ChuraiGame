@@ -705,6 +705,210 @@ KOREAN_POPULAR_GAMES = [
         'image_url': 'https://upload.wikimedia.org/wikipedia/en/4/4e/Tetris_99_cover_art.jpg',
         'tags': ['puzzle', 'battle-royale', 'multiplayer', 'competitive', 'nintendo', 'free-to-play'],
     },
+    
+    # === 전세계 인기 무료 게임 (F2P) ===
+    {
+        'title': '팀 포트리스 2 (Team Fortress 2)',
+        'genre': 'FPS, Hero Shooter, Multiplayer',
+        'description': '밸브의 클래스 기반 팀 슈터. 9개의 개성 있는 클래스와 유머러스한 스타일. 2007년 출시 후 무료화되어 꾸준한 인기.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/5/5e/Team_Fortress_2_cover.jpg',
+        'steam_appid': 440,
+        'tags': ['fps', 'hero-shooter', 'multiplayer', 'team-based', 'funny', 'free-to-play', 'classic'],
+    },
+    {
+        'title': '도타 2 (Dota 2)',
+        'genre': 'MOBA, Strategy, Multiplayer',
+        'description': '밸브의 MOBA 대작. 워크래프트 3 Dota Allstars를 계승. e스포츠 역대 최고 상금 기록. 깊은 전략성과 팀플레이.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/05/Dota_2_Logo.png',
+        'steam_appid': 570,
+        'tags': ['moba', 'strategy', 'multiplayer', 'competitive', 'esports', 'free-to-play', 'team-based'],
+    },
+    {
+        'title': '에이펙스 레전드 (Apex Legends)',
+        'genre': 'Battle Royale, FPS, Hero Shooter',
+        'description': '리스폰 엔터테인먼트의 배틀로얄 FPS. 레전드별 고유 능력과 빠른 무브먼트가 특징. 타이탄폴 세계관.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/d/db/Apex_legends_cover.jpg',
+        'steam_appid': 1172470,
+        'tags': ['battle-royale', 'fps', 'hero-shooter', 'multiplayer', 'competitive', 'free-to-play', 'team-based'],
+    },
+    {
+        'title': '포트나이트 (Fortnite)',
+        'genre': 'Battle Royale, TPS, Building',
+        'description': '에픽게임즈의 배틀로얄 게임. 건축 시스템이 특징. 콘서트, 콜라보 등 문화 현상으로 성장.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/8/8c/FORT_art.jpg',
+        'tags': ['battle-royale', 'tps', 'building', 'multiplayer', 'competitive', 'free-to-play', 'creative'],
+    },
+    {
+        'title': '워프레임 (Warframe)',
+        'genre': 'Action, TPS, Co-op, Looter',
+        'description': '디지털 익스트림즈의 무료 액션 TPS. 닌자 스타일의 빠른 액션과 다양한 프레임(캐릭터) 수집.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/e/e9/Warframe_Cover_Art.png',
+        'steam_appid': 230410,
+        'tags': ['action', 'tps', 'co-op', 'loot', 'sci-fi', 'free-to-play', 'ninja'],
+    },
+    {
+        'title': 'Path of Exile',
+        'genre': 'Action RPG, Hack and Slash, Dungeon Crawler',
+        'description': '그라인딩 기어 게임즈의 핵앤슬래시 ARPG. 디아블로 정신적 후속작. 복잡한 스킬 시스템과 시즌제 운영.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/91/Path_of_Exile_cover.png',
+        'steam_appid': 238960,
+        'tags': ['action-rpg', 'hack-and-slash', 'dungeon-crawler', 'loot', 'dark-fantasy', 'free-to-play'],
+    },
+    {
+        'title': 'Path of Exile 2',
+        'genre': 'Action RPG, Hack and Slash, Dungeon Crawler',
+        'description': 'Path of Exile의 후속작. 새로운 캐릭터와 스토리, 개선된 그래픽과 게임플레이.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/91/Path_of_Exile_cover.png',
+        'steam_appid': 2694490,
+        'tags': ['action-rpg', 'hack-and-slash', 'dungeon-crawler', 'loot', 'dark-fantasy', 'free-to-play'],
+    },
+    {
+        'title': '데스티니 가디언즈 (Destiny 2)',
+        'genre': 'FPS, Looter Shooter, MMO',
+        'description': '번지의 온라인 FPS. SF 세계관에서 가디언이 되어 싸우는 루트 슈터. 레이드 컨텐츠로 유명.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/05/Destiny_2_%28artwork%29.jpg',
+        'steam_appid': 1085660,
+        'tags': ['fps', 'shooter', 'loot', 'mmo', 'sci-fi', 'co-op', 'free-to-play'],
+    },
+    {
+        'title': '월드 오브 탱크 (World of Tanks)',
+        'genre': 'Action, Simulation, Multiplayer',
+        'description': '워게이밍의 전차 전투 게임. 2차대전~냉전기 전차로 15vs15 팀 배틀.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/64/World_of_Tanks_logo.png',
+        'tags': ['action', 'simulation', 'multiplayer', 'military', 'tank', 'free-to-play', 'team-based'],
+    },
+    {
+        'title': '워 썬더 (War Thunder)',
+        'genre': 'Simulation, Combat, Multiplayer',
+        'description': '가이진 엔터테인먼트의 밀리터리 시뮬레이션. 전차, 항공기, 함선을 모두 조종 가능.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/b8/War_Thunder_logo.png',
+        'steam_appid': 236390,
+        'tags': ['simulation', 'combat', 'multiplayer', 'military', 'vehicle', 'free-to-play'],
+    },
+    {
+        'title': '원스 휴먼 (Once Human)',
+        'genre': 'Survival, Open World, TPS, Co-op',
+        'description': '스타리 스튜디오의 오픈월드 서바이벌 게임. 포스트 아포칼립스 세계에서 기이한 생물들과 싸우며 생존.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2139460/header.jpg',
+        'steam_appid': 2139460,
+        'tags': ['survival', 'open-world', 'tps', 'co-op', 'post-apocalyptic', 'free-to-play', 'building'],
+    },
+    {
+        'title': '연운 (Yun Yun)',
+        'genre': 'Action RPG, Martial Arts, MMORPG',
+        'description': '중국풍 무협 액션 MMORPG. 화려한 경공술과 전투 액션이 특징.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1468840/header.jpg',
+        'steam_appid': 1468840,
+        'skip_rawg': True,  # 중국 게임이라 RAWG 매칭 불확실
+        'tags': ['action-rpg', 'martial-arts', 'mmorpg', 'open-world', 'free-to-play', 'anime'],
+    },
+    {
+        'title': 'Counter-Strike 2',
+        'genre': 'FPS, Tactical Shooter, Competitive',
+        'description': 'CS:GO의 후속작. 소스2 엔진으로 리메이크된 밸브의 대표 FPS. e스포츠의 성지.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/e/e5/Counter-Strike_2_-_Cover_Art.jpg',
+        'steam_appid': 730,
+        'tags': ['fps', 'tactical-shooter', 'competitive', 'esports', 'multiplayer', 'free-to-play'],
+    },
+    {
+        'title': 'SMITE 2',
+        'genre': 'MOBA, Action, Mythology',
+        'description': '하이레즈 스튜디오의 3인칭 MOBA. 신화 속 신들로 플레이.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2437690/header.jpg',
+        'steam_appid': 2437690,
+        'tags': ['moba', 'action', 'mythology', 'multiplayer', 'competitive', 'free-to-play', 'tps'],
+    },
+    {
+        'title': '이터널 리턴 (Eternal Return)',
+        'genre': 'Battle Royale, MOBA, Survival',
+        'description': '님블뉴론의 배틀로얄 + MOBA 하이브리드. 한국 개발 게임으로 아이템 제작과 생존.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1049590/header.jpg',
+        'steam_appid': 1049590,
+        'tags': ['battle-royale', 'moba', 'survival', 'anime', 'competitive', 'free-to-play', 'korean'],
+    },
+    {
+        'title': '건담 에볼루션 (Gundam Evolution)',
+        'genre': 'FPS, Hero Shooter, Mecha',
+        'description': '반다이남코의 건담 FPS. 모빌슈트를 조종하는 히어로 슈터.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1816670/header.jpg',
+        'steam_appid': 1816670,
+        'skip_rawg': True,  # 서비스 종료
+        'tags': ['fps', 'hero-shooter', 'mecha', 'anime', 'multiplayer', 'free-to-play', 'team-based'],
+    },
+    {
+        'title': '나라카: 블레이드포인트 (NARAKA: BLADEPOINT)',
+        'genre': 'Battle Royale, Action, Martial Arts',
+        'description': '24 엔터테인먼트의 무협 배틀로얄. 근접 무기 중심 전투와 경공술.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/2/24/Naraka_Bladepoint.jpg',
+        'steam_appid': 1203220,
+        'tags': ['battle-royale', 'action', 'martial-arts', 'multiplayer', 'competitive', 'free-to-play'],
+    },
+    {
+        'title': '더 파이널스 (THE FINALS)',
+        'genre': 'FPS, Arena Shooter, Destruction',
+        'description': '엠바크 스튜디오의 파괴 가능한 환경의 FPS. 실시간 방송 컨셉의 게임쇼.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2073850/header.jpg',
+        'steam_appid': 2073850,
+        'tags': ['fps', 'shooter', 'destruction', 'multiplayer', 'competitive', 'free-to-play', 'team-based'],
+    },
+    {
+        'title': '마블 라이벌 (Marvel Rivals)',
+        'genre': 'Hero Shooter, TPS, Team-based',
+        'description': '넷이즈의 마블 히어로 슈터. 오버워치 스타일의 6v6 팀 배틀.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2767030/header.jpg',
+        'steam_appid': 2767030,
+        'tags': ['hero-shooter', 'tps', 'team-based', 'competitive', 'multiplayer', 'free-to-play'],
+    },
+    {
+        'title': '벨루시아',
+        'genre': 'Racing, Casual, Multiplayer',
+        'description': '넥슨의 캐주얼 레이싱 게임. 카트라이더의 정신적 후속작.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2308590/header.jpg',
+        'steam_appid': 2308590,
+        'skip_rawg': True,  # 한국 게임
+        'tags': ['racing', 'casual', 'multiplayer', 'arcade', 'free-to-play', 'korean'],
+    },
+    {
+        'title': '런스케이프 (RuneScape)',
+        'genre': 'MMORPG, Fantasy, Sandbox',
+        'description': '재그엑스의 클래식 MMORPG. 2001년부터 서비스된 장수 게임. 자유로운 스킬 시스템.',
+        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/3c/Runescape_logo.png',
+        'steam_appid': 1343400,
+        'tags': ['mmorpg', 'fantasy', 'sandbox', 'classic', 'free-to-play', 'pvp'],
+    },
+    {
+        'title': '올드스쿨 런스케이프 (Old School RuneScape)',
+        'genre': 'MMORPG, Fantasy, Retro',
+        'description': '2007년 버전의 런스케이프 부활. 클래식 MMORPG 팬들 사이에서 인기.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2519060/header.jpg',
+        'steam_appid': 2519060,
+        'tags': ['mmorpg', 'fantasy', 'retro', 'classic', 'free-to-play', 'pvp'],
+    },
+    {
+        'title': '스쿼드 44 (Squad 44)',
+        'genre': 'FPS, Tactical, Mil-Sim',
+        'description': '2차대전 배경의 택티컬 FPS. 전장의 리얼리즘을 추구.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/736220/header.jpg',
+        'steam_appid': 736220,
+        'tags': ['fps', 'tactical', 'military', 'simulation', 'multiplayer', 'team-based'],
+    },
+    {
+        'title': '카트라이더: 드리프트 (KartRider: Drift)',
+        'genre': 'Racing, Arcade, Multiplayer',
+        'description': '넥슨의 카트라이더 글로벌 버전. 크로스플랫폼 지원.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2073450/header.jpg',
+        'steam_appid': 2073450,
+        'tags': ['racing', 'arcade', 'multiplayer', 'casual', 'free-to-play', 'korean'],
+    },
+    {
+        'title': '메이플스토리 월드 (MapleStory Worlds)',
+        'genre': 'MMORPG, Sandbox, Creative',
+        'description': '메이플스토리의 유저 제작 콘텐츠 플랫폼. 로블록스 스타일의 창작 도구.',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1913930/header.jpg',
+        'steam_appid': 1913930,
+        'skip_rawg': True,  # 한국 게임
+        'tags': ['mmorpg', 'sandbox', 'creative', 'casual', 'free-to-play', 'korean', '2d'],
+    },
 ]
 
 
@@ -774,10 +978,11 @@ class Command(BaseCommand):
                 search_term = english_title or korean_title
                 rawg_data = self._fetch_from_rawg(search_term, RAWG_API_KEY)
                 if rawg_data:
-                    # RAWG 매칭 결과 유사도 검증 (제목이 너무 다르면 무시)
-                    rawg_name = (rawg_data.get('name') or '').lower()
-                    search_lower = search_term.lower()
-                    if search_lower in rawg_name or rawg_name in search_lower:
+                    # RAWG 매칭 결과 유사도 검증 (개선된 버전)
+                    rawg_name = rawg_data.get('name') or ''
+                    is_match = self._is_similar_title(search_term, rawg_name)
+                    
+                    if is_match:
                         rawg_fetched += 1
                         self.stdout.write(f"  🔍 RAWG 매칭: {title} → {rawg_data.get('name')}")
                     else:
@@ -907,6 +1112,74 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"  RAWG 오류: {e}"))
             return None
     
+    def _is_similar_title(self, search_term, rawg_name):
+        """
+        두 게임 제목이 유사한지 확인 (개선된 매칭 로직)
+        
+        매칭 케이스:
+        - "Dungeon & Fighter" vs "Dungeon Fighter Online" → True
+        - "Lineage II" vs "Lineage 2: The Chaotic Chronicle" → True
+        - "PUBG: BATTLEGROUNDS" vs "PlayerUnknown's Battlegrounds" → True
+        - "NIKKE: Goddess of Victory" vs "GODDESS OF VICTORY: NIKKE" → True
+        - "Blade & Soul" vs "Soul Edge" → False (다른 게임)
+        """
+        import re
+        
+        def normalize(text):
+            """제목 정규화: 소문자, 특수문자 제거, 단어 추출"""
+            text = text.lower()
+            # 로마 숫자 → 아라비아 숫자
+            text = text.replace(' ii', ' 2').replace(' iii', ' 3').replace(' iv', ' 4')
+            # 특수문자 제거 (알파벳, 숫자, 공백만 유지)
+            text = re.sub(r'[^a-z0-9\s]', ' ', text)
+            # 여러 공백을 하나로
+            text = re.sub(r'\s+', ' ', text).strip()
+            return text
+        
+        def get_key_words(text):
+            """핵심 단어만 추출 (불용어 제거)"""
+            stopwords = {'the', 'a', 'an', 'of', 'and', 'or', 'in', 'on', 'at', 'to', 'for', 'with', 'by'}
+            words = normalize(text).split()
+            return set(w for w in words if w not in stopwords and len(w) > 1)
+        
+        # 정규화된 문자열
+        norm_search = normalize(search_term)
+        norm_rawg = normalize(rawg_name)
+        
+        # 1. 정규화된 문자열이 서로 포함되면 매칭
+        if norm_search in norm_rawg or norm_rawg in norm_search:
+            return True
+        
+        # 2. 핵심 단어 기반 매칭
+        search_words = get_key_words(search_term)
+        rawg_words = get_key_words(rawg_name)
+        
+        if not search_words or not rawg_words:
+            return False
+        
+        # 교집합 비율 계산
+        common_words = search_words & rawg_words
+        
+        # 검색어 단어의 60% 이상이 RAWG 결과에 포함되면 매칭
+        match_ratio = len(common_words) / len(search_words)
+        
+        # PUBG 특수 처리: "battlegrounds" 키워드
+        if 'battlegrounds' in norm_search and 'battlegrounds' in norm_rawg:
+            return True
+        
+        # Pokémon 특수 처리: pokemon + 버전명
+        if 'pokemon' in norm_search and 'pokemon' in norm_rawg:
+            # 버전 이름 중 하나라도 일치하면 OK
+            version_words = {'scarlet', 'violet', 'sword', 'shield', 'diamond', 'pearl', 
+                           'brilliant', 'shining', 'lets', 'go', 'pikachu', 'eevee',
+                           'legends', 'arceus'}
+            search_versions = search_words & version_words
+            rawg_versions = rawg_words & version_words
+            if search_versions & rawg_versions:
+                return True
+        
+        return match_ratio >= 0.6
+    
     def _ensure_tags(self):
         """필요한 태그가 없으면 생성"""
         required_tags = [
@@ -984,6 +1257,22 @@ class Command(BaseCommand):
             ('female-protagonist', '여성 주인공', 'feature'),
             ('visual-novel', '비주얼 노벨', 'genre'),
             ('crafting', '크래프팅', 'feature'),
+            
+            # 추가 태그 (인기 F2P 게임용)
+            ('hero-shooter', '히어로 슈터', 'genre'),
+            ('ninja', '닌자', 'theme'),
+            ('tank', '전차', 'theme'),
+            ('vehicle', '탈것', 'feature'),
+            ('combat', '전투', 'genre'),
+            ('post-apocalyptic', '포스트 아포칼립스', 'theme'),
+            ('dark-fantasy', '다크 판타지', 'theme'),
+            ('mmo', 'MMO', 'feature'),
+            ('mecha', '메카', 'theme'),
+            ('destruction', '파괴', 'feature'),
+            ('retro', '레트로', 'theme'),
+            ('arcade', '아케이드', 'genre'),
+            ('tactical-shooter', '택티컬 슈터', 'genre'),
+            ('mythology', '신화', 'theme'),
         ]
         
         for slug, name, tag_type in required_tags:
