@@ -858,3 +858,36 @@ def api_translate_game(request):
         print(traceback.format_exc())
         return JsonResponse({'error': str(e), 'success': False}, status=500)
 
+
+def api_autocomplete_games(request):
+    """
+    게임 자동완성 API - DB에서 제목으로 검색
+    
+    Query params:
+        q (required): 검색 쿼리
+        limit (optional): 결과 개수 (default: 10)
+    
+    Returns:
+        - games: 일치하는 게임 목록 (id, title, image_url, genre)
+    """
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 1:
+        return JsonResponse({'games': []})
+    
+    limit = min(int(request.GET.get('limit', 10)), 20)
+    
+    # DB에서 제목으로 검색 (대소문자 무시)
+    from django.db.models import Q
+    games = Game.objects.filter(
+        Q(title__icontains=query)
+    ).values('id', 'rawg_id', 'title', 'image_url', 'genre')[:limit]
+    
+    result = [{
+        'id': g['rawg_id'] or g['id'],
+        'title': g['title'],
+        'image_url': g['image_url'],
+        'genre': g['genre']
+    } for g in games]
+    
+    return JsonResponse({'games': result})

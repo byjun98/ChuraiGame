@@ -139,6 +139,130 @@
         .input-group:focus-within input {
             border-color: #3182F6;
         }
+
+        /* ====== Home Tab Animation Styles ====== */
+        /* Chart Container */
+        .genre-chart-container {
+            perspective: 1000px;
+        }
+
+        /* Pie Chart Animation */
+        .genre-chart-animate {
+            animation: chartReveal 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            transform-origin: center;
+        }
+
+        @keyframes chartReveal {
+            0% {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        /* Center Circle Animation */
+        .genre-center-animate {
+            animation: centerPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+        }
+
+        @keyframes centerPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Number Count Up Animation */
+        .genre-number-animate {
+            animation: numberPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+        }
+
+        @keyframes numberPop {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Glow Effect */
+        .genre-glow {
+            animation: glowPulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(79, 70, 229, 0.4);
+            }
+        }
+
+        /* Legend Items Stagger Animation */
+        .genre-legend-animate {
+            animation: legendFadeIn 0.4s ease-out both;
+        }
+
+        @keyframes legendFadeIn {
+            0% {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Steam Card Animation */
+        .steam-card-animate {
+            animation: steamCardSlideIn 0.5s ease-out both;
+        }
+
+        @keyframes steamCardSlideIn {
+            0% {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Recommendation Card Animation */
+        .recommendation-card-animate {
+            animation: cardSlideUp 0.5s ease-out both;
+        }
+
+        @keyframes cardSlideUp {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>

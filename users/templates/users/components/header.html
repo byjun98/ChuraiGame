@@ -25,21 +25,52 @@
             </nav>
         </div>
 
-        <!-- User Profile Widget -->
-        <div v-if="user" @click="goToProfile"
-            class="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity">
-            <div class="text-right hidden sm:block leading-tight">
-                <p class="text-sm font-semibold">{{ user.nickname }}</p>
-                <p class="text-[11px] text-gray-400">{{ user.email }}</p>
+        <!-- Search Box & User Profile Widget -->
+        <div class="flex items-center gap-3">
+            <!-- Header Search Box with Autocomplete -->
+            <div class="relative">
+                <input v-model="headerSearchQuery" type="text" placeholder="여기에서 검색"
+                    @keyup.enter="performHeaderSearch"
+                    @input="onHeaderSearchInput"
+                    @focus="showSearchSuggestions = headerSearchQuery.length > 0 && searchSuggestions.length > 0"
+                    @blur="hideSearchSuggestionsDelayed"
+                    class="bg-white border-2 border-[#3182F6] text-sm rounded-lg pl-3 pr-10 py-2 w-40 sm:w-52 focus:outline-none focus:border-[#1B64DA] focus:ring-2 focus:ring-[#3182F6]/20 transition-all">
+                <button @click="performHeaderSearch"
+                    class="absolute right-0 top-0 h-full px-3 text-[#3182F6] hover:text-[#1B64DA] flex items-center transition-colors">
+                    <i class="ph-bold ph-magnifying-glass text-lg"></i>
+                </button>
+                
+                <!-- Autocomplete Dropdown -->
+                <div v-show="showSearchSuggestions && searchSuggestions.length > 0"
+                    class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+                    <div v-for="(suggestion, index) in searchSuggestions" :key="suggestion.id"
+                        @mousedown.prevent="selectSearchSuggestion(suggestion)"
+                        class="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors">
+                        <img v-if="suggestion.image_url" :src="suggestion.image_url" 
+                            class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100">
+                        <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <i class="ph-fill ph-game-controller text-gray-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-900 truncate text-sm" v-text="suggestion.title"></div>
+                            <div v-if="suggestion.genre" class="text-xs text-gray-500 truncate" v-text="suggestion.genre"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div
-                class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+
+            <!-- User Profile Widget -->
+            <div v-if="user" @click="goToProfile"
+                class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-70 transition-opacity">
                 <img v-if="user.avatar" :src="user.avatar" class="w-full h-full object-cover">
                 <i v-else class="ph-fill ph-user text-gray-400"></i>
             </div>
-        </div>
-        <div v-else>
-            <button @click="currentStep = 'auth'" class="text-sm font-medium text-blue-600">로그인</button>
+            <div v-else>
+                <button @click="currentStep = 'auth'" 
+                    class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                    <i class="ph-fill ph-user text-gray-500"></i>
+                </button>
+            </div>
         </div>
     </div>
 </header>

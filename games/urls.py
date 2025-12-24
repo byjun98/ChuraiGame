@@ -27,6 +27,9 @@ urlpatterns = [
 
     # API Endpoints - Translate Game Description
     path('api/translate/', views.api_translate_game, name='api_translate_game'),
+    
+    # API Endpoints - Autocomplete
+    path('api/autocomplete/', views.api_autocomplete_games, name='api_autocomplete_games'),
 
     # API Endpoints - Existing (Generic Catch-all should be last)
     path('api/wishlist/', views.api_wishlist_list, name='api_wishlist_list'),

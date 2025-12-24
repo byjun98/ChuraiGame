@@ -40,7 +40,7 @@ def load_korean_games_from_db():
     
     개선사항:
     - 이미지가 있는 게임만 필터링
-    - 더 많은 제목 패턴 매칭
+    - 정확한 제목 매칭 (스핀오프 게임 제외)
     - RAWG 데이터가 있는 게임 우선
     - 태그 정보도 함께 반환
     """
@@ -51,53 +51,64 @@ def load_korean_games_from_db():
     
     from games.models import Game
     
+    # 제외할 게임 제목 패턴 (스핀오프, 잘못 매칭되는 게임들)
+    EXCLUDE_PATTERNS = [
+        # 롤 스핀오프 게임들 ("League of Legends" 검색 시 잘못 매칭)
+        'Bandle Tale', 'Ruined King', 'Hextech Mayhem', 'Mageseeker', 'CONV/RGENCE',
+        'Song of Nunu', 'Tellstones',
+        # 어몽어스 관련 (Among Us 검색 시 잘못 매칭)
+        'Among Us 3D', 'Among Us VR', 'Wolf Among Us', 'Among the Sleep',
+        # 포켓몬 스핀오프 (필요시)
+        'Detective Pikachu',
+        # 기타 잘못 매칭되는 게임
+        'RuneScape',  # 한국에서 유행하지 않음
+    ]
+    
     try:
-        # 1. korean 태그가 있는 게임
+        # 1. korean 태그가 있는 게임 (가장 정확함)
         korean_tagged = Game.objects.filter(
             tags__slug='korean'
         ).distinct()
         
-        # 2. 한글/영문 제목 패턴 매칭 (더 포괄적으로)
-        korean_titles_pattern = [
-            # 한국 온라인게임
-            '메이플', '던전앤파이터', '던파', '리니지', '마비노기', '서든', '카스',
-            '카트라이더', '테일즈런너', '크레이지', '바람의나라', '뮤 온라인', '뮤',
-            '블레이드앤소울', '검은사막', '로스트아크', '엘소드', '그랜드체이스',
-            '아이온', '마영전', '블루아카이브', '쿠키런', '니케', '명일방주',
-            # 글로벌 인기 게임 (한국에서 유행)
-            'MapleStory', 'Lost Ark', 'Black Desert', 'PUBG', 'Overwatch',
-            'Valorant', 'League of Legends', 'StarCraft', 'Diablo', 'FIFA',
-            'Counter-Strike', 'Dungeon Fighter', 'Mabinogi', 'Lineage', 'Vindictus',
+        # 2. 한글 제목이 포함된 게임 (괄호 안에 한글)
+        korean_title_games = Game.objects.filter(
+            title__regex=r'[가-힣]'
+        ).distinct()
+        
+        # 3. 특정 영문 제목으로만 검색 (정확한 제목)
+        exact_english_titles = [
+            # 글로벌 인기 게임 (한국에서도 유행) - 정확한 제목만
+            'Lost Ark', 'Black Desert Online', 'PUBG: BATTLEGROUNDS',
+            'Overwatch 2', 'VALORANT', 'Counter-Strike 2',
+            'Dungeon Fighter Online', 'Vindictus', 'StarCraft', 'StarCraft II',
+            'Diablo II', 'Diablo III', 'Diablo IV',
             # 닌텐도/콘솔 게임
-            'Mario', 'Zelda', 'Pokemon', 'Animal Crossing', '동물의 숲', '포켓몬',
-            'Splatoon', 'Kirby', 'Fire Emblem', 'Xenoblade', 'Metroid',
-            # 모바일 게임
-            'Genshin', 'Honkai', 'Arknights', 'Fate/Grand', 'Blue Archive',
-            'Cookie Run', 'Clash of Clans', 'Clash Royale', 'Brawl Stars',
+            'Super Mario', 'Mario Kart', 'Legend of Zelda', 'Animal Crossing',
+            'Splatoon', 'Kirby', 'Fire Emblem', 'Xenoblade', 'Metroid Dread',
+            'Super Smash Bros', 'Pokémon', 'Pokemon',
+            # 모바일/가챠 게임 (정확한 제목)
+            'Genshin Impact', 'Honkai: Star Rail', 'Arknights',
+            'Blue Archive', 'Cookie Run', 'NIKKE', 'Fate/Grand Order',
+            'Clash of Clans', 'Clash Royale', 'Brawl Stars',
             'Among Us', 'Fall Guys', 'Roblox', 'Marvel Snap',
-            # 추가 한국 게임
-            '스페셜포스', '배틀그라운드', '발로란트', '오버워치', '리그 오브',
-            # 인기 무료 게임 (F2P)
-            'Team Fortress', 'Dota 2', '도타', 'Apex Legends', '에이펙스',
-            'Fortnite', '포트나이트', 'Warframe', '워프레임',
-            'Path of Exile', 'Destiny 2', '데스티니', 'World of Tanks', '월드 오브 탱크',
-            'War Thunder', '워 썬더', 'Once Human', '원스 휴먼',
-            'THE FINALS', '더 파이널스', 'Marvel Rivals', '마블 라이벌',
-            'NARAKA', '나라카', 'Eternal Return', '이터널 리턴',
-            'RuneScape', 'SMITE', 'KartRider', '벨루시아', '연운',
+            # 인기 F2P 게임
+            'Team Fortress 2', 'Dota 2', 'Apex Legends', 'Fortnite',
+            'Warframe', 'Path of Exile', 'Destiny 2', 'World of Tanks',
+            'War Thunder', 'Once Human', 'THE FINALS', 'Marvel Rivals',
+            'NARAKA: BLADEPOINT', 'Eternal Return', 'SMITE 2',
         ]
         
         from django.db.models import Q
         title_filter = Q()
-        for pattern in korean_titles_pattern:
-            title_filter |= Q(title__icontains=pattern)
+        for exact_title in exact_english_titles:
+            title_filter |= Q(title__iexact=exact_title) | Q(title__istartswith=exact_title + ' (')
         
-        title_matched = Game.objects.filter(title_filter).distinct()
+        exact_title_matched = Game.objects.filter(title_filter).distinct()
         
-        # 3. 두 쿼리 결과 합치기 (Union)
-        all_korean_games = korean_tagged | title_matched
+        # 4. 세 쿼리 결과 합치기 (Union)
+        all_korean_games = korean_tagged | korean_title_games | exact_title_matched
         
-        # 4. 이미지가 있는 게임만 필터링 + RAWG 데이터 있는 것 우선 + 태그 prefetch
+        # 5. 이미지가 있는 게임만 필터링 + RAWG 데이터 있는 것 우선 + 태그 prefetch
         all_korean_games = all_korean_games.filter(
             Q(image_url__isnull=False, image_url__gt='') |
             Q(background_image__isnull=False, background_image__gt='') |
@@ -108,17 +119,36 @@ def load_korean_games_from_db():
         seen_titles = set()  # 중복 제거용
         
         for game in all_korean_games:
+            # 제외할 게임 필터링
+            should_exclude = False
+            for pattern in EXCLUDE_PATTERNS:
+                if pattern.lower() in game.title.lower():
+                    should_exclude = True
+                    break
+            if should_exclude:
+                continue
+            
             # 제목 중복 체크 (한글/영문 중복 방지)
             title_key = game.title.split(' (')[0].lower().strip()
             if title_key in seen_titles:
                 continue
             seen_titles.add(title_key)
             
-            # 이미지 URL 결정 (우선순위: background_image > image_url > Steam CDN)
-            image = game.background_image or game.image_url or ''
-            if not image and game.steam_appid:
-                # Steam CDN 폴백
-                image = f'https://cdn.cloudflare.steamstatic.com/steam/apps/{game.steam_appid}/header.jpg'
+            # 이미지 URL 결정 (우선순위: Steam CDN > background_image > image_url)
+            image = ''
+            
+            # /img/ 경로면 static 경로로 변환
+            if game.image_url and game.image_url.startswith('/img/'):
+                image = '/static' + game.image_url
+            elif game.background_image and game.background_image.startswith('/img/'):
+                image = '/static' + game.background_image
+            elif game.steam_appid:
+                # Steam CDN 이미지 (가장 안정적)
+                image = f'https://cdn.akamai.steamstatic.com/steam/apps/{game.steam_appid}/header.jpg'
+            elif game.background_image:
+                image = game.background_image
+            elif game.image_url:
+                image = game.image_url
             
             # 이미지가 없으면 스킵
             if not image:
@@ -500,7 +530,22 @@ def get_recommendations_for_user(user, limit=50):
             metacritic = float(game.metacritic_score) if game.metacritic_score else 0
             score = base_score + (metacritic / 5) - (i * 0.5)
             score = max(50, min(100, score))
-            image = getattr(game, 'image_url', '') or getattr(game, 'background_image', '') or ''
+            
+            # 이미지 소스 우선순위: Steam CDN > RAWG > 기타
+            # (Wikipedia 등 핫링킹 차단되는 이미지 회피)
+            image = ''
+            if game.steam_appid:
+                # Steam CDN에서 header 이미지 가져오기 (가장 안정적)
+                image = f"https://cdn.akamai.steamstatic.com/steam/apps/{game.steam_appid}/header.jpg"
+            elif game.background_image and 'rawg' in str(game.background_image):
+                # RAWG 이미지 사용 (신뢰할 수 있음)
+                image = game.background_image
+            elif game.image_url and 'rawg' in str(game.image_url):
+                image = game.image_url
+            elif game.background_image:
+                image = game.background_image
+            elif game.image_url:
+                image = game.image_url
             
             result.append({
                 'id': game.id,

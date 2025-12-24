@@ -19,21 +19,24 @@ KOREAN_POPULAR_GAMES = [
         'title': '메이플스토리 (MapleStory)',
         'genre': 'MMORPG, Side Scroller, 2D, Anime',
         'description': '넥슨에서 개발한 2D 횡스크롤 MMORPG. 2003년 출시 이후 한국을 대표하는 온라인게임으로 자리잡았다. 귀여운 도트 그래픽과 다양한 직업군, 보스레이드 컨텐츠가 특징.',
-        'image_url': 'https://maplestory.nexon.com/media/nexon/maplestory/og_maplestory.jpg',
+        'image_url': '/img/maple.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', '2d', 'side-scroller', 'anime', 'free-to-play', 'korean'],
     },
     {
         'title': '던전앤파이터 (Dungeon & Fighter)',
         'genre': 'Action RPG, Beat em up, 2D',
         'description': '네오플에서 개발한 2D 벨트스크롤 액션 RPG. 아케이드풍 타격감과 다양한 캐릭터가 매력. 중국에서 엄청난 인기를 얻어 세계 매출 1위 온라인게임 기록.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/97/Dungeon_Fighter_Online_cover.jpg',
+        'image_url': '/img/dnf.jpg',
+        'skip_rawg': True,
         'tags': ['action-rpg', 'beat-em-up', '2d', 'hack-and-slash', 'free-to-play', 'korean'],
     },
     {
         'title': '라테일 (Latale)',
         'genre': 'MMORPG, Side Scroller, 2D, Anime',
         'description': '액토즈소프트에서 개발한 2D 횡스크롤 MMORPG. 메이플스토리와 유사하지만 더 화려한 스킬과 점핑 액션이 특징. "온라인 다락방"이라는 별명.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/69/La_Tale_logo.png',
+        'image_url': '/img/latale.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', '2d', 'side-scroller', 'anime', 'free-to-play', 'korean'],
     },
     {
@@ -48,21 +51,24 @@ KOREAN_POPULAR_GAMES = [
         'title': '리니지 (Lineage)',
         'genre': 'MMORPG, Fantasy, PvP',
         'description': 'NC소프트에서 개발한 원조 MMORPG. 1998년 출시로 한국 온라인게임 역사의 시작. 피바람 전쟁, 성주 시스템 등 PvP 중심 컨텐츠가 특징.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/6e/Lineage_The_Blood_Pledge_logo.png',
+        'image_url': '/img/lineage.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', 'fantasy', 'pvp', 'medieval', 'free-to-play', 'korean'],
     },
     {
         'title': '리니지2 (Lineage II)',
         'genre': 'MMORPG, Fantasy, PvP, 3D',
         'description': 'NC소프트의 리니지 후속작. 언리얼 엔진 기반 3D 그래픽으로 혁신적인 비주얼. 공성전과 혈맹 시스템이 핵심.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/1/10/Lineage_II_logo.png',
+        'image_url': '/img/lineage2.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', 'fantasy', 'pvp', '3d', 'free-to-play', 'korean'],
     },
     {
         'title': '마비노기 (Mabinogi)',
         'genre': 'MMORPG, Life Sim, Fantasy',
         'description': '넥슨/데브캣에서 개발한 힐링 온라인게임. 전투보다 생활 컨텐츠(작곡, 요리, 재봉 등)가 발달. 음유시인 시스템으로 게임 내 연주 가능.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/0a/Mabinogi_logo.png',
+        'image_url': '/img/mabinogi.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', 'life-sim', 'fantasy', 'music', 'free-to-play', 'korean'],
     },
     {
@@ -77,14 +83,16 @@ KOREAN_POPULAR_GAMES = [
         'title': '아이온 (Aion)',
         'genre': 'MMORPG, Fantasy, PvP, Flying',
         'description': 'NC소프트의 비행 MMORPG. 하늘을 나는 전투가 특징. 천족과 마족의 대립 구도.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/f/f7/Aion_The_Tower_of_Eternity_logo.png',
+        'image_url': '/img/aion.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', 'fantasy', 'pvp', 'flying', 'free-to-play', 'korean'],
     },
     {
         'title': '블레이드앤소울 (Blade & Soul)',
         'genre': 'MMORPG, Action, Martial Arts',
         'description': 'NC소프트의 무협 MMORPG. 김형태 작가의 캐릭터 디자인과 화려한 무술 액션이 특징. 비공술 등 독특한 시스템.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/c/c9/Blade_%26_Soul_logo.png',
+        'image_url': '/img/blade_and_soul.png',  # 수동 이미지 필요 (로고가 아닌 게임 이미지)
+        'skip_rawg': True,  # 정확한 이미지 확보
         'tags': ['mmorpg', 'action', 'martial-arts', 'anime', 'free-to-play', 'korean'],
     },
     {
@@ -101,7 +109,7 @@ KOREAN_POPULAR_GAMES = [
         'title': '서든어택 (Sudden Attack)',
         'genre': 'FPS, Shooter, Multiplayer',
         'description': '한국의 국민 FPS. 게임하이에서 개발, 넥슨 서비스. 팀 데스매치, 폭파 미션 등 클래식 FPS 모드. PC방 점유율 1위를 오래 지켰던 게임.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4914048932261689118',
+        'image_url': '/img/sudden_attack.jpg',  # 수동 이미지 필요
         'skip_rawg': True,  # 한국 고유 게임
         'tags': ['fps', 'shooter', 'multiplayer', 'competitive', 'free-to-play', 'korean'],
     },
@@ -109,16 +117,16 @@ KOREAN_POPULAR_GAMES = [
         'title': '카운터 스트라이크 온라인 (Counter-Strike Online)',
         'genre': 'FPS, Shooter, Zombie, Multiplayer',
         'description': '넥슨이 서비스한 카스의 온라인화 버전. 좀비 모드, 다양한 무기 스킨 추가. 오리지널 카스에 한국식 컨텐츠 가미.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/archive/9/94/20220826012455%21Counter-Strike_Online_capsule.jpg',
-        'skip_rawg': True,  # RAWG에서 다른 게임과 혼동될 수 있음
+        'image_url': '/img/cso.jpg',  # 수동 이미지 필요 (CS 시리즈와 구분)
+        'skip_rawg': True,  # RAWG에서 다른 CS 게임과 혼동됨
         'tags': ['fps', 'shooter', 'zombie', 'multiplayer', 'free-to-play', 'korean'],
     },
     {
         'title': '스페셜포스 (Special Force)',
         'genre': 'FPS, Shooter, Tactical',
         'description': '드래곤플라이에서 개발한 밀리터리 FPS. 서든어택의 라이벌로 PC방에서 인기. 다양한 총기와 맵.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640042',
-        'skip_rawg': True,  # 한국 고유 게임
+        'image_url': '/img/SpecialForce.jpg',
+        'skip_rawg': True,
         'tags': ['fps', 'shooter', 'tactical', 'military', 'multiplayer', 'free-to-play', 'korean'],
     },
     {
@@ -141,7 +149,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '발로란트 (VALORANT)',
         'genre': 'FPS, Tactical Shooter, Hero Shooter',
         'description': '라이엇게임즈의 택티컬 FPS. CS와 오버워치의 결합. 에이전트별 고유 능력과 정밀한 총격전.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/b7/Valorant_cover.jpg',
+        'image_url': '/img/valorant.jpg',
+        'skip_rawg': True,
         'tags': ['fps', 'tactical-shooter', 'hero-shooter', 'competitive', 'esports', 'free-to-play'],
     },
     
@@ -150,7 +159,7 @@ KOREAN_POPULAR_GAMES = [
         'title': '스타크래프트 (StarCraft: Remastered)',
         'genre': 'RTS, Strategy, Sci-Fi',
         'description': '블리자드의 실시간 전략게임. 한국에서 e스포츠의 시작이 된 전설. 테란, 저그, 프로토스 3종족.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/93/StarCraft_Remastered_cover.jpg/220px-StarCraft_Remastered_cover.jpg',
+        'image_url': '/img/StarCraft.jpg',
         'steam_appid': None,  # Battle.net 전용
         'tags': ['rts', 'strategy', 'sci-fi', 'esports', 'competitive', 'military'],
     },
@@ -168,7 +177,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '리그 오브 레전드 (League of Legends)',
         'genre': 'MOBA, Strategy, Multiplayer',
         'description': '라이엇게임즈의 MOBA 게임. 전세계에서 가장 많이 플레이되는 게임 중 하나. 한국에서 압도적 1위 점유율.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/commons/d/d8/League_of_Legends_2019_vector.svg',
+        'image_url': '/img/lol.jpg',
+        'skip_rawg': True,
         'tags': ['moba', 'strategy', 'team-based', 'competitive', 'esports', 'free-to-play'],
     },
     
@@ -177,34 +187,35 @@ KOREAN_POPULAR_GAMES = [
         'title': '크레이지레이싱 카트라이더 (KartRider)',
         'genre': 'Racing, Arcade, Multiplayer',
         'description': '넥슨의 캐주얼 레이싱 게임. 아이템전과 스피드전. 휴대폰 시절부터 PC방, 모바일까지 국민게임.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640043',
-        'skip_rawg': True,  # 한국 고유 게임
+        'image_url': '/img/Kartrider.jpg',
+        'skip_rawg': True,
         'tags': ['racing', 'arcade', 'multiplayer', 'casual', 'fun', 'free-to-play', 'korean'],
     },
     {
         'title': '테일즈런너 (TalesRunner)',
         'genre': 'Racing, Platformer, Multiplayer',
         'description': '로커스에서 개발한 달리기 게임. 동화 속 세계관에서 점프와 대시, 아이템을 활용한 레이싱.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4914048932261689116',
-        'skip_rawg': True,  # RAWG에 없는 한국 고유 게임
+        'image_url': '/img/Talesrunner.jpg',
+        'skip_rawg': True,
         'tags': ['racing', 'platformer', 'multiplayer', 'casual', 'anime', 'free-to-play', 'korean'],
     },
     {
         'title': '크레이지아케이드 (Crazy Arcade)',
         'genre': 'Puzzle, Action, Multiplayer',
         'description': '넥슨의 폭탄게임. 봄버맨 스타일에 아이템과 캐릭터 커스터마이징. 카트라이더와 함께 넥슨의 양대 캐주얼 게임.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640041',
+        'image_url': '/img/crazy_arcade.jpg',  # 수동 이미지 필요
         'skip_rawg': True,  # 한국 고유 게임
         'tags': ['puzzle', 'action', 'multiplayer', 'party-game', 'casual', 'free-to-play', 'korean'],
     },
     
     # === 스포츠 / 피파 ===
     {
-        'title': 'FC 온라인 (FIFA Online 4 / FC Online)',
+        'title': 'FC 온라인 (FC Online)',
         'genre': 'Sports, Soccer, Multiplayer',
-        'description': 'EA와 넥슨의 온라인 축구게임. PC방 점유율 최상위. 선수 뽑기와 스쿼드 꾸미, 온라인 대전이 핵심.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8a/FC_Online_logo.svg/220px-FC_Online_logo.svg.png',
-        'tags': ['sports', 'soccer', 'simulation', 'multiplayer', 'competitive', 'free-to-play'],
+        'description': 'EA와 넥슨의 온라인 축구게임. PC방 점유율 최상위. 선수 뽑기와 스쿼드 꾸미기, 온라인 대전이 핵심.',
+        'image_url': '/img/fc_online.jpg',  # 수동 이미지 필요 (로고가 아닌 게임 이미지)
+        'skip_rawg': True,  # 넥슨 고유 게임
+        'tags': ['sports', 'soccer', 'simulation', 'multiplayer', 'competitive', 'free-to-play', 'korean'],
     },
     
     # === 디아블로 / 핵앤슬래시 ===
@@ -212,16 +223,18 @@ KOREAN_POPULAR_GAMES = [
         'title': '디아블로 II: 레저렉션 (Diablo II: Resurrected)',
         'genre': 'Action RPG, Hack and Slash, Dungeon Crawler',
         'description': '블리자드의 핵앤슬래시 RPG 리마스터. 한국 온라인게임 문화에 큰 영향. 아이템 파밍, 공포, 우울한 분위기.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c1/Diablo_II_Resurrected_cover_art.png/220px-Diablo_II_Resurrected_cover_art.png',
-        'steam_appid': None,  # Battle.net 전용
+        'image_url': '/img/diablo2.jpg',
+        'steam_appid': None,
+        'skip_rawg': True,
         'tags': ['action-rpg', 'hack-and-slash', 'dungeon-crawler', 'dark-fantasy', 'loot'],
     },
     {
         'title': '디아블로 III (Diablo III)',
         'genre': 'Action RPG, Hack and Slash',
         'description': '디아블로 시리즈 3편. 시즌제 운영과 그레이터 리프트 시스템.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/8/80/Diablo_III_cover.png',
+        'image_url': '/img/diablo3.jpg',  # 수동 이미지 필요 (Battle.net 전용)
         'steam_appid': None,  # Battle.net 전용
+        'skip_rawg': True,  # 수동 이미지 사용
         'tags': ['action-rpg', 'hack-and-slash', 'dungeon-crawler', 'co-op', 'loot'],
     },
     {
@@ -238,7 +251,7 @@ KOREAN_POPULAR_GAMES = [
         'title': '원신 (Genshin Impact)',
         'genre': 'Action RPG, Open World, Gacha',
         'description': '미호요의 오픈월드 액션 RPG. 젤다 풍 오픈월드에 가챠 시스템. 한국에서도 큰 인기.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/5/5d/Genshin_Impact_cover.jpg',
+        'image_url': '/img/Genshin_Impact.jpg',
         'steam_appid': None,  # Epic/자체 런처
         'tags': ['action-rpg', 'open-world', 'gacha', 'anime', 'exploration', 'free-to-play'],
     },
@@ -246,7 +259,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '블루아카이브 (Blue Archive)',
         'genre': 'RPG, Strategy, Gacha, Anime',
         'description': '넥슨게임즈의 미소녀 수집형 RPG. 학원물 세계관과 일러스트가 인기.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/7/7e/Blue_Archive_cover.jpg',
+        'image_url': '/img/blue_archive.jpg',  # 수동 이미지 (RAWG에서 잘못된 이미지 제공)
+        'skip_rawg': True,  # 모바일 게임
         'tags': ['rpg', 'strategy', 'gacha', 'anime', 'visual-novel', 'free-to-play', 'korean'],
     },
     
@@ -255,44 +269,48 @@ KOREAN_POPULAR_GAMES = [
         'title': '바람의나라 (Kingdom of the Winds)',
         'genre': 'MMORPG, 2D, Korean Mythology',
         'description': '넥슨의 원조 그래픽 MMORPG. 1996년 서비스 시작. 고구려 신화 기반.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/1/1f/Kingdom_of_the_Winds_logo.gif',
+        'image_url': '/img/wind.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', '2d', 'korean', 'mythology', 'classic', 'free-to-play'],
     },
     {
         'title': '뮤 (MU Online)',
         'genre': 'MMORPG, 3D, Fantasy',
         'description': '웹젠의 3D MMORPG. 초기 3D 온라인게임 대표. 아이템 +13 강화 시스템의 원조.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/7/79/MU_Online_logo.png',
+        'image_url': '/img/mu.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', '3d', 'fantasy', 'pvp', 'free-to-play', 'korean'],
     },
     {
         'title': '거상 (Gersang)',
         'genre': 'MMORPG, Trading, Economy',
         'description': '넥슨 초기 게임. 조선시대 배경의 무역과 경제 시스템이 특징인 온라인 게임.',
-        'image_url': 'https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=4909040818600640044',
-        'skip_rawg': True,  # RAWG에 없는 한국 고유 게임
+        'image_url': '/img/Gersang.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', 'economy', 'trading', 'korean', 'classic', 'free-to-play'],
     },
     {
         'title': '그랜드체이스 (GrandChase)',
         'genre': 'Action RPG, Beat em up, 2D',
         'description': 'KOG에서 개발한 횡스크롤 액션 RPG. 던파와 유사한 벨트스크롤 액션. 엘소드의 전신.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/a/a7/GrandChase_logo.png',
+        'image_url': '/img/GrandChase.jpg',
+        'skip_rawg': True,
         'tags': ['action-rpg', 'beat-em-up', '2d', 'anime', 'free-to-play', 'korean'],
     },
     {
         'title': '엘소드 (Elsword)',
         'genre': 'Action RPG, Beat em up, 2D, Anime',
         'description': 'KOG의 횡스크롤 액션 RPG. 그랜드체이스의 후속작. 화려한 스킬과 콤보.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/bc/Elsword_logo.png',
-        'steam_appid': 0,  # Steam에도 있음
+        'image_url': '/img/elsword.jpg',
+        'skip_rawg': True,
         'tags': ['action-rpg', 'beat-em-up', '2d', 'anime', 'free-to-play', 'korean'],
     },
     {
         'title': '메이플스토리 2 (MapleStory 2)',
         'genre': 'MMORPG, 3D, Casual, Building',
         'description': '메이플스토리의 3D 버전. 집꾸미기와 UGC 컨텐츠가 특징. 서비스 종료.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/c/c3/MapleStory_2_logo.png',
+        'image_url': '/img/MapleStory2.jpg',
+        'skip_rawg': True,
         'tags': ['mmorpg', '3d', 'casual', 'building', 'free-to-play', 'korean'],
     },
     
@@ -309,7 +327,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '브롤스타즈 (Brawl Stars)',
         'genre': 'MOBA, Shooter, Multiplayer',
         'description': '수퍼셀의 3분 짧은 모바일 대전게임. 다양한 브롤러 캐릭터와 게임 모드.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/0e/Brawl_Stars_logo.png',
+        'image_url': '/img/Brawl_Stars.jpg',
+        'skip_rawg': True,
         'tags': ['moba', 'shooter', 'multiplayer', 'casual', 'team-based', 'free-to-play'],
     },
     {
@@ -323,15 +342,17 @@ KOREAN_POPULAR_GAMES = [
         'title': '클래시 로얄 (Clash Royale)',
         'genre': 'Strategy, Card Game, Tower Defense',
         'description': '수퍼셀의 실시간 전략 카드게임. 타워 디펜스와 카드 배틀의 결합.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/Clash_Royale_Logo.png/220px-Clash_Royale_Logo.png',
+        'image_url': '/img/ClashRoyale.jpg',
+        'skip_rawg': True,
         'tags': ['strategy', 'card-game', 'tower-defense', 'pvp', 'competitive', 'free-to-play'],
     },
     {
         'title': '어몽어스 (Among Us)',
         'genre': 'Social Deduction, Party Game, Multiplayer',
         'description': '마피아 게임을 온라인으로. 크루원과 임포스터로 나뉘어 정체를 찾아내는 게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/9a/Among_Us_cover_art.png',
+        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg',
         'steam_appid': 945360,
+        'skip_rawg': True,  # RAWG에서 Among Us 3D, VR, Wolf Among Us 등 혼동됨
         'tags': ['party-game', 'social-deduction', 'multiplayer', 'co-op', 'funny', 'casual'],
     },
     {
@@ -346,7 +367,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '로블록스 (Roblox)',
         'genre': 'Sandbox, Multiplayer, Creative',
         'description': '유저가 직접 게임을 만들고 플레이하는 플랫폼. 다양한 미니게임과 창작 컨텐츠.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg',
+        'image_url': '/img/Roblox.jpg',
+        'skip_rawg': True,
         'tags': ['sandbox', 'multiplayer', 'creative', 'casual', 'free-to-play', 'family-friendly'],
     },
     {
@@ -361,63 +383,71 @@ KOREAN_POPULAR_GAMES = [
         'title': '쿠키런: 킹덤 (Cookie Run: Kingdom)',
         'genre': 'RPG, Simulation, Gacha',
         'description': '데브시스터즈의 쿠키런 시리즈 왕국 건설 버전. 귀여운 쿠키 수집과 왕국 꾸미기.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/7/7f/Cookie_Run_Kingdom_logo.png',
+        'image_url': '/img/cookierun.jpg',
+        'skip_rawg': True,
         'tags': ['rpg', 'simulation', 'gacha', 'cute', 'building', 'free-to-play', 'korean'],
     },
     {
         'title': '니케 (NIKKE: Goddess of Victory)',
         'genre': 'Shooter, RPG, Gacha, Anime',
         'description': '시프트업의 미소녀 슈팅 가챠게임. 화려한 일러스트와 슈팅 액션.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/30/Goddess_of_Victory_Nikke_Logo.png',
+        'image_url': '/img/nikke.jpg',
+        'skip_rawg': True,
         'tags': ['shooter', 'rpg', 'gacha', 'anime', 'action', 'free-to-play', 'korean'],
     },
     {
         'title': '명일방주 (Arknights)',
         'genre': 'Tower Defense, Strategy, Gacha',
         'description': '하이퍼그리프의 타워 디펜스 가챠게임. 전략적인 배치와 캐릭터 수집.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/c/c1/Arknights_logo.png',
+        'image_url': '/img/Arknights.jpg',
+        'skip_rawg': True,
         'tags': ['tower-defense', 'strategy', 'gacha', 'anime', 'tactical', 'free-to-play'],
     },
     {
         'title': '붕괴: 스타레일 (Honkai: Star Rail)',
         'genre': 'Turn-based RPG, Gacha, Sci-Fi',
         'description': '호요버스의 턴제 RPG. 우주를 배경으로 한 스토리와 캐릭터 수집.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/00/Honkai_Star_Rail_cover.jpg',
+        'image_url': '/img/Star_Rail.jpg',
+        'skip_rawg': True,
         'tags': ['turn-based', 'rpg', 'gacha', 'anime', 'sci-fi', 'story-rich', 'free-to-play'],
     },
     {
         'title': '명조: 워더링 웨이브 (Wuthering Waves)',
         'genre': 'Action RPG, Open World, Gacha',
         'description': '쿠로게임즈의 오픈월드 액션 RPG. 원신과 경쟁하는 신작.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/9d/Wuthering_Waves_logo.png',
+        'image_url': '/img/Waves.jpg',
+        'skip_rawg': True,
         'tags': ['action-rpg', 'open-world', 'gacha', 'anime', 'exploration', 'free-to-play'],
     },
     {
         'title': '우마무스메 (Umamusume: Pretty Derby)',
         'genre': 'Simulation, Racing, Gacha, Anime',
         'description': '말을 의인화한 레이싱 육성 시뮬레이션. 일본에서 큰 인기.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/e/e1/Uma_Musume_Pretty_Derby_Logo.png',
+        'image_url': '/img/mal.jpg',
         'tags': ['simulation', 'racing', 'gacha', 'anime', 'cute', 'free-to-play'],
     },
     {
         'title': '페그오 (Fate/Grand Order)',
         'genre': 'Turn-based RPG, Gacha, Visual Novel',
         'description': '페이트 시리즈의 모바일 RPG. 역사 영웅들을 소환하는 가챠 게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/f/f7/Fate_Grand_Order_logo.png',
+        'image_url': '/img/fgo.jpg',
+        'skip_rawg': True,
         'tags': ['turn-based', 'rpg', 'gacha', 'anime', 'visual-novel', 'story-rich', 'free-to-play'],
     },
     {
         'title': '리그 오브 레전드: 와일드 리프트 (LoL: Wild Rift)',
         'genre': 'MOBA, Strategy, Multiplayer',
         'description': '롤의 모바일 버전. 모바일에 최적화된 조작과 빠른 게임 시간.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/c/c5/League_of_Legends_Wild_Rift.png',
+        'image_url': '/img/Wild_Rift.jpg',
+        'skip_rawg': True,
         'tags': ['moba', 'strategy', 'team-based', 'competitive', 'esports', 'free-to-play'],
     },
     {
         'title': '팀파이트 택틱스 (Teamfight Tactics)',
         'genre': 'Auto Battler, Strategy, Multiplayer',
         'description': '롤 세계관의 오토배틀러. 챔피언 조합과 시너지가 핵심.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/7/73/Teamfight_Tactics_logo.png',
+        'image_url': '/img/Teamfight_Tactics.jpg',
+        'skip_rawg': True,
         'tags': ['auto-battler', 'strategy', 'pvp', 'tactical', 'free-to-play'],
     },
     
@@ -426,7 +456,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '슈퍼 마리오 시리즈 (Super Mario Bros.)',
         'genre': 'Platformer, Action, Adventure',
         'description': '닌텐도의 대표 프랜차이즈. 배관공 마리오의 모험을 그린 플랫포머의 교과서.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png',
+        'image_url': '/img/Super_Mario_Bros.jpg',
+        'skip_rawg': True,
         'tags': ['platformer', 'action', 'adventure', 'family-friendly', 'nintendo', 'classic'],
     },
     {
@@ -447,14 +478,16 @@ KOREAN_POPULAR_GAMES = [
         'title': '마리오 카트 8 디럭스 (Mario Kart 8 Deluxe)',
         'genre': 'Racing, Arcade, Multiplayer',
         'description': '닌텐도 레이싱 게임의 결정판. 아이템전과 코스가 매력.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/b5/MarioKart8Deluxe.jpg',
+        'image_url': '/img/Mario_Kart.jpg',
+        'skip_rawg': True,
         'tags': ['racing', 'arcade', 'multiplayer', 'party-game', 'family-friendly', 'nintendo'],
     },
     {
         'title': '마리오 파티 슈퍼스타즈 (Mario Party Superstars)',
         'genre': 'Party Game, Minigames, Multiplayer',
         'description': '닌텐도 파티게임 시리즈. 보드게임과 미니게임의 조합.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/1/1e/Mario_Party_Superstars.jpg',
+        'image_url': '/img/Mario_Party.jpg',
+        'skip_rawg': True,
         'tags': ['party-game', 'minigames', 'multiplayer', 'casual', 'family-friendly', 'nintendo'],
     },
     {
@@ -491,7 +524,7 @@ KOREAN_POPULAR_GAMES = [
         'title': '젤다의 전설: 꿈꾸는 섬 (The Legend of Zelda: Link\'s Awakening)',
         'genre': 'Action-Adventure, Puzzle',
         'description': '게임보이 클래식의 리메이크. 귀여운 그래픽과 던전 퍼즐.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/d/da/Link%27s_Awakening_Remake_Boxart.png',
+        'image_url': '/img/Links_Awakening.jpg',
         'tags': ['action-adventure', 'puzzle', 'cute', 'nintendo', 'classic'],
     },
     
@@ -500,35 +533,37 @@ KOREAN_POPULAR_GAMES = [
         'title': '포켓몬스터 스칼렛/바이올렛 (Pokémon Scarlet/Violet)',
         'genre': 'RPG, Monster Collection, Open World',
         'description': '최초의 오픈월드 포켓몬. 스페인 풍 지역을 탐험하며 포켓몬 수집.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/a/a7/Pok%C3%A9mon_Scarlet_and_Violet.png',
+        'image_url': '/img/Pokemon_Sv.jpg',
+        'skip_rawg': True,
         'tags': ['rpg', 'monster-tamer', 'open-world', 'turn-based', 'nintendo', 'adventure'],
     },
     {
         'title': '포켓몬스터 소드/실드 (Pokémon Sword/Shield)',
         'genre': 'RPG, Monster Collection, Adventure',
         'description': '스위치 첫 본편 포켓몬. 와일드 에리어와 다이맥스 배틀.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/3a/Pok%C3%A9mon_Sword_and_Shield.png',
+        'image_url': '/img/Pokemon_Ss.jpg',
         'tags': ['rpg', 'monster-tamer', 'adventure', 'turn-based', 'nintendo'],
     },
     {
         'title': '포켓몬 레전드 아르세우스 (Pokémon Legends: Arceus)',
         'genre': 'Action RPG, Monster Collection, Open World',
         'description': '과거 시대 포켓몬 세계. 액션 기반 야생 포켓몬 포획.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/9e/Pokemon_Legends_Arceus_cover.jpg',
+        'image_url': '/img/LEGENDS_Arceus.jpg',
+        'skip_rawg': True,
         'tags': ['action-rpg', 'monster-tamer', 'open-world', 'exploration', 'nintendo'],
     },
     {
-        'title': '포켓몬스터 다이아몬드/펄 리메이크 (Pokémon Brilliant Diamond/Shining Pearl)',
+        'title': '포켓몬스터 다이아몬드/펄',
         'genre': 'RPG, Monster Collection',
         'description': '4세대 포켓몬의 스위치 리메이크. 신오지방 모험.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/b5/Pokémon_Brilliant_Diamond_and_Shining_Pearl.png',
+        'image_url': '/img/Pokemon_dp.jpg',
         'tags': ['rpg', 'monster-tamer', 'adventure', 'turn-based', 'nintendo', 'classic'],
     },
     {
         'title': '포켓몬스터 레츠고 피카츄/이브이 (Pokémon Let\'s Go)',
         'genre': 'RPG, Monster Collection, Casual',
         'description': '포켓몬 GO 스타일의 본편 게임. 모션 컨트롤 포획.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/4/4a/Pok%C3%A9mon_Let%27s_Go%2C_Pikachu%21_and_Pok%C3%A9mon_Let%27s_Go%2C_Eevee%21.png',
+        'image_url': '/img/Pokemon_lets.jpg',
         'tags': ['rpg', 'monster-tamer', 'casual', 'cute', 'nintendo', 'family-friendly'],
     },
     
@@ -544,7 +579,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '놀러오세요 동물의 숲 (Animal Crossing: Wild World)',
         'genre': 'Life Simulation, Relaxing',
         'description': 'DS용 동물의 숲. 휴대용으로 즐기는 마을 생활 시뮬레이션.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/f/fb/Animal_Crossing_Wild_World.jpg',
+        'image_url': '/img/Ac_Wild_World.jpg',
+        'skip_rawg': True,
         'tags': ['life-sim', 'relaxing', 'casual', 'cute', 'nintendo', 'classic'],
     },
     
@@ -553,15 +589,9 @@ KOREAN_POPULAR_GAMES = [
         'title': '스플래툰 3 (Splatoon 3)',
         'genre': 'TPS, Shooter, Multiplayer',
         'description': '잉크를 뿌려 영역을 확보하는 슈터. 유니크한 게임성과 스타일리시한 디자인.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/60/Splatoon_3_box_art.jpg',
+        'image_url': '/img/Splatoon_.jpg',
+        'skip_rawg': True,
         'tags': ['shooter', 'tps', 'multiplayer', 'team-based', 'competitive', 'nintendo', 'colorful'],
-    },
-    {
-        'title': '스플래툰 2 (Splatoon 2)',
-        'genre': 'TPS, Shooter, Multiplayer',
-        'description': '스위치용 스플래툰. 연어런과 오카스퀘어.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/d/d0/Splatoon_2_NA_box.jpg',
-        'tags': ['shooter', 'tps', 'multiplayer', 'team-based', 'competitive', 'nintendo'],
     },
     
     # === 커비 시리즈 ===
@@ -569,14 +599,16 @@ KOREAN_POPULAR_GAMES = [
         'title': '별의 커비: 디스커버리 (Kirby and the Forgotten Land)',
         'genre': 'Platformer, Action, Adventure',
         'description': '커비 시리즈 첫 3D 플랫포머. 머금기와 입체운동 능력.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/d/dc/Kirby_and_the_Forgotten_Land_box_art.jpg',
+        'image_url': '/img/Kirby_and_the_Forgotten_Land.jpg',
+        'skip_rawg': True,
         'tags': ['platformer', 'action', 'adventure', 'cute', 'nintendo', 'family-friendly'],
     },
     {
         'title': '별의 커비 스타 얼라이즈 (Kirby Star Allies)',
         'genre': 'Platformer, Action, Co-op',
         'description': '스위치용 커비. 적을 동료로 만드는 시스템.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/8/8c/Kirby_Star_Allies.jpg',
+        'image_url': '/img/Kirby_Star_Allies.jpg',
+        'skip_rawg': True,
         'tags': ['platformer', 'action', 'co-op', 'cute', 'nintendo', 'family-friendly'],
     },
     
@@ -585,21 +617,24 @@ KOREAN_POPULAR_GAMES = [
         'title': '링피트 어드벤처 (Ring Fit Adventure)',
         'genre': 'Fitness, RPG, Adventure',
         'description': '링콘 컨트롤러로 운동하며 모험하는 피트니스 게임.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/Ring_Fit_Adventure_Key_Art.jpg/220px-Ring_Fit_Adventure_Key_Art.jpg',
+        'image_url': '/img/Ring_Fit_Adventure.jpg',
+        'skip_rawg': True,
         'tags': ['fitness', 'rpg', 'adventure', 'casual', 'nintendo', 'family-friendly'],
     },
     {
         'title': '저스트 댄스 2024 (Just Dance 2024)',
         'genre': 'Rhythm, Dance, Music',
         'description': '유비소프트의 댄스 게임. K-POP 포함 다양한 곡 수록.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/69/Just_Dance_2024_Cover.jpg',
+        'image_url': '/img/Just_Dance.jpg',
+        'skip_rawg': True,
         'tags': ['rhythm', 'music', 'fitness', 'party-game', 'casual', 'family-friendly'],
     },
     {
         'title': '리듬 세상 (Rhythm Heaven)',
         'genre': 'Rhythm, Music, Minigames',
         'description': '닌텐도의 리듬 게임. 기발한 미니게임과 중독성 있는 음악.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/7/79/Rhythm_Heaven_cover.jpg',
+        'image_url': '/img/Rhythm_Heaven.jpg',
+        'skip_rawg': True,
         'tags': ['rhythm', 'music', 'minigames', 'casual', 'nintendo', 'funny'],
     },
     {
@@ -622,7 +657,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '레이튼 교수 시리즈 (Professor Layton)',
         'genre': 'Puzzle, Adventure, Mystery',
         'description': '레이튼 교수의 퍼즐 어드벤처. 수백 개의 두뇌 퍼즐과 미스터리 스토리.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/b/b5/Professor_Layton_and_the_Curious_Village.jpg',
+        'image_url': '/img/Professor_Layton.jpg',
+        'skip_rawg': True,
         'tags': ['puzzle', 'adventure', 'mystery', 'story-rich', 'nintendo', 'casual'],
     },
     {
@@ -639,70 +675,73 @@ KOREAN_POPULAR_GAMES = [
         'title': '파이어 엠블렘: 풍화설월 (Fire Emblem: Three Houses)',
         'genre': 'Tactical RPG, Strategy, Story Rich',
         'description': '닌텐도 택티컬 RPG. 학원 파트와 전쟁 파트로 구성.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/1/1f/Fire_Emblem_Three_Houses.jpg',
+        'image_url': '/img/Fire_Emblem_Three_Houses.jpg',
+        'skip_rawg': True,
         'tags': ['tactical-rpg', 'strategy', 'story-rich', 'anime', 'turn-based', 'nintendo'],
     },
     {
         'title': '파이어 엠블렘 인게이지 (Fire Emblem Engage)',
         'genre': 'Tactical RPG, Strategy',
         'description': '역대 FE 영웅들이 등장하는 신작. 전략적 깊이와 팬서비스.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/f/f2/Fire_Emblem_Engage_cover.jpg',
+        'image_url': '/img/Fire_Emblem_Engage.jpg',
+        'skip_rawg': True,
         'tags': ['tactical-rpg', 'strategy', 'anime', 'turn-based', 'nintendo'],
     },
     {
         'title': '제노블레이드 크로니클스 3 (Xenoblade Chronicles 3)',
         'genre': 'JRPG, Action RPG, Open World',
         'description': '모노리스 소프트의 대작 JRPG. 방대한 월드와 스토리.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/e/e4/Xenoblade_Chronicles_3_cover.jpg',
+        'image_url': '/img/Xenoblade_Chronicles3.jpg',
+        'skip_rawg': True,
         'tags': ['jrpg', 'action-rpg', 'open-world', 'story-rich', 'nintendo'],
     },
     {
         'title': '메트로이드 드레드 (Metroid Dread)',
         'genre': 'Metroidvania, Action, Exploration',
         'description': '19년 만의 메트로이드 2D 신작. 긴장감 넘치는 탐험.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/0f/Metroid_Dread_key_visual.jpg',
+        'image_url': '/img/Metroid.jpg',
+        'skip_rawg': True,
         'tags': ['metroidvania', 'action', 'exploration', 'sci-fi', 'nintendo'],
     },
     {
-        'title': '동키콩 컨트리 리턴즈 (Donkey Kong Country Returns)',
+        'title': '동키콩 바난자',
         'genre': 'Platformer, Action, Co-op',
         'description': '레트로 스튜디오의 동키콩 부활작. 하드코어 플랫포머.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/2/20/Donkey_Kong_Country_Returns_Cover.png',
+        'image_url': '/img/DONKEY_KONG_BANANZA.jpg',
+        'skip_rawg': True,
         'tags': ['platformer', 'action', 'co-op', 'difficult', 'nintendo', 'classic'],
     },
     {
         'title': '요시 시리즈 (Yoshi\'s Crafted World)',
         'genre': 'Platformer, Puzzle, Cute',
         'description': '공예 스타일의 요시 게임. 귀엽고 창의적인 스테이지.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/9/91/Yoshis_Crafted_World.jpg',
+        'image_url': '/img/Yoshi\'s_Crafted_World.jpg',
+        'skip_rawg': True,
         'tags': ['platformer', 'puzzle', 'cute', 'casual', 'nintendo', 'family-friendly'],
     },
     {
         'title': '피크민 4 (Pikmin 4)',
         'genre': 'Strategy, Puzzle, Adventure',
         'description': '미야모토의 피크민 시리즈. 작은 생물들을 지휘해 탐험.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/2/2f/Pikmin_4_cover_art.jpg',
+        'image_url': '/img/Pikmin4.jpg',
+        'skip_rawg': True,
         'tags': ['strategy', 'puzzle', 'adventure', 'cute', 'nintendo'],
     },
     {
         'title': '루이지 맨션 3 (Luigi\'s Mansion 3)',
         'genre': 'Action-Adventure, Puzzle, Horror',
         'description': '루이지의 유령 저택 탐험. 코믹 호러 어드벤처.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a0/Luigi%27s_Mansion_3_cover_art.jpg/220px-Luigi%27s_Mansion_3_cover_art.jpg',
+        'image_url': '/img/Luigi_Mansion_3.jpg',
+        'skip_rawg': True,
         'tags': ['action-adventure', 'puzzle', 'horror', 'funny', 'nintendo', 'co-op'],
     },
-    {
-        'title': '베이오네타 3 (Bayonetta 3)',
-        'genre': 'Action, Hack and Slash',
-        'description': '플래티넘 게임즈의 스타일리시 액션. 화려한 액션과 성인 유머.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/0/0e/Bayonetta_3.jpg',
-        'tags': ['action', 'hack-and-slash', 'action-adventure', 'female-protagonist', 'nintendo'],
-    },
+
     {
         'title': '테트리스 99 (Tetris 99)',
         'genre': 'Puzzle, Battle Royale, Multiplayer',
         'description': '테트리스 배틀로얄. 99명 중 최후의 1인.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/4/4e/Tetris_99_cover_art.jpg',
+        'image_url': '/img/Tetris99.jpg',
+        'skip_rawg': True,
         'tags': ['puzzle', 'battle-royale', 'multiplayer', 'competitive', 'nintendo', 'free-to-play'],
     },
     
@@ -735,7 +774,8 @@ KOREAN_POPULAR_GAMES = [
         'title': '포트나이트 (Fortnite)',
         'genre': 'Battle Royale, TPS, Building',
         'description': '에픽게임즈의 배틀로얄 게임. 건축 시스템이 특징. 콘서트, 콜라보 등 문화 현상으로 성장.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/8/8c/FORT_art.jpg',
+        'image_url': '/img/Fortnite.jpg',
+        'skip_rawg': True,
         'tags': ['battle-royale', 'tps', 'building', 'multiplayer', 'competitive', 'free-to-play', 'creative'],
     },
     {
@@ -774,7 +814,7 @@ KOREAN_POPULAR_GAMES = [
         'title': '월드 오브 탱크 (World of Tanks)',
         'genre': 'Action, Simulation, Multiplayer',
         'description': '워게이밍의 전차 전투 게임. 2차대전~냉전기 전차로 15vs15 팀 배틀.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/6/64/World_of_Tanks_logo.png',
+        'image_url': '/img/World_Of_Tanks.jpg',
         'tags': ['action', 'simulation', 'multiplayer', 'military', 'tank', 'free-to-play', 'team-based'],
     },
     {
@@ -794,13 +834,13 @@ KOREAN_POPULAR_GAMES = [
         'tags': ['survival', 'open-world', 'tps', 'co-op', 'post-apocalyptic', 'free-to-play', 'building'],
     },
     {
-        'title': '연운 (Yun Yun)',
-        'genre': 'Action RPG, Martial Arts, MMORPG',
-        'description': '중국풍 무협 액션 MMORPG. 화려한 경공술과 전투 액션이 특징.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1468840/header.jpg',
-        'steam_appid': 1468840,
+        'title': '연운 (Where Winds Meet)',
+        'genre': 'Action RPG, Martial Arts, Open World',
+        'description': '에버스톤 스튜디오의 중국풍 무협 오픈월드 액션 RPG. 화려한 경공술과 전투 액션이 특징.',
+        'image_url': '/img/wherewindsmeet.jpg',
+        'steam_appid': 1399560,
         'skip_rawg': True,  # 중국 게임이라 RAWG 매칭 불확실
-        'tags': ['action-rpg', 'martial-arts', 'mmorpg', 'open-world', 'free-to-play', 'anime'],
+        'tags': ['action-rpg', 'martial-arts', 'open-world', 'exploration', 'free-to-play', 'anime'],
     },
     {
         'title': 'Counter-Strike 2',
@@ -814,8 +854,9 @@ KOREAN_POPULAR_GAMES = [
         'title': 'SMITE 2',
         'genre': 'MOBA, Action, Mythology',
         'description': '하이레즈 스튜디오의 3인칭 MOBA. 신화 속 신들로 플레이.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2437690/header.jpg',
+        'image_url': '/img/smite2.jpg',  # 수동 이미지 필요
         'steam_appid': 2437690,
+        'skip_rawg': True,  # 정확한 이미지 확보 위해
         'tags': ['moba', 'action', 'mythology', 'multiplayer', 'competitive', 'free-to-play', 'tps'],
     },
     {
@@ -825,15 +866,6 @@ KOREAN_POPULAR_GAMES = [
         'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1049590/header.jpg',
         'steam_appid': 1049590,
         'tags': ['battle-royale', 'moba', 'survival', 'anime', 'competitive', 'free-to-play', 'korean'],
-    },
-    {
-        'title': '건담 에볼루션 (Gundam Evolution)',
-        'genre': 'FPS, Hero Shooter, Mecha',
-        'description': '반다이남코의 건담 FPS. 모빌슈트를 조종하는 히어로 슈터.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1816670/header.jpg',
-        'steam_appid': 1816670,
-        'skip_rawg': True,  # 서비스 종료
-        'tags': ['fps', 'hero-shooter', 'mecha', 'anime', 'multiplayer', 'free-to-play', 'team-based'],
     },
     {
         'title': '나라카: 블레이드포인트 (NARAKA: BLADEPOINT)',
@@ -859,52 +891,21 @@ KOREAN_POPULAR_GAMES = [
         'steam_appid': 2767030,
         'tags': ['hero-shooter', 'tps', 'team-based', 'competitive', 'multiplayer', 'free-to-play'],
     },
+    # 벨루시아, 스쿼드44 제거 - 한국에서 유행하지 않음
     {
-        'title': '벨루시아',
-        'genre': 'Racing, Casual, Multiplayer',
-        'description': '넥슨의 캐주얼 레이싱 게임. 카트라이더의 정신적 후속작.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2308590/header.jpg',
-        'steam_appid': 2308590,
-        'skip_rawg': True,  # 한국 게임
-        'tags': ['racing', 'casual', 'multiplayer', 'arcade', 'free-to-play', 'korean'],
-    },
-    {
-        'title': '런스케이프 (RuneScape)',
-        'genre': 'MMORPG, Fantasy, Sandbox',
-        'description': '재그엑스의 클래식 MMORPG. 2001년부터 서비스된 장수 게임. 자유로운 스킬 시스템.',
-        'image_url': 'https://upload.wikimedia.org/wikipedia/en/3/3c/Runescape_logo.png',
-        'steam_appid': 1343400,
-        'tags': ['mmorpg', 'fantasy', 'sandbox', 'classic', 'free-to-play', 'pvp'],
-    },
-    {
-        'title': '올드스쿨 런스케이프 (Old School RuneScape)',
-        'genre': 'MMORPG, Fantasy, Retro',
-        'description': '2007년 버전의 런스케이프 부활. 클래식 MMORPG 팬들 사이에서 인기.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2519060/header.jpg',
-        'steam_appid': 2519060,
-        'tags': ['mmorpg', 'fantasy', 'retro', 'classic', 'free-to-play', 'pvp'],
-    },
-    {
-        'title': '스쿼드 44 (Squad 44)',
-        'genre': 'FPS, Tactical, Mil-Sim',
-        'description': '2차대전 배경의 택티컬 FPS. 전장의 리얼리즘을 추구.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/736220/header.jpg',
-        'steam_appid': 736220,
-        'tags': ['fps', 'tactical', 'military', 'simulation', 'multiplayer', 'team-based'],
-    },
-    {
-        'title': '카트라이더: 드리프트 (KartRider: Drift)',
+        'title': '카트라이더 드리프트 (KartRider Drift)',
         'genre': 'Racing, Arcade, Multiplayer',
-        'description': '넥슨의 카트라이더 글로벌 버전. 크로스플랫폼 지원.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/2073450/header.jpg',
+        'description': '넥슨의 카트라이더 글로벌 버전. 크로스플랫폼 지원. 기존 카트라이더와는 별개 게임.',
+        'image_url': '/img/kartrider_drift.jpg',  # 수동 이미지 필요
         'steam_appid': 2073450,
-        'tags': ['racing', 'arcade', 'multiplayer', 'casual', 'free-to-play', 'korean'],
+        'skip_rawg': True,  # 기존 카트라이더와 구분
+        'tags': ['racing', 'arcade', 'multiplayer', 'casual', 'free-to-play', 'korean', '3d'],
     },
     {
         'title': '메이플스토리 월드 (MapleStory Worlds)',
         'genre': 'MMORPG, Sandbox, Creative',
         'description': '메이플스토리의 유저 제작 콘텐츠 플랫폼. 로블록스 스타일의 창작 도구.',
-        'image_url': 'https://cdn.akamai.steamstatic.com/steam/apps/1913930/header.jpg',
+        'image_url': '/img/maplestorywolrd.jpg',
         'steam_appid': 1913930,
         'skip_rawg': True,  # 한국 게임
         'tags': ['mmorpg', 'sandbox', 'creative', 'casual', 'free-to-play', 'korean', '2d'],
@@ -954,7 +955,7 @@ class Command(BaseCommand):
         for idx, game_data in enumerate(KOREAN_POPULAR_GAMES):
             title = game_data['title']
             
-            # 기존 게임 찾기 (제목으로)
+            # 기존 게임 찾기 (제목 또는 steam_appid로)
             # 한글 부분만 또는 영문 부분만으로도 검색
             title_parts = title.split(' (')
             korean_title = title_parts[0].strip()
@@ -963,6 +964,10 @@ class Command(BaseCommand):
             existing = Game.objects.filter(title__icontains=korean_title).first()
             if not existing and english_title:
                 existing = Game.objects.filter(title__icontains=english_title).first()
+            
+            # steam_appid로도 검색 (제목 변경 시 기존 게임을 찾기 위해)
+            if not existing and game_data.get('steam_appid'):
+                existing = Game.objects.filter(steam_appid=game_data['steam_appid']).first()
             
             # skip_rawg 플래그 확인 - RAWG에 없거나 잘못 매칭되는 게임은 건너뜀
             skip_rawg = game_data.get('skip_rawg', False)
@@ -1002,13 +1007,33 @@ class Command(BaseCommand):
                         existing.description = game_data.get('description', existing.description)
                     existing.genre = game_data.get('genre', existing.genre)
                     
-                    # RAWG 데이터로 업데이트
+                    # 이미지 업데이트 우선순위:
+                    # 1) game_data에 수동 지정된 image_url (가장 높은 우선순위)
+                    # 2) Steam CDN 이미지 (steam_appid가 있는 경우)
+                    # 3) RAWG 데이터 (skip_rawg가 아닌 경우)
+                    manual_image = game_data.get('image_url', '')
+                    
+                    # 수동 지정 이미지가 있으면 무조건 적용
+                    if manual_image:
+                        existing.image_url = manual_image
+                        if not existing.background_image:
+                            existing.background_image = manual_image
+                        self.stdout.write(f"    📷 이미지 수동 지정: {manual_image[:50]}...")
+                    # Steam CDN 이미지 (수동 지정이 없고 steam_appid가 있는 경우)
+                    elif steam_cdn_image and not existing.image_url:
+                        existing.image_url = steam_cdn_image
+                        existing.background_image = steam_cdn_image
+                        self.stdout.write(f"    📷 Steam CDN 이미지: {steam_cdn_image[:50]}...")
+                    
+                    # RAWG 데이터로 업데이트 (이미지는 수동/Steam이 없을 때만)
                     if rawg_data:
                         if not existing.rawg_id:
                             existing.rawg_id = rawg_data.get('id')
-                        if not existing.background_image or options.get('update_images'):
-                            existing.background_image = rawg_data.get('background_image', '')
-                            existing.image_url = rawg_data.get('background_image', existing.image_url)
+                        # 이미지: 수동 지정이나 Steam CDN이 없을 때만 RAWG 사용
+                        if not manual_image and not steam_cdn_image:
+                            if not existing.background_image or options.get('update_images'):
+                                existing.background_image = rawg_data.get('background_image', '')
+                                existing.image_url = rawg_data.get('background_image', existing.image_url)
                         if rawg_data.get('metacritic') and not existing.metacritic_score:
                             existing.metacritic_score = rawg_data.get('metacritic')
                         if rawg_data.get('description_raw') and not existing.description:
@@ -1072,6 +1097,14 @@ class Command(BaseCommand):
             
             created_count += 1
             self.stdout.write(self.style.SUCCESS(f"  추가: {title}"))
+        
+        # 온보딩 캐시 무효화 (변경사항 즉시 반영)
+        try:
+            from users.onboarding import clear_korean_games_cache
+            clear_korean_games_cache()
+            self.stdout.write(self.style.SUCCESS("📝 온보딩 캐시 무효화 완료"))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"⚠️ 캐시 무효화 실패: {e}"))
         
         self.stdout.write(self.style.SUCCESS(
             f"\n완료! 생성: {created_count}개, 업데이트: {updated_count}개, RAWG 매칭: {rawg_fetched}개"

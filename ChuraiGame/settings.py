@@ -127,7 +127,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# 정적 파일 디렉토리 설정 (이미지 등 수동 추가 파일용)
+STATICFILES_DIRS = [
+    ('img', BASE_DIR / 'img'),  # /static/img/파일명.jpg 형태로 접근 가능
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

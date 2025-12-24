@@ -87,6 +87,10 @@
     const saleItemsPerPage = ref(12);
     const currentSaleCount = ref(12);
     const saleSearchQuery = ref('');  // Search query for sale games
+    const headerSearchQuery = ref('');  // Search query for header search box
+    const searchSuggestions = ref([]);  // Autocomplete suggestions
+    const showSearchSuggestions = ref(false);  // Show/hide autocomplete dropdown
+    const searchDebounceTimer = ref(null);  // Debounce timer for search
     const showScrollTopBtn = ref(false);
     const isLoadingMoreSales = ref(false);
     const infiniteScrollTrigger = ref(null);
@@ -342,6 +346,17 @@
         // Initial check
         handleHashChange();
 
+        // Check URL search parameter (from detail page header search)
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search');
+        if (searchQuery) {
+            saleSearchQuery.value = searchQuery;
+            currentStep.value = 'main';
+            currentTab.value = 'sale';
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        }
+
         // Listen for hash changes (browser back/forward)
         window.addEventListener('hashchange', handleHashChange);
 
@@ -494,9 +509,9 @@
                         matchedGames.push({
                             ...rawgGame,
                             rawg_id: rawgGame.rawg_id || rawgGame.id,  // rawg_id 명시적 보장
-                            discount_rate: saleMatch.discount_rate,
-                            current_price: saleMatch.current_price,
-                            original_price: saleMatch.original_price,
+                            discount_rate: saleMatch.discount_rate || 0,
+                            current_price: saleMatch.current_price || 0,
+                            original_price: saleMatch.original_price || 0,
                             steam_game_id: saleMatch.game_id,
                             isOnSale: true
                         });
@@ -751,6 +766,67 @@
                 container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
             }
         }
+    };
+
+    // Header Search: Navigate to sale tab and search
+    const performHeaderSearch = () => {
+        if (headerSearchQuery.value.trim()) {
+            // Hide suggestions
+            showSearchSuggestions.value = false;
+            // Switch to sale tab and apply search query
+            currentStep.value = 'main';
+            currentTab.value = 'sale';
+            saleSearchQuery.value = headerSearchQuery.value.trim();
+            // Clear header search after transferring
+            headerSearchQuery.value = '';
+            // Update URL hash
+            window.location.hash = 'sale';
+        }
+    };
+
+    // Header Search Autocomplete: Fetch suggestions from DB
+    const onHeaderSearchInput = async () => {
+        const query = headerSearchQuery.value.trim();
+        
+        // Clear previous timer
+        if (searchDebounceTimer.value) {
+            clearTimeout(searchDebounceTimer.value);
+        }
+        
+        if (query.length < 1) {
+            searchSuggestions.value = [];
+            showSearchSuggestions.value = false;
+            return;
+        }
+        
+        // Debounce: wait 200ms before making API call
+        searchDebounceTimer.value = setTimeout(async () => {
+            try {
+                const response = await fetch(`/games/api/autocomplete/?q=${encodeURIComponent(query)}&limit=10`);
+                const data = await response.json();
+                searchSuggestions.value = data.games || [];
+                showSearchSuggestions.value = searchSuggestions.value.length > 0;
+            } catch (e) {
+                console.error('Autocomplete error:', e);
+                searchSuggestions.value = [];
+                showSearchSuggestions.value = false;
+            }
+        }, 200);
+    };
+
+    // Select a suggestion and navigate to game detail
+    const selectSearchSuggestion = (suggestion) => {
+        showSearchSuggestions.value = false;
+        headerSearchQuery.value = '';
+        // Navigate to game detail page
+        window.location.href = `/games/${suggestion.id}/`;
+    };
+
+    // Hide suggestions with delay (for click handling)
+    const hideSearchSuggestionsDelayed = () => {
+        setTimeout(() => {
+            showSearchSuggestions.value = false;
+        }, 150);
     };
 
     const handleLogout = () => {
@@ -1140,7 +1216,10 @@
         if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
         return count.toLocaleString();
     };
-    const handleImageError = (e) => { e.target.src = "https://via.placeholder.com/460x215?text=No+Image"; };
+    const handleImageError = (e) => {
+        // 외부 서버 의존성 제거: SVG data URI로 폴백 (회색 배경 + 게임 아이콘)
+        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='460' height='215' viewBox='0 0 460 215'%3E%3Crect fill='%23e5e7eb' width='460' height='215'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='16' fill='%239ca3af'%3E🎮 No Image%3C/text%3E%3C/svg%3E";
+    };
     const goToHome = () => {
         currentStep.value = 'main';
         currentTab.value = 'home';
@@ -2241,7 +2320,16 @@ Remember: ABSOLUTELY NO TEXT OR LETTERS IN THE IMAGE!`;
         showVerifyPassword,
         isVerifyingPassword,
         passwordVerifyError,
-        verifyPasswordAndGoToSettings
+        verifyPasswordAndGoToSettings,
+
+        // Header Search & Autocomplete
+        headerSearchQuery,
+        performHeaderSearch,
+        searchSuggestions,
+        showSearchSuggestions,
+        onHeaderSearchInput,
+        selectSearchSuggestion,
+        hideSearchSuggestionsDelayed
     };
 
         }

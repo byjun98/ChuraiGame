@@ -97,6 +97,69 @@ def main_view(request):
             with open(fast_json_path, 'r', encoding='utf-8') as f:
                 games_data = json.load(f)
         
+        # === DB에서 추가 게임 가져오기 (온라인, 무료, 닌텐도 게임들) ===
+        # 세일 데이터에 없는 DB 게임들 추가 (add_korean_games로 추가된 게임들)
+        existing_titles = set(g.get('title', '').lower() for g in games_data)
+        
+        # DB 게임 가져오기
+        from games.models import Game, Tag
+        db_games = Game.objects.prefetch_related('tags').all()
+        
+        for db_game in db_games:
+            # 이미 세일 데이터에 있는 게임은 제외 (제목 기준)
+            title_lower = db_game.title.lower()
+            if title_lower in existing_titles:
+                continue
+            
+            # 태그에서 특수 속성 확인
+            tag_slugs = list(db_game.tags.values_list('slug', flat=True))
+            
+            is_free = 'free-to-play' in tag_slugs
+            is_nintendo = 'nintendo' in tag_slugs
+            
+            # DB 게임 데이터 형식 변환
+            # 이미지 소스 우선순위: Steam CDN > RAWG background > 기타 image_url
+            # (Wikipedia 등 핫링킹 차단되는 이미지 피함)
+            game_image = ''
+            if db_game.steam_appid:
+                # Steam CDN에서 header 이미지 가져오기 (가장 안정적)
+                game_image = f"https://cdn.akamai.steamstatic.com/steam/apps/{db_game.steam_appid}/header.jpg"
+            elif db_game.background_image and 'rawg' in db_game.background_image:
+                # RAWG 이미지 사용 (신뢰할 수 있음)
+                game_image = db_game.background_image
+            elif db_game.image_url and 'rawg' in db_game.image_url:
+                game_image = db_game.image_url
+            elif db_game.background_image:
+                game_image = db_game.background_image
+            elif db_game.image_url:
+                game_image = db_game.image_url
+            
+            game_entry = {
+                'title': db_game.title,
+                'image_url': game_image,
+                'thumbnail': game_image,  # 세일 탭과의 일관성을 위해 thumbnail도 설정
+                'game_id': db_game.steam_appid or db_game.rawg_id or db_game.id,
+                'rawg_id': db_game.rawg_id,
+                'steam_appid': db_game.steam_appid,
+                'genre': db_game.genre or '',
+                'description': db_game.description or '',
+                'metacritic_score': db_game.metacritic_score,
+                # 세일 관련 필드 (세일 안하는 게임)
+                'discount_rate': 0,
+                'current_price': 0,  # 무료 또는 미정
+                'original_price': 0,
+                'steam_rating': 0,
+                'review_count': 0,
+                # DB 게임 식별 플래그
+                'is_db_game': True,
+                'is_free': is_free,
+                'is_nintendo': is_nintendo,
+                'tags': tag_slugs,
+            }
+            
+            games_data.append(game_entry)
+            existing_titles.add(title_lower)
+        
         # Generate best_prices from highly rated games with high discount
         # (steam_rating >= 85% AND discount_rate >= 50%)
         if games_data:

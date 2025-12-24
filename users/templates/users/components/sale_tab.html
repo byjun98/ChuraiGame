@@ -3,7 +3,7 @@
 <div v-if="currentTab === 'sale'" class="animate-fade-in space-y-8">
 
     <!-- Popular Games ON SALE Section -->
-    <section v-if="(popularGamesOnSale && popularGamesOnSale.length > 0) || isLoadingPopularGames">
+    <section v-if="(popularGamesOnSale && popularGamesOnSale.length > 0) || isLoadingPopularGames" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center gap-3 mb-4">
             <div
                 class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-red-500 rounded-xl flex items-center justify-center">
@@ -60,7 +60,7 @@
                         {{ game.rating ? game.rating.toFixed(1) : 'N/A' }}
                     </div>
                     <div class="relative aspect-video">
-                        <img :src="game.image_url || 'https://via.placeholder.com/460x215'" @error="handleImageError"
+                        <img :src="game.image_url || ''" @error="handleImageError"
                             class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                     </div>
@@ -93,7 +93,7 @@
     </section>
 
     <!-- Best Historical Prices Section -->
-    <section v-if="bestPrices && bestPrices.length > 0">
+    <section v-if="bestPrices && bestPrices.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center gap-3 mb-4">
             <div
                 class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
@@ -155,14 +155,17 @@
     </section>
 
     <!-- Main Sale List -->
-    <section>
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div class="flex items-center gap-3">
                 <div
                     class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                    <i class="ph-fill ph-tag text-white text-xl"></i>
+                    <i class="ph-fill ph-magnifying-glass text-white text-xl"></i>
                 </div>
-                <h2 class="text-xl font-bold">💰 현재 세일 중</h2>
+                <div>
+                    <h2 class="text-xl font-bold">🎮 게임 검색</h2>
+                    <p class="text-sm text-gray-500">세일 게임, 무료 게임, 닌텐도 게임 등 검색</p>
+                </div>
             </div>
 
             <!-- Controls Container -->
@@ -238,14 +241,34 @@
                 </button>
 
                 <div class="relative aspect-[16/9] bg-gray-200">
-                    <img :src="game.thumbnail" @error="handleImageError" class="w-full h-full object-cover">
-                    <div
+                    <img :src="game.thumbnail || game.image_url" @error="handleImageError" class="w-full h-full object-cover">
+                    <!-- Discount Badge (세일 게임) -->
+                    <div v-if="game.discount_rate && game.discount_rate > 0"
                         class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
                         -{{ Math.round(game.discount_rate * 100) }}%
+                    </div>
+                    <!-- Free Badge (무료 게임) -->
+                    <div v-else-if="game.is_free"
+                        class="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <i class="ph-fill ph-gift"></i> 무료
+                    </div>
+                    <!-- Nintendo Badge (닌텐도 게임) -->
+                    <div v-else-if="game.is_nintendo"
+                        class="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <i class="ph-fill ph-game-controller"></i> 닌텐도
+                    </div>
+                    <!-- Full Price Badge (정가 판매 게임) -->
+                    <div v-else-if="game.is_db_game"
+                        class="absolute top-3 right-3 bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <i class="ph-fill ph-tag"></i> 정가
                     </div>
                 </div>
                 <div class="p-4 flex flex-col flex-1">
                     <h3 class="font-bold text-gray-800 mb-1 line-clamp-1" :title="game.title">{{ game.title }}</h3>
+                    <!-- Genre/Tags for DB Games -->
+                    <div v-if="game.is_db_game && game.genre" class="text-xs text-gray-500 mb-1 line-clamp-1">
+                        {{ game.genre }}
+                    </div>
                     <!-- Steam Rating Badge -->
                     <div class="flex items-center gap-2 mb-2">
                         <span v-if="game.steam_rating"
@@ -261,12 +284,36 @@
                             class="px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white animate-pulse">
                             🔥역대 최저가!
                         </span>
+                        <!-- Metacritic for DB games -->
+                        <span v-if="game.is_db_game && game.metacritic_score"
+                            class="px-2 py-0.5 rounded text-xs font-medium"
+                            :class="game.metacritic_score >= 75 ? 'bg-green-100 text-green-700' : game.metacritic_score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
+                            MC {{ game.metacritic_score }}
+                        </span>
                     </div>
                     <div class="mt-auto pt-3 flex items-end justify-between">
                         <div class="flex flex-col">
-                            <span class="text-xs text-gray-400 line-through">₩{{ formatPrice(game.original_price)
-                                }}</span>
-                            <span class="text-lg font-bold text-blue-600">₩{{ formatPrice(game.current_price) }}</span>
+                            <!-- 세일 게임: 원래 가격과 현재 가격 -->
+                            <template v-if="game.discount_rate && game.discount_rate > 0">
+                                <span class="text-xs text-gray-400 line-through">₩{{ formatPrice(game.original_price) }}</span>
+                                <span class="text-lg font-bold text-blue-600">₩{{ formatPrice(game.current_price) }}</span>
+                            </template>
+                            <!-- 무료 게임 -->
+                            <template v-else-if="game.is_free">
+                                <span class="text-lg font-bold text-green-600">무료 플레이</span>
+                            </template>
+                            <!-- 닌텐도 게임 -->
+                            <template v-else-if="game.is_nintendo">
+                                <span class="text-lg font-bold text-red-600">🎮 닌텐도 플랫폼</span>
+                            </template>
+                            <!-- 정가 판매 게임 -->
+                            <template v-else-if="game.is_db_game">
+                                <span class="text-sm font-medium text-gray-600">정가 판매</span>
+                            </template>
+                            <!-- 일반 세일 게임 (할인 없음 but 가격 있음) -->
+                            <template v-else>
+                                <span class="text-lg font-bold text-blue-600">₩{{ formatPrice(game.current_price || game.original_price) }}</span>
+                            </template>
                         </div>
                         <!-- Buttons -->
                         <div class="flex items-center gap-1">
@@ -277,7 +324,7 @@
                                 <i class="ph-bold ph-storefront"></i>
                             </a>
                             <!-- Steam Button -->
-                            <a :href="game.store_link" target="_blank" @click.stop
+                            <a v-if="game.store_link" :href="game.store_link" target="_blank" @click.stop
                                 class="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
                                 title="Steam에서 보기">
                                 <i class="ph-bold ph-steam-logo"></i>

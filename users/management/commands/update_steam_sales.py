@@ -1,18 +1,17 @@
 """
 Django Management Command: Update Steam Sales Data (CheapShark API)
 =====================================================================
-CheapShark API를 사용하여 양질의 스팀 세일 데이터를 가져옵니다.
+CheapShark API를 사용하여 DB에 있는 게임들의 스팀 세일 데이터를 가져옵니다.
 
 주요 특징:
+- DB에 있는 게임들만 수집 (새 게임 추가 없음)
 - 무료 API, API 키 불필요
-- steamRatingCount >= 500 필터로 스캠 게임 원천 차단
-- steamRating >= 75 필터로 좋은 평가의 게임만 수집
+- Rate limiting 방지를 위한 적절한 딜레이
 - 역대 최저가 정보 포함
 
 Usage:
     python manage.py update_steam_sales
-    python manage.py update_steam_sales --count 300
-    python manage.py update_steam_sales --min-reviews 1000
+    python manage.py update_steam_sales --no-history
 """
 
 import requests
@@ -25,107 +24,117 @@ from django.conf import settings
 
 
 class Command(BaseCommand):
-    help = 'Fetch and update Steam sale data using CheapShark API (high-quality games only)'
+    help = 'Fetch and update Steam sale data for games already in DB using CheapShark API'
 
     # CheapShark API Endpoints
     DEALS_API_URL = "https://www.cheapshark.com/api/1.0/deals"
     GAMES_API_URL = "https://www.cheapshark.com/api/1.0/games"
     PAGE_SIZE = 60  # CheapShark 최대값
+    
+    # Rate limiting 방지
+    REQUEST_DELAY = 1.0  # 1초 딜레이 (안전하게)
+    HISTORY_DELAY = 0.5  # 역대 최저가 조회는 더 빠르게
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--count',
-            type=int,
-            default=1500,
-            help='Number of sale items to fetch (default: 500)'
-        )
-        parser.add_argument(
-            '--min-rating',
-            type=int,
-            default=55,
-            help='Minimum Steam rating percentage (default: 75)'
-        )
-        parser.add_argument(
-            '--min-reviews',
-            type=int,
-            default=300,
-            help='Minimum review count to filter scam games (default: 500)'
-        )
-        parser.add_argument(
-            '--fetch-history',
-            action='store_true',
-            default=True,
-            help='Fetch historical low prices for top games (default: True)'
-        )
         parser.add_argument(
             '--no-history',
             action='store_true',
             help='Skip fetching historical low prices'
         )
+        parser.add_argument(
+            '--delay',
+            type=float,
+            default=1.0,
+            help='Delay between API requests in seconds (default: 1.0)'
+        )
 
-    def fetch_deals(self, page_number=0, min_rating=75, sort_by="Deal Rating"):
-        """CheapShark Deals API로 세일 게임 목록 조회
-        
-        Args:
-            sort_by: 정렬 기준 ("Deal Rating", "Reviews", "Savings", "Price", "Metacritic", "recent")
-        """
-        params = {
-            "storeID": "1",          # 1 = Steam
-            "onSale": "1",           # 현재 세일 중
-            "steamRating": str(min_rating),
-            "pageSize": str(self.PAGE_SIZE),
-            "pageNumber": str(page_number),
-            "sortBy": sort_by
-        }
-        
-        try:
-            response = requests.get(self.DEALS_API_URL, params=params, timeout=30)
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            self.stdout.write(self.style.ERROR(f"❌ API 요청 실패: {e}"))
-            return []
+    def fetch_deals_with_retry(self, params, max_retries=3):
+        """CheapShark API 호출 (429 에러 시 Retry-After 대기)"""
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(self.DEALS_API_URL, params=params, timeout=30)
+                
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    self.stdout.write(self.style.WARNING(
+                        f"⏳ Rate limited! {retry_after}초 대기 후 재시도..."
+                    ))
+                    time.sleep(retry_after)
+                    continue
+                
+                response.raise_for_status()
+                return response.json()
+                
+            except requests.RequestException as e:
+                if attempt < max_retries - 1:
+                    self.stdout.write(self.style.WARNING(f"⚠️ 요청 실패, 재시도 중... ({e})"))
+                    time.sleep(5)
+                else:
+                    self.stdout.write(self.style.ERROR(f"❌ API 요청 실패: {e}"))
+                    return []
+        return []
 
-    def fetch_historical_low(self, game_id):
-        """CheapShark Games API로 역대 최저가 정보 조회"""
-        try:
-            response = requests.get(f"{self.GAMES_API_URL}?id={game_id}", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                return data.get('cheapestPriceEver', None)
-        except Exception:
-            pass
+    def fetch_historical_low_with_retry(self, game_id, max_retries=2):
+        """CheapShark Games API로 역대 최저가 정보 조회 (429 처리 포함)"""
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(f"{self.GAMES_API_URL}?id={game_id}", timeout=10)
+                
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', 30))
+                    self.stdout.write(self.style.WARNING(f"⏳ Rate limited! {retry_after}초 대기..."))
+                    time.sleep(retry_after)
+                    continue
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get('cheapestPriceEver', None)
+            except Exception:
+                pass
         return None
 
     def handle(self, *args, **options):
-        target_count = options['count']
-        min_rating = options['min_rating']
-        min_reviews = options['min_reviews']
         fetch_history = not options['no_history']
+        self.REQUEST_DELAY = options['delay']
         
         self.stdout.write(self.style.NOTICE(
-            f"🚀 CheapShark API로 Steam 세일 데이터 업데이트 시작"
+            f"🚀 CheapShark API로 DB 게임들의 세일 데이터 업데이트 시작"
         ))
-        self.stdout.write(f"   목표: {target_count}개")
-        self.stdout.write(f"   필터: 스팀 평가 {min_rating}% 이상, 리뷰 {min_reviews}개 이상")
+        self.stdout.write(f"   📌 모드: DB에 있는 게임만 수집 (새 게임 추가 안함)")
+        self.stdout.write(f"   ⏱️ 요청 딜레이: {self.REQUEST_DELAY}초")
         self.stdout.write("")
         
-        # 중복 체크용 set (steam_app_id 기준)
+        # DB에서 게임 정보 먼저 로드
+        from games.models import Game
+        
+        db_steam_ids = set()
+        steam_to_rawg = {}
+        games_with_steam = Game.objects.filter(
+            steam_appid__isnull=False
+        ).exclude(steam_appid=0).values_list('steam_appid', 'rawg_id')
+        
+        for steam_appid, rawg_id in games_with_steam:
+            db_steam_ids.add(str(steam_appid))
+            if rawg_id:
+                steam_to_rawg[str(steam_appid)] = rawg_id
+        
+        self.stdout.write(f"   📊 DB에 있는 Steam 게임: {len(db_steam_ids)}개")
+        self.stdout.write("")
+        
+        # 중복 체크용 set
         seen_app_ids = set()
         collected_data = []
         
-        def process_deals(deals, source_name=""):
-            """딜 데이터를 처리하여 collected_data에 추가 (중복 제거)"""
+        def process_deals(deals):
+            """딜 데이터를 처리하여 collected_data에 추가 (DB 게임만, 중복 제거)"""
             added = 0
             for deal in deals:
-                # 리뷰 개수 필터링 (핵심! 스캠 게임 차단)
-                review_count = int(deal.get('steamRatingCount') or 0)
-                if review_count < min_reviews:
-                    continue
-                
-                # 스팀 앱 ID가 없는 경우 스킵
                 steam_app_id = deal.get('steamAppID')
                 if not steam_app_id:
+                    continue
+                
+                # ★ DB에 있는 게임만 수집 ★
+                if str(steam_app_id) not in db_steam_ids:
                     continue
                 
                 # 중복 체크
@@ -143,15 +152,16 @@ class Command(BaseCommand):
                 sale_price_krw = int(sale_price_usd * 1300)
                 normal_price_krw = int(normal_price_usd * 1300)
                 
-                # CheapShark redirect URL 생성 (다른 스토어로 연결 가능)
                 deal_id = deal.get('dealID', '')
                 cheapshark_url = f"https://www.cheapshark.com/redirect?dealID={deal_id}" if deal_id else ""
+                
+                review_count = int(deal.get('steamRatingCount') or 0)
                 
                 game_info = {
                     'game_id': f"app{steam_app_id}",
                     'steam_app_id': steam_app_id,
                     'cheapshark_id': deal.get('gameID'),
-                    'deal_id': deal_id,  # CheapShark deal ID
+                    'deal_id': deal_id,
                     'title': deal.get('title'),
                     'current_price': sale_price_krw,
                     'original_price': normal_price_krw,
@@ -165,101 +175,64 @@ class Command(BaseCommand):
                     'deal_rating': deal.get('dealRating', '0'),
                     'thumbnail': deal.get('thumb'),
                     'store_link': f"https://store.steampowered.com/app/{steam_app_id}/",
-                    'cheapshark_url': cheapshark_url,  # 가격 비교 / 다른 스토어 링크
+                    'cheapshark_url': cheapshark_url,
                     'is_on_sale': deal.get('isOnSale') == "1",
-                    'sale_count': review_count  # 하위 호환성을 위해 리뷰 수를 sale_count로도 저장
+                    'sale_count': review_count,
+                    'rawg_id': steam_to_rawg.get(str(steam_app_id))  # 미리 매핑
                 }
                 
                 collected_data.append(game_info)
                 added += 1
             return added
         
-        # ===== 1단계: Deal Rating 정렬로 수집 (할인 가성비 높은 게임) =====
-        self.stdout.write("📊 1단계: Deal Rating 기준 수집 중...")
-        page = 0
-        deal_rating_target = target_count // 3  # 1/3은 Deal Rating으로
+        # CheapShark deals API를 페이지네이션으로 순회
+        # 여러 정렬 기준으로 수집하여 다양한 게임 확보
         
-        while len(collected_data) < deal_rating_target:
-            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Deal Rating")
-            
-            if not deals:
-                break
-            
-            added = process_deals(deals, "Deal Rating")
-            
-            if page % 5 == 0:
-                self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개)")
-            
-            page += 1
-            time.sleep(0.2)
-            
-            if page > 50:
-                break
+        sort_criteria = [
+            ("Deal Rating", 30),   # Deal Rating으로 30페이지
+            ("Reviews", 30),       # 인기도로 30페이지
+            ("Metacritic", 20),    # 메타크리틱으로 20페이지
+            ("Savings", 20),       # 할인율로 20페이지
+        ]
         
-        deal_rating_count = len(collected_data)
-        self.stdout.write(f"   ✅ Deal Rating: {deal_rating_count}개 수집 완료")
+        for sort_by, max_pages in sort_criteria:
+            self.stdout.write(f"📥 {sort_by} 기준 수집 중...")
+            
+            for page in range(max_pages):
+                params = {
+                    "storeID": "1",
+                    "onSale": "1",
+                    "pageSize": str(self.PAGE_SIZE),
+                    "pageNumber": str(page),
+                    "sortBy": sort_by
+                }
+                
+                deals = self.fetch_deals_with_retry(params)
+                
+                if not deals:
+                    self.stdout.write(f"   ⚠️ 페이지 {page + 1}에서 데이터 없음, 다음으로 넘어감")
+                    break
+                
+                added = process_deals(deals)
+                
+                if (page + 1) % 10 == 0:
+                    self.stdout.write(f"   ✅ 페이지 {page + 1}/{max_pages} (수집: {len(collected_data)}개, +{added} 신규)")
+                
+                time.sleep(self.REQUEST_DELAY)
+            
+            self.stdout.write(f"   ✅ {sort_by}: 완료 (누적: {len(collected_data)}개)")
         
-        # ===== 2단계: Reviews 정렬로 수집 (인기 게임 - 리뷰 많은 게임) =====
-        self.stdout.write("🔥 2단계: 인기도(Reviews) 기준 수집 중...")
-        page = 0
-        reviews_target = (target_count * 2) // 3  # 2/3 지점까지
-        
-        while len(collected_data) < reviews_target:
-            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Reviews")
-            
-            if not deals:
-                break
-            
-            added = process_deals(deals, "Reviews")
-            
-            if page % 5 == 0:
-                self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개, +{added} 신규)")
-            
-            page += 1
-            time.sleep(0.2)
-            
-            if page > 50:
-                break
-        
-        reviews_count = len(collected_data) - deal_rating_count
-        self.stdout.write(f"   ✅ Reviews 기준: {reviews_count}개 추가 수집 완료")
-        
-        # ===== 3단계: Metacritic 정렬로 수집 (고평가 게임 - 엘든링, 세키로 등) =====
-        self.stdout.write("🏆 3단계: Metacritic 기준 수집 중... (엘든링, 세키로 등 명작)")
-        page = 0
-        before_metacritic = len(collected_data)
-        
-        while len(collected_data) < target_count:
-            deals = self.fetch_deals(page_number=page, min_rating=min_rating, sort_by="Metacritic")
-            
-            if not deals:
-                break
-            
-            added = process_deals(deals, "Metacritic")
-            
-            if page % 5 == 0:
-                self.stdout.write(f"   ✅ 페이지 {page + 1} 완료 (수집: {len(collected_data)}개, +{added} 신규)")
-            
-            page += 1
-            time.sleep(0.2)
-            
-            if page > 50:
-                break
-        
-        metacritic_count = len(collected_data) - before_metacritic
-        self.stdout.write(f"   ✅ Metacritic 기준: {metacritic_count}개 추가 수집 완료")
-        self.stdout.write(f"   📊 총 수집: {len(collected_data)}개 (중복 제거 완료)")
-        
-        # 목표 개수에 맞춰 자르기
-        collected_data = collected_data[:target_count]
+        self.stdout.write(f"\n📊 1차 수집 완료: {len(collected_data)}개 (DB 게임 중 세일 중인 것)")
         
         # 역대 최저가 정보 조회
         if fetch_history and len(collected_data) > 0:
-            self.stdout.write(f"\n📊 역대 최저가 정보 조회 중... (상위 500개)")
-            for i, game in enumerate(collected_data[:500]):
+            history_count = min(len(collected_data), 300)  # 최대 300개만
+            self.stdout.write(f"\n📊 역대 최저가 정보 조회 중... (상위 {history_count}개)")
+            
+            for i, game in enumerate(collected_data[:history_count]):
                 cheapshark_id = game.get('cheapshark_id')
                 if cheapshark_id:
-                    historical = self.fetch_historical_low(cheapshark_id)
+                    historical = self.fetch_historical_low_with_retry(cheapshark_id)
                     if historical:
                         game['cheapest_price_ever'] = float(historical.get('price', 0))
                         game['cheapest_price_ever_krw'] = int(float(historical.get('price', 0)) * 1300)
@@ -270,46 +243,19 @@ class Command(BaseCommand):
                         else:
                             game['is_historical_low'] = False
                 
-                if (i + 1) % 20 == 0:
-                    self.stdout.write(f"   ✅ {i + 1}/500 완료")
-                time.sleep(0.2)
+                if (i + 1) % 50 == 0:
+                    self.stdout.write(f"   ✅ {i + 1}/{history_count} 완료")
+                
+                time.sleep(self.HISTORY_DELAY)
         
         # 데이터 분류
         categorized = self._categorize_data(collected_data)
         
-        # DB에서 rawg_id 매핑 추가
-        from games.models import Game
-        self.stdout.write(f"\n🔗 DB에서 rawg_id 매핑 중...")
-        steam_to_rawg = {}
-        games_with_both = Game.objects.filter(
-            steam_appid__isnull=False,
-            rawg_id__isnull=False
-        ).values_list('steam_appid', 'rawg_id')
-        
-        for steam_appid, rawg_id in games_with_both:
-            steam_to_rawg[str(steam_appid)] = rawg_id
-        
-        self.stdout.write(f"   ✅ DB에서 {len(steam_to_rawg)}개의 매핑 발견")
-        
-        # collected_data에 rawg_id 추가
-        matched_count = 0
-        for game in collected_data:
-            steam_app_id = game.get('steam_app_id', '')
-            rawg_id = steam_to_rawg.get(str(steam_app_id))
-            if rawg_id:
-                game['rawg_id'] = rawg_id
-                matched_count += 1
-        
-        self.stdout.write(f"   ✅ {matched_count}/{len(collected_data)}개 게임에 rawg_id 매핑 완료")
-        
         # 결과 저장
         result = {
             'updated_at': datetime.now().isoformat(),
-            'source': 'CheapShark API',
-            'filters': {
-                'min_steam_rating': min_rating,
-                'min_review_count': min_reviews
-            },
+            'source': 'CheapShark API (DB games only)',
+            'db_game_count': len(db_steam_ids),
             'stats': {
                 'total_count': len(collected_data),
                 'popular_count': len(categorized['popular_sales']),
@@ -332,7 +278,8 @@ class Command(BaseCommand):
                 json.dump(collected_data, f, ensure_ascii=False, indent=2)
             
             self.stdout.write(self.style.SUCCESS("\n🎉 완료!"))
-            self.stdout.write(f"   📊 전체 수집: {len(collected_data)}개")
+            self.stdout.write(f"   📊 DB 게임 총: {len(db_steam_ids)}개")
+            self.stdout.write(f"   📊 세일 중인 게임: {len(collected_data)}개")
             self.stdout.write(f"   🔥 인기 세일: {len(categorized['popular_sales'])}개")
             self.stdout.write(f"   💰 역대 최대 할인: {len(categorized['top_discounts'])}개")
             self.stdout.write(f"   ⭐ 역대 최저가: {len(categorized.get('historical_lows', []))}개")
@@ -380,7 +327,7 @@ class Command(BaseCommand):
             reverse=True
         )[:50]
         
-        # 하위 호환성: top_sales와 best_prices도 포함
+        # 하위 호환성
         top_sales = popular_sales
         best_prices = [
             {**g, 'is_best_price': g.get('is_historical_low', False)}

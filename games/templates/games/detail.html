@@ -531,6 +531,107 @@
 </div>
 
 <script>
+    // ========== Header Search Autocomplete ==========
+    let detailSearchDebounceTimer = null;
+    let detailSearchSuggestions = [];
+
+    // Header Search: Navigate to sale tab on main page
+    function performDetailSearch() {
+        const searchInput = document.getElementById('detailHeaderSearch');
+        const query = searchInput ? searchInput.value.trim() : '';
+        if (query) {
+            hideDetailSuggestions();
+            // Navigate to main page with search query as hash parameter
+            window.location.href = `/?search=${encodeURIComponent(query)}#sale`;
+        }
+    }
+
+    // Autocomplete: Fetch suggestions from DB
+    async function onDetailSearchInput() {
+        const searchInput = document.getElementById('detailHeaderSearch');
+        const query = searchInput ? searchInput.value.trim() : '';
+        
+        // Clear previous timer
+        if (detailSearchDebounceTimer) {
+            clearTimeout(detailSearchDebounceTimer);
+        }
+        
+        if (query.length < 1) {
+            hideDetailSuggestions();
+            return;
+        }
+        
+        // Debounce: wait 200ms before making API call
+        detailSearchDebounceTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`/games/api/autocomplete/?q=${encodeURIComponent(query)}&limit=10`);
+                const data = await response.json();
+                detailSearchSuggestions = data.games || [];
+                renderDetailSuggestions();
+            } catch (e) {
+                console.error('Autocomplete error:', e);
+                hideDetailSuggestions();
+            }
+        }, 200);
+    }
+
+    // Render suggestions dropdown
+    function renderDetailSuggestions() {
+        const container = document.getElementById('detailSearchSuggestions');
+        if (!container) return;
+        
+        if (detailSearchSuggestions.length === 0) {
+            hideDetailSuggestions();
+            return;
+        }
+        
+        container.innerHTML = detailSearchSuggestions.map(game => `
+            <div onmousedown="selectDetailSuggestion(${game.id})" 
+                class="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors">
+                ${game.image_url 
+                    ? `<img src="${game.image_url}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100">`
+                    : `<div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-game-controller text-gray-400"></i></div>`
+                }
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-gray-900 truncate text-sm">${game.title}</div>
+                    ${game.genre ? `<div class="text-xs text-gray-500 truncate">${game.genre}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+        
+        container.classList.remove('hidden');
+    }
+
+    // Select a suggestion and navigate to game detail
+    function selectDetailSuggestion(gameId) {
+        hideDetailSuggestions();
+        window.location.href = `/games/${gameId}/`;
+    }
+
+    // Show suggestions dropdown
+    function showDetailSuggestions() {
+        const container = document.getElementById('detailSearchSuggestions');
+        const searchInput = document.getElementById('detailHeaderSearch');
+        if (container && searchInput && searchInput.value.trim().length > 0 && detailSearchSuggestions.length > 0) {
+            container.classList.remove('hidden');
+        }
+    }
+
+    // Hide suggestions dropdown
+    function hideDetailSuggestions() {
+        const container = document.getElementById('detailSearchSuggestions');
+        if (container) {
+            container.classList.add('hidden');
+        }
+    }
+
+    // Hide suggestions with delay (for click handling)
+    function hideDetailSuggestionsDelayed() {
+        setTimeout(() => {
+            hideDetailSuggestions();
+        }, 150);
+    }
+
     // RAWG API로 추가 정보 가져오기
     const RAWG_API_KEY = '{{ rawg_api_key }}';
     const GAME_TITLE = '{{ game.title|escapejs }}';

@@ -93,7 +93,7 @@
 
                 <!-- Game Image -->
                 <div class="relative aspect-[16/10] overflow-hidden">
-                    <img :src="game.image_url || 'https://via.placeholder.com/460x215?text=No+Image'"
+                    <img :src="game.image_url || ''"
                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         @error="handleImageError">
 
@@ -109,15 +109,15 @@
                             :class="isWishlisted(game.rawg_id || game.id) ? 'text-red-500' : 'text-white/70'"></i>
                     </button>
 
-                    <!-- Recommendation Score Badge -->
+                    <!-- Recommendation Score Badge (Top Right) -->
                     <div v-if="game.recommendation_score"
-                        class="absolute top-3 left-14 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
+                        class="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
                         🎯 {{ game.recommendation_score }}점
                     </div>
 
-                    <!-- Sale Badge -->
+                    <!-- Sale Badge (Below Score Badge) -->
                     <div v-if="game.is_on_sale"
-                        class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold animate-pulse">
+                        class="absolute top-12 right-3 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold animate-pulse">
                         -{{ Math.round(game.discount_rate) }}%
                     </div>
 
