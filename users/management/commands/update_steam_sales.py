@@ -47,6 +47,25 @@ class Command(BaseCommand):
             default=1.0,
             help='Delay between API requests in seconds (default: 1.0)'
         )
+        parser.add_argument(
+            '--add-new',
+            type=int,
+            default=0,
+            help='Add new games to DB (specify count, e.g. --add-new 1500). Sorted by popularity/rating.'
+        )
+        parser.add_argument(
+            '--sort-by',
+            type=str,
+            default='Reviews',
+            choices=['Reviews', 'Rating', 'Metacritic', 'Deal Rating', 'Savings'],
+            help='Sort criteria for --add-new (default: Reviews for popularity)'
+        )
+        parser.add_argument(
+            '--min-reviews',
+            type=int,
+            default=500,
+            help='Minimum Steam review count to include (default: 500). Filters out obscure games.'
+        )
 
     def fetch_deals_with_retry(self, params, max_retries=3):
         """CheapShark API 호출 (429 에러 시 Retry-After 대기)"""
@@ -96,6 +115,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         fetch_history = not options['no_history']
         self.REQUEST_DELAY = options['delay']
+        add_new_count = options['add_new']
+        sort_by = options['sort_by']
+        min_reviews = options['min_reviews']
+        
+        # --add-new 모드인 경우 새 게임 추가 로직 실행
+        if add_new_count > 0:
+            self._add_new_games(add_new_count, sort_by, min_reviews)
+            return
         
         self.stdout.write(self.style.NOTICE(
             f"🚀 CheapShark API로 DB 게임들의 세일 데이터 업데이트 시작"
@@ -343,3 +370,147 @@ class Command(BaseCommand):
             'highly_rated': highly_rated,
             'best_prices': best_prices
         }
+
+    def _add_new_games(self, target_count, sort_by, min_reviews=500):
+        """CheapShark API에서 인기 게임을 가져와 DB에 새로 추가 (중복 무시)"""
+        from games.models import Game
+        
+        self.stdout.write(self.style.NOTICE(
+            f"🚀 CheapShark API로 새 게임 {target_count}개 추가 시작"
+        ))
+        self.stdout.write(f"   📌 정렬 기준: {sort_by}")
+        self.stdout.write(f"   📌 최소 리뷰 수: {min_reviews}개")
+        self.stdout.write(f"   ⏱️ 요청 딜레이: {self.REQUEST_DELAY}초")
+        self.stdout.write("")
+        
+        # 기존 DB의 Steam App ID 수집 (중복 체크용)
+        existing_steam_ids = set(
+            str(sid) for sid in Game.objects.filter(
+                steam_appid__isnull=False
+            ).exclude(steam_appid=0).values_list('steam_appid', flat=True)
+        )
+        self.stdout.write(f"   📊 기존 DB 게임: {len(existing_steam_ids)}개")
+        
+        # 수집할 게임들
+        new_games = []
+        seen_app_ids = set()
+        skipped_low_reviews = 0
+        page = 0
+        max_pages = (target_count // self.PAGE_SIZE) + 50  # 필터링 감안해 더 많이 확보
+        
+        self.stdout.write(f"   🎯 목표: {target_count}개 신규 게임 추가")
+        self.stdout.write("")
+        
+        while len(new_games) < target_count and page < max_pages:
+            params = {
+                "storeID": "1",
+                "pageSize": str(self.PAGE_SIZE),
+                "pageNumber": str(page),
+                "sortBy": sort_by
+            }
+            
+            deals = self.fetch_deals_with_retry(params)
+            
+            if not deals:
+                self.stdout.write(f"   ⚠️ 페이지 {page + 1}에서 데이터 없음")
+                break
+            
+            added_this_page = 0
+            for deal in deals:
+                steam_app_id = deal.get('steamAppID')
+                if not steam_app_id:
+                    continue
+                
+                # 최소 리뷰 수 필터링
+                review_count = int(deal.get('steamRatingCount') or 0)
+                if review_count < min_reviews:
+                    skipped_low_reviews += 1
+                    continue
+                
+                # 중복 체크: 현재 수집 중인 것 + 기존 DB
+                if str(steam_app_id) in seen_app_ids:
+                    continue
+                if str(steam_app_id) in existing_steam_ids:
+                    continue
+                
+                seen_app_ids.add(str(steam_app_id))
+                
+                # 가격 변환 (달러 -> 원화)
+                sale_price_usd = float(deal.get('salePrice') or 0)
+                normal_price_usd = float(deal.get('normalPrice') or 0)
+                
+                # 게임 정보 구성
+                game_info = {
+                    'steam_appid': int(steam_app_id),
+                    'title': deal.get('title', ''),
+                    'name': deal.get('title', ''),
+                    'cheapshark_id': deal.get('gameID'),
+                    'current_price_usd': sale_price_usd,
+                    'original_price_usd': normal_price_usd,
+                    'steam_rating': int(deal.get('steamRatingPercent') or 0),
+                    'review_count': int(deal.get('steamRatingCount') or 0),
+                    'metacritic_score': int(deal.get('metacriticScore') or 0),
+                    'thumbnail': deal.get('thumb', ''),
+                }
+                
+                new_games.append(game_info)
+                added_this_page += 1
+                
+                if len(new_games) >= target_count:
+                    break
+            
+            if (page + 1) % 10 == 0 or added_this_page > 0:
+                self.stdout.write(
+                    f"   📥 페이지 {page + 1}: +{added_this_page}개 신규 "
+                    f"(누적: {len(new_games)}/{target_count})"
+                )
+            
+            page += 1
+            time.sleep(self.REQUEST_DELAY)
+        
+        self.stdout.write("")
+        self.stdout.write(f"✅ 수집 완료: {len(new_games)}개 신규 게임")
+        if skipped_low_reviews > 0:
+            self.stdout.write(f"   ⏭️ 리뷰 {min_reviews}개 미만 제외: {skipped_low_reviews}개")
+        
+        # DB에 저장
+        if new_games:
+            self.stdout.write(f"\n💾 DB에 저장 중...")
+            
+            created_count = 0
+            skipped_count = 0
+            
+            for i, game_info in enumerate(new_games):
+                try:
+                    # 한번 더 중복 체크 (동시 실행 방지)
+                    if Game.objects.filter(steam_appid=game_info['steam_appid']).exists():
+                        skipped_count += 1
+                        continue
+                    
+                    # 게임 생성 (Game 모델 필수 필드: title, image_url)
+                    thumbnail = game_info['thumbnail'] or ''
+                    # Steam 썸네일을 header 이미지로 변환
+                    image_url = thumbnail.replace('capsule_sm_120', 'header') if thumbnail else f"https://cdn.akamai.steamstatic.com/steam/apps/{game_info['steam_appid']}/header.jpg"
+                    
+                    game = Game.objects.create(
+                        title=game_info['name'][:200],
+                        steam_appid=game_info['steam_appid'],
+                        metacritic_score=game_info['metacritic_score'] if game_info['metacritic_score'] > 0 else None,
+                        image_url=image_url,
+                        background_image=image_url,
+                    )
+                    created_count += 1
+                    
+                    if (i + 1) % 100 == 0:
+                        self.stdout.write(f"   ✅ {i + 1}/{len(new_games)} 처리됨 (생성: {created_count}개)")
+                    
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"   ⚠️ '{game_info['name']}' 저장 실패: {e}"))
+                    skipped_count += 1
+            
+            self.stdout.write(self.style.SUCCESS(f"\n🎉 완료!"))
+            self.stdout.write(f"   ✅ 신규 생성: {created_count}개")
+            self.stdout.write(f"   ⏭️ 건너뜀 (중복): {skipped_count}개")
+            self.stdout.write(f"   📊 총 DB 게임 수: {Game.objects.count()}개")
+        else:
+            self.stdout.write(self.style.WARNING("⚠️ 추가할 신규 게임이 없습니다."))
