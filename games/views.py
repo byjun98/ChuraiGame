@@ -567,7 +567,10 @@ def api_reviews_by_rawg_id(request, rawg_id):
         - game_exists: DB에 게임이 있는지 여부
     """
     try:
-        game = Game.objects.get(rawg_id=rawg_id)
+        # 중복 rawg_id가 있을 수 있으므로 filter 사용
+        game = Game.objects.filter(rawg_id=rawg_id).first()
+        if not game:
+            raise Game.DoesNotExist
         # users.GameRating 사용 (실제 데이터)
         ratings = GameRating.objects.filter(game=game).select_related('user').order_by('-updated_at')
         my_rating = ratings.filter(user=request.user).first()
@@ -670,7 +673,14 @@ def api_wishlist_status_by_rawg_id(request, rawg_id):
         })
     
     try:
-        game = Game.objects.get(rawg_id=rawg_id)
+        # 중복 rawg_id가 있을 수 있으므로 filter 사용
+        game = Game.objects.filter(rawg_id=rawg_id).first()
+        if not game:
+            return JsonResponse({
+                'is_wishlisted': False,
+                'authenticated': True,
+                'game_exists': False
+            })
         is_wishlisted = request.user.wishlist.filter(pk=game.pk).exists()
         
         return JsonResponse({

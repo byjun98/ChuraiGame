@@ -828,20 +828,69 @@ def get_top_rated_games(page_size=20):
 
 def get_trending_games(page_size=20):
     """
-    Get games with highest metacritic scores.
+    Get trending games - high metacritic scores from recent 2 years (2024-2025).
     Only includes games with metacritic score of 70+.
     
     Args:
         page_size: Number of results (default: 20)
     
     Returns:
-        list: Games sorted by metacritic score (70+)
+        list: Recent games (2024-2025) sorted by metacritic score (70+)
     """
-    return get_games_by_ordering(
-        ordering='-metacritic', 
-        page_size=page_size,
-        metacritic_min=70  # Only games with 70+ metacritic
-    )
+    if not RAWG_API_KEY:
+        logger.warning("RAWG_API_KEY not configured")
+        return []
+    
+    try:
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        # Filter for games from 2024-01-01 to today (recent 2 years)
+        start_date = '2024-01-01'
+        
+        params = {
+            'key': RAWG_API_KEY,
+            'ordering': '-metacritic',  # Highest metacritic first
+            'page_size': page_size * 3,  # Get more to filter
+            'platforms': '4',  # PC only
+            'metacritic': '70,100',  # Only games with 70+ metacritic
+            'dates': f'{start_date},{today}',  # Games from 2024-2025 only
+            'exclude_additions': 'true'  # Exclude DLCs
+        }
+        
+        response = requests.get(f"{BASE_URL}/games", params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        for game in data.get('results', []):
+            image_url = game.get('background_image', '')
+            
+            # Must have an image
+            if not image_url:
+                continue
+            
+            results.append({
+                'rawg_id': game['id'],
+                'slug': game.get('slug', ''),
+                'title': game['name'],
+                'image_url': image_url,
+                'rating': game.get('rating'),
+                'ratings_count': game.get('ratings_count', 0),
+                'released': game.get('released'),
+                'genres': [g['name'] for g in game.get('genres', [])],
+                'metacritic': game.get('metacritic'),
+                'added': game.get('added', 0)
+            })
+            
+            if len(results) >= page_size:
+                break
+        
+        logger.info(f"Fetched {len(results)} trending games (2024-2025, metacritic 70+)")
+        return results
+    
+    except requests.RequestException as e:
+        logger.error(f"Error fetching trending games: {e}")
+        return []
 
 
 def get_new_releases(page_size=20):

@@ -1276,11 +1276,18 @@ def get_game_rating_api(request, rawg_id):
     from games.models import Game
     
     try:
-        game = Game.objects.get(rawg_id=rawg_id)
-        rating = GameRating.objects.get(user=request.user, game=game)
-        return JsonResponse({'score': rating.score, 'game_id': game.id})
-    except (Game.DoesNotExist, GameRating.DoesNotExist):
-        return JsonResponse({'score': None})
+        # 중복 rawg_id가 있을 수 있으므로 filter 사용
+        game = Game.objects.filter(rawg_id=rawg_id).first()
+        if not game:
+            return JsonResponse({'score': None, 'game_exists': False})
+        rating = GameRating.objects.filter(user=request.user, game=game).first()
+        if rating:
+            return JsonResponse({'score': rating.score, 'game_id': game.id})
+        else:
+            return JsonResponse({'score': None, 'game_exists': True})
+    except Exception as e:
+        print(f"get_game_rating_api error: {e}")
+        return JsonResponse({'score': None, 'error': str(e)})
 
 
 # =============================================================================

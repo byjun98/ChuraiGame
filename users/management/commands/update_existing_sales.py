@@ -61,6 +61,7 @@ class Command(BaseCommand):
             
             # 상세 정보 조회로 현재 세일 가격 가져오기
             if cheapshark_id:
+                time.sleep(0.5)  # 상세 조회 전 딜레이
                 detail_response = requests.get(
                     f"{self.CHEAPSHARK_API}/games",
                     params={"id": cheapshark_id},
@@ -176,8 +177,8 @@ class Command(BaseCommand):
             if (i + 1) % batch_size == 0:
                 self.stdout.write(f"   ✅ {i + 1}/{total_games} 처리 완료 (세일 중: {on_sale_count})")
             
-            # API 속도 제한 (0.3초 대기)
-            time.sleep(0.3)
+            # API 속도 제한 (CheapShark: 초당 1회 권장, 게임당 2번 호출하므로 1.5초)
+            time.sleep(1.5)
         
         self.stdout.write(f"\n   📊 총 조회: {len(sale_data)}개, 세일 중: {on_sale_count}개")
         

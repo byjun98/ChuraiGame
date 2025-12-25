@@ -506,18 +506,26 @@
                     }
 
                     if (saleMatch) {
-                        matchedGames.push({
-                            ...rawgGame,
-                            rawg_id: rawgGame.rawg_id || rawgGame.id,  // rawg_id 명시적 보장
-                            discount_rate: saleMatch.discount_rate || 0,
-                            current_price: saleMatch.current_price || 0,
-                            original_price: saleMatch.original_price || 0,
-                            steam_game_id: saleMatch.game_id,
-                            isOnSale: true
-                        });
+                        // 할인율이 있고, 현재 가격이 있는 게임만 표시 (무료 표시 방지)
+                        const discountRate = saleMatch.discount_rate || 0;
+                        const currentPrice = saleMatch.current_price || 0;
+                        const originalPrice = saleMatch.original_price || 0;
+                        
+                        // 실제 세일 중인 게임만 추가 (할인율 > 0 또는 가격 정보가 있는 경우)
+                        if (discountRate > 0 && currentPrice > 0 && originalPrice > 0) {
+                            matchedGames.push({
+                                ...rawgGame,
+                                rawg_id: rawgGame.rawg_id || rawgGame.id,  // rawg_id 명시적 보장
+                                discount_rate: discountRate,
+                                current_price: currentPrice,
+                                original_price: originalPrice,
+                                steam_game_id: saleMatch.game_id,
+                                isOnSale: true
+                            });
 
-                        // Stop when we have enough matches
-                        if (matchedGames.length >= 30) break;
+                            // Stop when we have enough matches
+                            if (matchedGames.length >= 30) break;
+                        }
                     }
                 }
 

@@ -147,3 +147,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
 }
+
+# File upload settings
+# Default is 2.5MB which is too small for image uploads (base64 encoded images can be large)
+# Set to 10MB to allow AI profile image generation with user photos
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
