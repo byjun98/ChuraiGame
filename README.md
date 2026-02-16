@@ -1,191 +1,212 @@
-# 🎮 GameMatch (ChuraiGame)
+# 🎮 ChuraiGame (GameMatch)
 
-> **"당신의 취향, AI가 찾아드립니다."**
-> 
-> **Steam 연동 기반 하이브리드 게임 추천 & AI 큐레이팅 플랫폼**  
+> **Steam 연동 + 하이브리드 추천 + AI 큐레이션**으로 
+> “지금 내 취향에 맞는 게임”을 빠르게 찾는 Django 기반 웹 서비스
 
 <div align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
-![Vue.js](https://img.shields.io/badge/Vue.js-3.0-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
-![Steam](https://img.shields.io/badge/Steam_API-Intergration-000000?style=for-the-badge&logo=steam&logoColor=white)
-![OpenAI](https://img.shields.io/badge/GPT--5_Nano-AI_Curator-412991?style=for-the-badge&logo=openai&logoColor=white)
-![Google Gemini](https://img.shields.io/badge/Gemini_2.0-Translator-8E75B2?style=for-the-badge&logo=google-gemini&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-3.16-ff1709?style=for-the-badge&logo=django&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-DB-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-2.3-013243?style=for-the-badge&logo=numpy&logoColor=white)
+![SciPy](https://img.shields.io/badge/SciPy-1.16-8CAAE6?style=for-the-badge&logo=scipy&logoColor=white)
+![scikit--learn](https://img.shields.io/badge/scikit--learn-1.8-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
+![Steam](https://img.shields.io/badge/Steam_OpenID-Integrated-000000?style=for-the-badge&logo=steam&logoColor=white)
 
 </div>
 
-<br>
+---
 
-## 📖 프로젝트 개요
+## 1) 프로젝트 소개
 
-**GameMatch**는 "할 게임이 없다"고 느끼는 게이머들을 위해 개발되었습니다.  
-단순한 인기 순위가 아닌, **사용자의 Steam 라이브러리 플레이 기록**과 **직관적인 온보딩 평가**를 분석하여 개인화된 게임을 추천합니다.
+ChuraiGame은 다음 3가지를 결합해 추천 품질과 체감 성능을 동시에 개선한 프로젝트입니다.
 
-### 💡 핵심 가치
-- **Connectivity**: Steam 계정 연동 한 번으로 나의 게임 인생을 분석
-- **Personalization**: 플레이 타임과 평가 데이터를 결합한 정교한 추천 알고리즘
-- **Optimization**: 외부 API 의존도를 낮추고 자체 캐싱 시스템으로 **98% 속도 향상**
-- **Intelligence**: GPT-5 기반 AI 큐레이터와의 대화를 통한 감성 추천
+1. **Steam OpenID 로그인/연동**: 유저 라이브러리와 플레이 정보 연계
+2. **하이브리드 추천 엔진**: 협업 필터링 + 태그(콘텐츠) + 메타크리틱 신호 결합
+3. **외부 API 캐시 전략**: RAWG 호출을 DB 캐시로 흡수해 메인 진입 속도 개선
+
+면접 포인트는 “기능 구현”보다, **외부 의존성을 어떻게 줄였고**, **데이터 스키마와 배치 계산을 어떻게 최적화했는지**입니다.
 
 ---
 
-## 🏗 시스템 아키텍처
+## 2) 기술 스택 (면접 답변용 핵심 위주)
 
-```mermaid
-graph TD
-    User[User / Browser] -->|Vue.js Interaction| Frontend[Frontend Views]
-    Frontend -->|REST API| Backend[Django REST Framework]
-    
-    subgraph "Backend Service"
-        Backend -->|Auth| SteamAuth[Steam OpenID Login]
-        Backend -->|Feature| Recommender[Recommendation Engine]
-        Backend -->|Feature| AIChat[AI Chatbot (GPT/Gemini)]
-        Backend -->|Data| DB[(SQLite DB)]
-        
-        Recommender -->|Read| CachedGame[DB Cache Layer]
-        Recommender -->|Calc| Similarity[SciPy Hybrid Filtering]
-    end
-    
-    subgraph "External APIs"
-        SteamAuth --> SteamAPI[Steam Web API]
-        Backend --> RAWG[RAWG Game API]
-        Backend --> CheapShark[CheapShark Sale API]
-        AIChat --> OpenAI[GPT-5 Nano]
-    end
-    
-    CachedGame -.->|Cache Miss| RAWG
+### Backend
+- **Django 5.2.8 + Django REST Framework 3.16.1**
+- **SQLite** (로컬/개발 기준)
+- 커스텀 유저 모델, 앱 분리(`users`, `games`, `community`)
+
+### Data / Recommendation
+- **pandas + NumPy + SciPy(sparse) + scikit-learn(cosine_similarity)**
+- 평점 정규화 후 게임-유저 행렬 기반 **Item-based Collaborative Filtering**
+- 게임 태그(장르/테마/특징/분위기) + 메타크리틱을 추가한 **Hybrid Similarity**
+
+### External Integrations
+- **Steam OpenID / Steam Web API**
+- **RAWG API** (게임 상세/목록)
+- CheapShark/기타 가격 데이터셋(JSON) 연동 구조
+
+### Frontend
+- Django Template 기반 렌더링 + 컴포넌트 템플릿 구조
+- 정적 리소스/이미지 직접 서빙 구성
+
+---
+
+## 3) 아키텍처 요약
+
+```text
+Browser
+  └─ Django Views / Template
+       ├─ Users Domain (인증/온보딩/추천 진입)
+       ├─ Games Domain (목록/상세/캐시/RAWG 연동)
+       ├─ Community Domain (게시글/상호작용)
+       └─ Recommendation Batch
+            ├─ GameRating -> sparse matrix
+            ├─ cosine similarity 계산
+            └─ GameSimilarity Top-K 저장
 ```
 
 ---
 
-## ⚡ 기술적 도전과 해결 (Troubleshooting)
+## 4) 수치로 설명하는 개선 포인트 (면접용)
 
-### 1. RAWG API 속도 문제 해결 (Performance Optimization)
-**문제:** 메인 페이지 로딩 시 `Popular`, `Trending`, `New Release` 등의 섹션을 위해 매번 RAWG API를 호출하여 로딩 시간이 **9초 이상** 소요됨.  
-**해결:**
-- **DB Caching Layer** 구현: API 응답 결과를 `CachedGameList` 모델에 JSON 형태로 저장.
-- **TTL (Time-To-Live)** 설정: 6시간 주기로 자동 갱신.
-- **결과:** 로딩 속도 **9초 → 0.15초 (약 98% 단축)** 달성.
+아래 수치는 코드 구조/정책 기준으로 설명 가능한 **구체 수치**입니다.
 
-### 2. Cold Start 문제 해결 (Onboarding System)
-**문제:** 신규 가입자는 데이터가 없어 추천이 불가능함.  
-**해결:** 
-- **왓챠(Watcha) 스타일 온보딩** 도입.
-- 가입 직후 인기 게임 1,500개를 스와이프하며 평가 (-1: 싫어요, 0: 관심없음, 3.5: 좋아요, 5: 인생게임).
-- 최소 3개 이상 평가 시 즉시 **Item-Based Collaborative Filtering** 작동.
+### 4-1. RAWG API 캐싱으로 외부 호출량 절감
+- 캐시 단위: `popular`, `top_rated`, `trending`, `new_releases` 카테고리
+- 카테고리별 기본 적재량: **40개**
+- TTL: **6시간 이내 캐시 유효**
 
-### 3. 추천 정교화 (Hybrid Recommendation)
-**전략:** 단순히 장르만 매칭하지 않고 복합적인 점수 산정 로직 구현.
-```python
-# games/recommendation.py
-def calculate_score(game, user_pref):
-    score = 0
-    score += genre_match_score(game) * 0.4  # 장르 적합도 (40%)
-    score += metacritic_score(game) * 0.25  # 전문가 평점 (25%)
-    score += user_rating_score(game) * 0.2  # 유저 평점 (20%)
-    score += sale_benefit_score(game) * 0.15 # 할인율 (15%)
-    return score
-```
+**개선 설명**
+- 캐시 미적용 시: 메인 진입 때마다 카테고리별 외부 호출 반복
+- 캐시 적용 시: TTL 구간 동안 **DB 조회로 대체**, 외부 호출 0회
+- 한 번의 캐시 갱신 후 메인 진입 N회 동안, 호출량을 최대 **4N → 0**으로 줄이는 구조
 
----
+### 4-2. 유사도 저장 스키마 최적화
+- `game_a_id < game_b_id` 형태로 **정규화 저장**
+- 동일 쌍(A,B)/(B,A) 중복 제거
 
-## ✨ 주요 기능 상세
+**개선 설명**
+- 페어 중복 제거로 유사도 저장 공간을 이론적으로 **약 50% 절감**
+- `similarity_rank` 기반 Top-K 조회 최적화로 추천 시 후처리 비용 축소
 
-### 1. 🔐 Steam 완벽 연동
-- **OpenID 2.0**: 보안 걱정 없는 공식 로그인 지원
-- **라이브러리 분석**: 보유 게임, 플레이 타임 자동 동기화
-- **실시간 반영**: "내가 어제 3시간 플레이한 Elden Ring"이 즉시 추천 알고리즘에 반영됨
+### 4-3. 계산량 제어 파라미터화
+- `--min-ratings`(기본 3), `--top-k`(기본 50), `--min-similarity`(기본 0.1)
 
-### 2. 🤖 AI 게임 큐레이터 (Chatbot)
-- **Context-Aware**: 단순 챗봇이 아닙니다. 유저의 Steam 라이브러리와 평가 데이터를 Prompt Context로 주입.
-- **GPT-5 Nano**: "너 엘든링 100시간 했네? 그럼 P의 거짓은 어때?" 같은 개인화된 대화 가능.
-- **Gemini Translation**: 영어로 된 게임 설명을 Gemini 2.0 Flash Lite를 이용해 1초 만에 자연스러운 한국어로 번역.
+**개선 설명**
+- 평점이 적은 게임 제외로 노이즈/희소성 문제 완화
+- 모든 페어를 저장하지 않고 상위 K만 유지하여 DB write/read 비용 통제
 
-### 3. 💰 스마트 세일 정보
-- **CheapShark API Integration**: Steam 외에도 다양한 스토어의 최저가 비교.
-- **Scam Filter**: 할인율은 높지만 평점이 낮은 '스컴 게임'을 자동 필터링 (리뷰 500개 이상, 긍정 80% 이상).
+### 4-4. 온보딩 데이터 품질 필터
+- JSON 온보딩 후보군에서 `steam_rating >= 75`, `review_count >= 500` 필터 적용
+- 상위 **500개** 후보를 사용해 초기 평가 경험 구성
 
-### 4. 👥 커뮤니티 & 리뷰
-- 게임별 별점 평가 및 코멘트 작성
-- 유저 간 게시글 작성, 좋아요, 댓글 소통 기능
-- 이미지 업로드 지원
+**개선 설명**
+- 콜드스타트에서 “아는 게임이 너무 적게 보이는 문제”와 “품질 낮은 타이틀 노출”을 동시에 완화
 
 ---
 
-## 🛠 설치 및 실행 방법
+## 5) 트러블슈팅 / 어려웠던 점 / 개선 방향
 
-### Prerequisites
+### A. 외부 API 의존으로 인한 체감 지연
+**문제**
+- 페이지 렌더 시 외부 API 직접 호출이 누적되면 응답 지연과 실패율 증가
+
+**해결**
+- `CachedGameList` 모델 기반 카테고리 캐시 + TTL + 수동 갱신 커맨드 분리
+
+**다음 개선**
+- 캐시 갱신을 주기 스케줄러(cron/celery beat)로 자동화
+- 캐시 히트율/미스율 메트릭 수집(예: Prometheus)
+
+### B. 추천 정확도 vs 계산 비용의 트레이드오프
+**문제**
+- 협업 필터링만 사용하면 신규/롱테일 게임에 취약
+- 콘텐츠 신호를 늘리면 계산/관리 복잡도가 증가
+
+**해결**
+- 협업 + 태그 + 메타크리틱 가중합 하이브리드
+- 배치 계산 시 sparse matrix 및 Top-K 컷오프 적용
+
+**다음 개선**
+- 가중치(협업/태그/메타) 자동 튜닝(A/B 테스트)
+- 사용자 세그먼트별 가중치 동적 적용
+
+### C. 데이터 소스 간 ID 불일치(Steam AppID vs RAWG ID)
+**문제**
+- 서로 다른 ID 체계 때문에 상세 이동/연결 시 누락 발생
+
+**해결**
+- 검색 리다이렉트 + 상세 뷰에서 다중 키(steam_appid/rawg_id/local id) 순차 탐색
+
+**다음 개선**
+- 통합 매핑 테이블을 별도 관리하고 동기화 배치 강화
+
+---
+
+## 6) 로컬 실행 가이드
+
+### 요구사항
 - Python 3.9+
-- Django 5.x
-- API Keys (RAWG, OpenAI/GMS)
+- `.env`에 필요한 API 키 설정(RAWG 등)
 
-### 1. 환경 설정
+### 설치
 ```bash
-# Repository Clone
-git clone https://github.com/username/ChuraiGame.git
+git clone <repo-url>
 cd ChuraiGame
-
-# 가상환경 생성 및 실행
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 패키지 설치
 pip install -r requirements.txt
 ```
 
-### 2. 데이터베이스 초기화 (필수)
-이 프로젝트는 대량의 게임 데이터를 다루므로 초기 적재 과정이 필요합니다.
-
+### 마이그레이션
 ```bash
-# DB 마이그레이션
 python manage.py migrate
-
-# 1. 게임 기본 데이터 적재 (JSON -> DB)
-python manage.py load_games
-
-# 2. 장르 정보 업데이트 (RAWG API 연동, 약 10~20분 소요)
-python manage.py update_genres --limit=100  # 테스트용 100개만 우선 실행 권장
-
-# 3. 메인 페이지용 캐시 생성 (속도 향상 핵심)
-python manage.py refresh_game_cache
-
-# 4. 게임 유사도 계산 (Item-Based CF 추천용, 평가 데이터 필요)
-python manage.py calculate_game_similarity
-# 옵션: --min-ratings 5 (최소 5개 평가받은 게임만), --top-k 30 (상위 30개 유사 게임 저장)
 ```
 
-### 3. 서버 실행
+### 데이터/캐시 관련 커맨드
+```bash
+# 초기 게임 적재
+python manage.py load_games
+
+# 메인 목록 캐시 갱신
+python manage.py refresh_game_cache
+
+# 스팀 태그/리뷰 수집
+python manage.py fetch_steam_tags
+python manage.py fetch_steam_reviews
+
+# 게임 간 유사도 배치 계산
+python manage.py calculate_game_similarity --min-ratings 3 --top-k 50
+```
+
+### 실행
 ```bash
 python manage.py runserver
 ```
-접속: [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## 📂 폴더 구조 (Project Structure)
+## 7) 디렉터리 구조
 
-```
+```text
 ChuraiGame/
-├── games/                  # 게임 데이터, 추천 로직, API 관리
-│   ├── management/commands # 데이터 적재/싱크 스크립트
-│   ├── utils.py            # RAWG API 래퍼 & 추천 알고리즘
-│   └── views.py            # 게임 상세, API 뷰
-├── users/                  # 유저 관리, Steam 연동, 온보딩
-│   ├── steam_auth.py       # Steam OpenID & API 핸들러
-│   ├── onboarding.py       # 왓챠 스타일 평가 로직
-│   └── views.py            # AI 챗봇, 프로필
-├── community/              # 게시판 기능
-├── templates/              # Vue.js가 포함된 Django 템플릿
-└── steamsale.py            # 세일 데이터 크롤링 모듈
+├── ChuraiGame/                 # settings, urls
+├── games/                      # 게임 도메인, RAWG 연동, 캐시, 상세
+│   └── management/commands/    # load/cache/fetch 계열 배치
+├── users/                      # 인증, Steam 연동, 온보딩, 추천
+│   └── management/commands/    # 유사도 계산, 세일 동기화 등
+├── community/                  # 커뮤니티 기능
+├── templates/                  # 공통 템플릿
+└── requirements.txt
 ```
 
 ---
 
-<div align="center">
+## 8) 면접에서 이렇게 말하면 좋습니다 (요약)
 
-**Created by SSAFY 14기 1학기 관통 프로젝트 팀**
-<br>
-사용된 모든 게임 이미지의 저작권은 각 개발사/배급사에 있습니다.
+- “외부 API 지연을 기능 문제로 보지 않고 **캐시 계층 문제**로 정의해서 해결했습니다.”
+- “추천은 모델 성능만이 아니라 운영 비용도 중요해서, **Top-K 저장/정규화 스키마**로 트래픽 대비 비용을 줄였습니다.”
+- “콜드스타트는 알고리즘 이전에 데이터 품질 이슈라서, 온보딩 후보군에 **평점/리뷰 수 필터**를 걸어 체감 추천 품질을 개선했습니다.”
 
-</div>
