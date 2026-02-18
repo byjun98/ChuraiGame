@@ -584,21 +584,9 @@ from .steam_auth import get_steam_owned_games, get_steam_recently_played
 def ai_chat_api(request):
     """
     AI Game Recommendation Chatbot API
-    Uses Google Gemini 2.5 Flash Lite via SSAFY GMS API
-    Native Google Generative Language API format
+    Uses Google Gemini 2.0 Flash Lite (직접 호출, 4초 rate limit)
     """
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    # Get API key from environment
-    api_key = os.getenv('GMS_API_KEY')
-    
-    if not api_key:
-        return JsonResponse({
-            'error': 'API 키가 설정되지 않았습니다.',
-            'success': False
-        }, status=500)
+    from gemini_client import gemini_generate, extract_text
     
     try:
         data = json.loads(request.body)
@@ -739,41 +727,19 @@ def ai_chat_api(request):
             "parts": [{"text": user_message}]
         })
 
-        # 3. Payload 구성
-        payload = {
-            "systemInstruction": {
-                "parts": [{"text": system_prompt_text}]
-            },
-            "contents": gemini_contents,
-            "generationConfig": {
+        # =================================================================
+        # [API 요청] Gemini API 호출 (Google 직접, 4초 rate limit)
+        # =================================================================
+        response = gemini_generate(
+            contents=gemini_contents,
+            system_instruction={"parts": [{"text": system_prompt_text}]},
+            generation_config={
                 "temperature": 0.7,
-                "maxOutputTokens": 2048,  # 채팅용으로 충분한 길이
+                "maxOutputTokens": 2048,
                 "topP": 0.8,
                 "topK": 40
-            }
-        }
-
-        # =================================================================
-        # [API 요청] Gemini API 호출 (Native EndPoint)
-        # =================================================================
-        # 주의: gms.ssafy.io 경로 사용, 모델명 gemini-2.5-flash-lite 적용
-        url = "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
-        
-        # 인증은 쿼리 파라미터로 전달
-        params = {
-            'key': api_key
-        }
-        
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        response = requests.post(
-            url,
-            params=params,
-            headers=headers,
-            json=payload,
-            timeout=30  # Flash 모델은 빠르므로 30초면 충분
+            },
+            timeout=30
         )
         
         # =================================================================
@@ -781,29 +747,18 @@ def ai_chat_api(request):
         # =================================================================
         if response.status_code == 200:
             result = response.json()
+            ai_text = extract_text(result)
             
-            # Gemini 응답 구조: candidates[0].content.parts[0].text
-            try:
-                candidates = result.get('candidates', [])
-                if candidates and candidates[0].get('content'):
-                    ai_text = candidates[0]['content']['parts'][0]['text']
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'message': ai_text,
-                        'role': 'assistant'
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'AI가 응답을 생성하지 못했습니다 (Blocked or Empty).'
-                    }, status=500)
-                    
-            except (KeyError, IndexError) as e:
-                print(f"Parsing Error: {e}")
+            if ai_text:
+                return JsonResponse({
+                    'success': True,
+                    'message': ai_text,
+                    'role': 'assistant'
+                })
+            else:
                 return JsonResponse({
                     'success': False,
-                    'error': '응답 파싱 중 오류가 발생했습니다.'
+                    'error': 'AI가 응답을 생성하지 못했습니다 (Blocked or Empty).'
                 }, status=500)
                 
         else:
@@ -816,6 +771,8 @@ def ai_chat_api(request):
 
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': '잘못된 JSON 형식입니다.'}, status=400)
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
     except Exception as e:
         import traceback
         print(traceback.format_exc())
@@ -827,20 +784,9 @@ def ai_chat_api(request):
 def translate_text_api(request):
     """
     Translate game description to Korean using Gemini 2.0 Flash Lite
-    Much faster than GPT!
+    Google 직접 호출 + 4초 rate limit (무료 요금제 대응)
     """
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    # Get API key from environment
-    api_key = os.getenv('GMS_API_KEY')
-    
-    if not api_key:
-        return JsonResponse({
-            'error': 'API 키가 설정되지 않았습니다.',
-            'success': False
-        }, status=500)
+    from gemini_client import gemini_generate, extract_text
     
     try:
         data = json.loads(request.body)
@@ -890,44 +836,23 @@ def translate_text_api(request):
 
 한국어 번역:"""
         
-        # Call Gemini 2.0 Flash Lite API (much faster!)
-        response = requests.post(
-            f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}",
-            headers={
-                "Content-Type": "application/json"
-            },
-            json={
-                "contents": [
-                    {
-                        "parts": [
-                            {
-                                "text": prompt
-                            }
-                        ]
-                    }
-                ]
-            },
-            timeout=30  # Gemini is much faster
+        # Gemini 2.0 Flash Lite API 호출 (Google 직접, 4초 rate limit)
+        response = gemini_generate(
+            contents=[{"parts": [{"text": prompt}]}],
+            timeout=30
         )
         
         print(f"[DEBUG] Gemini Response Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
+            translated_text = extract_text(result)
             
-            # Parse Gemini response format
-            candidates = result.get('candidates', [])
-            if candidates and len(candidates) > 0:
-                content = candidates[0].get('content', {})
-                parts = content.get('parts', [])
-                if parts and len(parts) > 0:
-                    translated_text = parts[0].get('text', '')
-                    
-                    if translated_text:
-                        return JsonResponse({
-                            'success': True,
-                            'translated': translated_text.strip()
-                        })
+            if translated_text:
+                return JsonResponse({
+                    'success': True,
+                    'translated': translated_text.strip()
+                })
             
             print(f"[DEBUG] Gemini result structure: {result}")
             return JsonResponse({
@@ -946,6 +871,11 @@ def translate_text_api(request):
             'error': '번역 서버 응답 시간이 초과되었습니다.',
             'success': False
         }, status=504)
+    except ValueError as e:
+        return JsonResponse({
+            'error': str(e),
+            'success': False
+        }, status=500)
     except Exception as e:
         import traceback
         print(f"Translation Error: {e}")
@@ -2234,6 +2164,8 @@ def generate_ai_profile_api(request):
     사용자의 사진을 게임 캐릭터 스타일로 변환하거나,
     닉네임/취향 장르 기반으로 새로운 프로필 이미지 생성
     
+    Google 직접 호출 + 4초 rate limit (무료 요금제 대응)
+    
     Request Body (Gemini API 형식):
         - contents: [{parts: [{text: prompt}, {inlineData: {mimeType, data}}]}]
         - generationConfig: {responseModalities: ["Text", "Image"]}
@@ -2243,35 +2175,18 @@ def generate_ai_profile_api(request):
         - image_base64: 생성된 이미지 (base64 encoded)
         - text: AI 텍스트 응답 (있는 경우)
     """
-    import os
-    import base64
-    from dotenv import load_dotenv
-    load_dotenv()
-    
-    # Get API key from environment
-    api_key = os.getenv('GMS_API_KEY')
-    
-    if not api_key:
-        return JsonResponse({
-            'error': 'API 키가 설정되지 않았습니다.',
-            'success': False
-        }, status=500)
+    from gemini_client import gemini_generate_with_image, extract_image
     
     try:
         data = json.loads(request.body)
         
-        # Gemini Image Generation API endpoint
-        url = f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key={api_key}"
+        # Gemini Image Generation API 호출 (Google 직접, 4초 rate limit)
+        contents = data.get('contents', [])
+        generation_config = data.get('generationConfig', None)
         
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        # Forward the request body as-is (already in Gemini format)
-        response = requests.post(
-            url,
-            headers=headers,
-            json=data,
+        response = gemini_generate_with_image(
+            contents=contents,
+            generation_config=generation_config,
             timeout=60  # Image generation takes longer
         )
         
@@ -2279,41 +2194,20 @@ def generate_ai_profile_api(request):
         
         if response.status_code == 200:
             result = response.json()
+            image_base64, text_response = extract_image(result)
             
-            # Parse Gemini response
-            candidates = result.get('candidates', [])
-            if candidates and len(candidates) > 0:
-                content = candidates[0].get('content', {})
-                parts = content.get('parts', [])
-                
-                image_base64 = None
-                text_response = None
-                
-                for part in parts:
-                    # Check for inline image data
-                    if 'inlineData' in part:
-                        image_base64 = part['inlineData'].get('data')
-                    # Check for text
-                    if 'text' in part:
-                        text_response = part['text']
-                
-                if image_base64:
-                    return JsonResponse({
-                        'success': True,
-                        'image_base64': image_base64,
-                        'text': text_response
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'error': '이미지가 생성되지 않았습니다.',
-                        'text': text_response
-                    }, status=500)
-            
-            return JsonResponse({
-                'success': False,
-                'error': 'AI가 응답을 생성하지 못했습니다.'
-            }, status=500)
+            if image_base64:
+                return JsonResponse({
+                    'success': True,
+                    'image_base64': image_base64,
+                    'text': text_response
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': '이미지가 생성되지 않았습니다.',
+                    'text': text_response
+                }, status=500)
             
         else:
             print(f"[DEBUG] Gemini error response: {response.text}")
@@ -2328,6 +2222,11 @@ def generate_ai_profile_api(request):
             'success': False,
             'error': '잘못된 JSON 형식입니다.'
         }, status=400)
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
     except requests.Timeout:
         return JsonResponse({
             'success': False,

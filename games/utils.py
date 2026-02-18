@@ -187,12 +187,9 @@ def fetch_rawg_trailers(game_id):
 
 def translate_text_gemini(text):
     """
-    Translate text using Gemini API (or other available method).
+    Translate text using Gemini API (Google 직접 호출, 4초 rate limit)
     """
-    api_key = os.getenv('GMS_API_KEY')
-    if not api_key:
-        logger.warning("GMS_API_KEY for translation not configured")
-        return None
+    from gemini_client import gemini_generate, extract_text
 
     try:
         prompt = f"""당신은 10년 경력의 전문 게임 로컬라이제이션 번역가입니다. 
@@ -209,24 +206,21 @@ def translate_text_gemini(text):
 
 한국어 번역:"""
 
-        response = requests.post(
-            f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}]
-            },
+        response = gemini_generate(
+            contents=[{"parts": [{"text": prompt}]}],
             timeout=30
         )
         
         if response.status_code == 200:
             result = response.json()
-            candidates = result.get('candidates', [])
-            if candidates:
-                translation = candidates[0]['content']['parts'][0]['text'].strip()
-                return translation
+            translation = extract_text(result)
+            if translation:
+                return translation.strip()
         else:
             logger.error(f"Gemini translation failed: {response.status_code} {response.text}")
             
+    except ValueError as e:
+        logger.error(f"Gemini API key error: {e}")
     except Exception as e:
         logger.error(f"Error calling Gemini translation API: {e}")
         

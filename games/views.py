@@ -773,13 +773,7 @@ def api_translate_game(request):
     import os
     import json
     import requests
-    from dotenv import load_dotenv
     from .utils import translate_text_gemini
-    load_dotenv()
-    
-    api_key = os.getenv('GMS_API_KEY')
-    if not api_key:
-        return JsonResponse({'error': 'API 키가 설정되지 않았습니다.', 'success': False}, status=500)
         
     try:
         data = json.loads(request.body)
